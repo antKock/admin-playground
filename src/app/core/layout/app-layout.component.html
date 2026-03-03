@@ -1,0 +1,39 @@
+<a class="skip-to-content" href="#main-content">Skip to content</a>
+<div class="app-layout">
+  <nav class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <span class="text-lg font-semibold text-brand">Lauréat Admin</span>
+    </div>
+    <ul class="nav-list">
+      @for (item of navItems; track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="nav-item-active"
+            class="nav-item"
+          >
+            <lucide-icon [img]="item.icon" [size]="18" class="nav-icon"></lucide-icon>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="flex-1"></div>
+      <button
+        (click)="onLogout()"
+        class="flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary"
+      >
+        <lucide-icon [img]="LogOut" [size]="16"></lucide-icon>
+        <span>Logout</span>
+      </button>
+    </header>
+
+    <main id="main-content" class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

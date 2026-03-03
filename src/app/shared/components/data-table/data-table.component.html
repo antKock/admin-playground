@@ -1,0 +1,45 @@
+<div class="data-table" #scrollContainer>
+  <table>
+    <thead>
+      <tr>
+        @for (col of columns(); track col.key) {
+          <th [style.width]="col.width">{{ col.label }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @if (isLoading() && data().length === 0) {
+        @for (row of skeletonRows; track $index) {
+          <tr class="skeleton-row">
+            @for (col of columns(); track col.key) {
+              <td>
+                <div class="skeleton-cell"></div>
+              </td>
+            }
+          </tr>
+        }
+      } @else {
+        @for (row of data(); track $index) {
+          <tr
+            class="data-row"
+            tabindex="0"
+            (click)="onRowClick(row)"
+            (keydown)="onRowKeydown($event, row)"
+          >
+            @for (col of columns(); track col.key) {
+              <td>{{ getCellValue(row, col.key) }}</td>
+            }
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+
+  @if (isLoading() && data().length > 0) {
+    <div class="loading-more">
+      <div class="loading-spinner"></div>
+    </div>
+  }
+
+  <div class="scroll-sentinel"></div>
+</div>

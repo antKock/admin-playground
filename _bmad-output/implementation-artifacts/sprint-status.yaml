@@ -1,0 +1,84 @@
+# generated: 2026-03-03
+# project: admin-playground
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-03
+project: admin-playground
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: done
+  1-1-project-scaffold-design-system-foundation: done
+  1-2-api-type-generation-base-service-layer: done
+  1-3-authentication-system: done
+  1-4-application-shell-navigation: done
+  1-5-shared-component-library-core: done
+  epic-1-retrospective: optional
+
+  epic-2: in-progress
+  2-1-funding-program-list-detail-views: ready-for-dev
+  2-2-funding-program-create-edit-delete: ready-for-dev
+  2-3-action-theme-list-detail-create-edit-delete: ready-for-dev
+  2-4-action-theme-status-workflow-duplication: ready-for-dev
+  2-5-list-filtering: ready-for-dev
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-action-model-crud-with-relationship-selectors: backlog
+  3-2-folder-model-crud-with-multi-program-association: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-community-crud-user-assignment: backlog
+  4-2-agent-crud-soft-delete-management: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-indicator-model-crud-with-type-subtype-configuration: backlog
+  5-2-indicator-model-list-values-type-constraints: backlog
+  5-3-indicator-model-association-visibility-attachment: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-expandable-indicator-card-system: backlog
+  6-2-parameter-toggle-configuration-dirty-tracking: backlog
+  6-3-jsonlogic-rule-input-association-metadata: backlog
+  6-4-indicator-picker-for-model-association: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-api-inspector-on-detail-pages: backlog
+  epic-7-retrospective: optional

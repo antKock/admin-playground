@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laureat Admin — UX Design Direction v3</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  LAUREAT ADMIN — UX DESIGN REFERENCE MOCKUP (v3)               ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                                                                  ║
+  ║  This file is the pixel-level reference for Angular              ║
+  ║  implementation. It demonstrates 3 views:                        ║
+  ║                                                                  ║
+  ║  VIEW 1 — Entity List (Action Themes)                            ║
+  ║    Angular: ThemeListComponent                                   ║
+  ║    Shared:  AppLayout, DataTable, StatusBadge, SearchBar         ║
+  ║    Shows:   sortable columns, column filters, infinite scroll,   ║
+  ║             linked entity references, row hover actions,         ║
+  ║             last-updated + updated-by columns                    ║
+  ║                                                                  ║
+  ║  VIEW 2 — Model Workspace (Action Model detail)                  ║
+  ║    Angular: ActionModelDetailComponent                           ║
+  ║    Shared:  AppLayout, MetadataGrid, SectionAnchors, SaveBar,   ║
+  ║             ApiInspector                                         ║
+  ║    Custom:  IndicatorCard, IndicatorPicker, ToggleRow, RuleField ║
+  ║    Shows:   single-page with section anchors, inline editable    ║
+  ║             metadata, linked reference fields (select + ↗),      ║
+  ║             expandable indicator cards with drag reorder +       ║
+  ║             remove, 6 parameter toggles per card, 3-state        ║
+  ║             param hint icons (off/on/on+rule), JSONLogic rule    ║
+  ║             fields with human-readable prose translation,        ║
+  ║             unsaved state (orange border + sticky save bar),     ║
+  ║             attach indicator picker (search + results),          ║
+  ║             API inspector with formatted JSON                    ║
+  ║                                                                  ║
+  ║  VIEW 3 — Indicator Detail (Indicator Model)                     ║
+  ║    Angular: IndicatorModelDetailComponent                        ║
+  ║    Shared:  AppLayout, MetadataGrid, SectionAnchors, DataTable,  ║
+  ║             StatusBadge, ApiInspector                            ║
+  ║    Shows:   3-column metadata grid (type/subtype selectors),     ║
+  ║             list values CRUD table, "usage" cross-reference      ║
+  ║             table (which models use this indicator),             ║
+  ║             API inspector with formatted JSON                    ║
+  ║                                                                  ║
+  ║  COMPONENT → CSS CLASS MAPPING:                                  ║
+  ║  ─────────────────────────────────────────────                   ║
+  ║  AppLayout        → .admin-layout, .sidebar, .header,            ║
+  ║                     .main-content, .content-area                 ║
+  ║  DataTable        → .data-table, .table-name, .table-technical,  ║
+  ║                     .table-actions, .col-filter                  ║
+  ║  MetadataGrid     → .metadata-grid, .metadata-item,              ║
+  ║                     .metadata-input, .metadata-select,           ║
+  ║                     .metadata-linked, .go-link                   ║
+  ║  SectionAnchors   → .section-anchors, .section-anchor            ║
+  ║  StatusBadge      → .badge, .badge-draft/published/disabled      ║
+  ║  SaveBar          → .save-bar, .btn-save, .btn-discard           ║
+  ║  Toast            → (not shown — auto-dismiss notification)      ║
+  ║  ConfirmDialog    → (not shown — CDK overlay)                    ║
+  ║  IndicatorCard    → .indicator-card, .indicator-card-header,     ║
+  ║                     .indicator-card-body, .drag-handle,          ║
+  ║                     .remove-indicator-btn, .param-summary,       ║
+  ║                     .param-hint (.off/.on/.on-rule)              ║
+  ║  ToggleRow        → .toggle-row, .toggle-row-left/right,        ║
+  ║                     .toggle-icon, .toggle-label, .toggle         ║
+  ║  RuleField        → .rule-field, .rule-reference, .rule-hint     ║
+  ║  IndicatorPicker  → .indicator-picker, .indicator-picker-search, ║
+  ║                     .indicator-picker-list/item/footer           ║
+  ║  ApiInspector     → .api-inspector, .api-inspector-header/body   ║
+  ║  ParamHintIcons   → .param-hint (.off / .on / .on-rule)         ║
+  ║                                                                  ║
+  ║  ICONS: Lucide via lucide-angular (in mockup: lucide-static      ║
+  ║         font with class="icon-xxx")                              ║
+  ║                                                                  ║
+  ║  STATES DEMONSTRATED:                                            ║
+  ║  • Card collapsed (default) vs expanded                          ║
+  ║  • Card clean vs unsaved (orange border)                         ║
+  ║  • Toggle OFF vs ON (with rule field appearing)                  ║
+  ║  • Param hint: off (gray) / on (purple) / on+rule (purple+dot)  ║
+  ║  • Picker: open state with search results + already-attached     ║
+  ║  • Linked field: select + navigation icon                        ║
+  ║  • Table row hover → actions appear                              ║
+  ║                                                                  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
+<style>
+  /* ===== DESIGN TOKENS =====
+     These map 1:1 to Tailwind CSS custom theme tokens in tailwind.config.ts.
+     In Angular: use Tailwind classes (e.g. bg-brand-primary, text-error).
+     Here they're CSS variables for the static mockup. */
+  :root {
+    /* Brand */
+    --brand-primary: #1400cc;
+    --brand-hover: #0d009a;
+    --brand-light: #d9c8f5;
+    --brand-tertiary: #e84e0f;
+
+    /* Text */
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-tertiary: #888888;
+    --text-disabled: #b0b0b0;
+    --text-link: #1400cc;
+    --text-error: #b32020;
+    --text-success: #006b5e;
+    --text-warning: #8a6000;
+
+    /* Surface */
+    --surface-base: #ffffff;
+    --surface-subtle: #f9f9f9;
+    --surface-muted: #f4f4f4;
+    --surface-light: #eeeeee;
+    --surface-mid: #e4e4e4;
+    --surface-dark: #333333;
+    --surface-active: #dde2f5;
+    --surface-hover-table: #f0f2fa;
+    --surface-button-primary: #1400cc;
+    --surface-button-hover: #0d009a;
+    --surface-button-disabled: #e8e8e8;
+
+    /* Stroke */
+    --stroke-standard: #e0e0e0;
+    --stroke-medium: #cccccc;
+    --stroke-strong: #aaaaaa;
+    --stroke-brand: #1400cc;
+
+    /* Status */
+    --status-draft: #f9f9f9;
+    --status-review: #d9c8f5;
+    --status-published: #2e8b7a;
+    --status-published-bg: #a8d5ce;
+    --status-disabled: #c8c8c8;
+    --status-error: #f5a0a0;
+    --status-warning: #f5d87a;
+    --status-unsaved: #e89420;
+    --status-unsaved-bg: #fef3e0;
+
+    /* Icon */
+    --icon-primary: #1a1a1a;
+    --icon-secondary: #555555;
+    --icon-tertiary: #888888;
+    --icon-active: #1400cc;
+
+    /* Spacing */
+    --gap-1: 4px;
+    --gap-2: 8px;
+    --gap-3: 12px;
+    --gap-4: 16px;
+    --gap-6: 24px;
+    --gap-8: 32px;
+
+    /* Layout */
+    --sidebar-width: 240px;
+    --header-height: 56px;
+    --radius: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 9999px;
+  }
+
+  /* ===== RESET & BASE ===== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-primary);
+    background: var(--surface-base);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+  }
+
+  a, .link {
+    color: var(--text-link);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a:hover, .link:hover {
+    color: var(--brand-hover);
+    text-decoration: underline;
+  }
+
+  /* ===== ICON SIZING (separate from lucide icon- prefix) ===== */
+  .sz-sm { font-size: 14px !important; }
+  .sz-md { font-size: 16px !important; }
+  .sz-lg { font-size: 18px !important; }
+
+  /* ===== SHOWCASE NAVIGATION ===== */
+  .showcase-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--surface-dark);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-4);
+    padding: var(--gap-3) var(--gap-6);
+    font-size: 13px;
+  }
+
+  .showcase-nav .logo {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--brand-light);
+    margin-right: var(--gap-4);
+  }
+
+  .showcase-nav button {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+
+  .showcase-nav button:hover,
+  .showcase-nav button.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+  }
+
+  .showcase-section {
+    display: none;
+    padding-top: 52px;
+  }
+
+  .showcase-section.active {
+    display: block;
+  }
+
+  /* ===== COMPONENT: AppLayout =====
+     Angular: AppLayoutComponent (shell used by all pages)
+     Contains: sidebar (240px fixed), header (56px), scrollable content area (max 1200px)
+     Sidebar: brand logo, section labels, nav items with active state (left border + purple bg)
+     Header: breadcrumb (entity > current), user avatar + name + logout */
+  .admin-layout {
+    display: flex;
+    min-height: calc(100vh - 52px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-width);
+    background: var(--surface-subtle);
+    border-right: 1px solid var(--stroke-standard);
+    flex-shrink: 0;
+    padding-top: var(--gap-2);
+  }
+
+  .sidebar-brand {
+    padding: var(--gap-4) var(--gap-4) var(--gap-6);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brand-primary);
+    letter-spacing: -0.3px;
+  }
+
+  .sidebar-section {
+    padding: var(--gap-2) var(--gap-4);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+    padding: 10px var(--gap-4);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.1s;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin-right: var(--gap-2);
+  }
+
+  .sidebar-item:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+  }
+
+  .sidebar-item.active {
+    background: var(--surface-active);
+    color: var(--brand-primary);
+    font-weight: 500;
+    border-left-color: var(--brand-primary);
+  }
+
+  .sidebar-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    opacity: 0.7;
+  }
+
+  .sidebar-item.active .sidebar-icon { opacity: 1; }
+
+  /* Header */
+  .header {
+    height: var(--header-height);
+    background: var(--surface-base);
+    border-bottom: 1px solid var(--stroke-standard);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--gap-6);
+  }
+
+  .header-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .header-breadcrumb .separator { color: var(--text-disabled); }
+
+  .header-breadcrumb .current {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .header-user {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .header-user .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--brand-primary);
+  }
+
+  .header-user .logout {
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .header-user .logout:hover { color: var(--text-error); }
+
+  /* Main content */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content-area {
+    flex: 1;
+    padding: var(--gap-6);
+    max-width: 1200px;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-6);
+  }
+
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: var(--gap-1);
+  }
+
+  /* ===== SHARED: Buttons =====
+     4 variants: primary (purple fill), secondary (purple outline), ghost (gray outline), danger (red outline)
+     Size modifier: .btn-sm for compact contexts (table actions, card headers) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-2);
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--surface-button-primary);
+    color: white;
+  }
+
+  .btn-primary:hover { background: var(--surface-button-hover); }
+
+  .btn-primary:disabled {
+    background: var(--surface-button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--brand-primary);
+    border: 1px solid var(--stroke-brand);
+  }
+
+  .btn-secondary:hover {
+    background: var(--surface-active);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--stroke-standard);
+  }
+
+  .btn-ghost:hover {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--text-error);
+    border: 1px solid var(--text-error);
+  }
+
+  .btn-danger:hover { background: #fef2f2; }
+
+  .btn-sm {
+    padding: 5px 14px;
+    font-size: 13px;
+  }
+
+  /* ===== COMPONENT: StatusBadge =====
+     Angular: StatusBadgeComponent
+     Input: status ('draft' | 'published' | 'disabled')
+     Renders: pill badge with status-specific bg + text color
+     Also: .badge-type for entity type labels (e.g. "list", "number", "Action Model") */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .badge-draft {
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+  }
+
+  .badge-published {
+    background: var(--status-published-bg);
+    color: var(--text-success);
+  }
+
+  .badge-disabled {
+    background: var(--status-disabled);
+    color: var(--text-secondary);
+  }
+
+  .badge-type {
+    background: var(--brand-light);
+    color: var(--brand-primary);
+    font-size: 11px;
+    padding: 2px 10px;
+  }
+
+  /* ===== SHARED: SearchBar =====
+     Reusable search input with icon prefix.
+     Used: above DataTable on list pages, inside IndicatorPicker.
+     Behavior: instant filter (debounced), focus ring on brand-primary. */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+    margin-bottom: var(--gap-4);
+  }
+
+  .search-input {
+    flex: 1;
+    padding: 9px 14px 9px 36px;
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-base);
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
+  }
+
+  .search-input::placeholder { color: var(--text-disabled); }
+
+  .search-wrapper {
+    position: relative;
+    flex: 1;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  /* ===== COMPONENT: DataTable =====
+     Angular: DataTableComponent (generic, reusable across all entity lists)
+     Features:
+       - Sortable columns: click th to sort (sorted class + arrow icon)
+       - Column filters: hover on th reveals .col-filter dropdown (status, type, etc.)
+       - Row hover: highlights row + reveals .table-actions (copy, more menu)
+       - Infinite scroll: .infinite-scroll-indicator at bottom (replaces pagination)
+       - Linked references: entity names as <a class="link"> navigating to detail page
+     Columns: Name (+ technical), Status (badge), Referenced entity (link), Updated, Updated by, Actions */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-base);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .data-table thead {
+    background: var(--surface-subtle);
+  }
+
+  .data-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--stroke-standard);
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: color 0.1s;
+  }
+
+  .data-table th:hover {
+    color: var(--brand-primary);
+  }
+
+  .data-table th .sort-icon {
+    margin-left: 4px;
+    font-size: 10px;
+    opacity: 0.4;
+  }
+
+  .data-table th:hover .sort-icon { opacity: 0.8; }
+
+  .data-table th.sorted { color: var(--brand-primary); }
+
+  .data-table th.sorted .sort-icon { opacity: 1; color: var(--brand-primary); }
+
+  .data-table th .col-filter {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    background: var(--surface-base);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: var(--gap-2);
+    z-index: 50;
+    cursor: default;
+  }
+
+  .data-table th:hover .col-filter { display: block; }
+
+  .col-filter-option {
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-primary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .col-filter-option:hover {
+    background: var(--surface-muted);
+  }
+
+  .col-filter-option.active {
+    background: var(--surface-active);
+    color: var(--brand-primary);
+    font-weight: 500;
+  }
+
+  .data-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--stroke-standard);
+    vertical-align: middle;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .data-table tbody tr {
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--surface-hover-table);
+  }
+
+  .table-name {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .table-technical {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .table-meta {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .table-actions {
+    display: flex;
+    gap: var(--gap-2);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .data-table tbody tr:hover .table-actions { opacity: 1; }
+
+  .table-action-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+
+  .table-action-btn:hover {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+  }
+
+  /* Infinite scroll indicator */
+  .infinite-scroll-indicator {
+    text-align: center;
+    padding: var(--gap-6);
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  .scroll-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--stroke-standard);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: var(--gap-2);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== SHARED: Detail View Header =====
+     Used on all detail/workspace pages (Models, Indicators, Programs, etc.)
+     Structure: title + badge | action buttons
+     Below: technical name (monospace), meta line (updated date + by + ID)
+     The .detail-meta-item shows last modifier and update date on all detail views. */
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--gap-6);
+    padding-bottom: var(--gap-4);
+    border-bottom: 1px solid var(--stroke-standard);
+  }
+
+  .detail-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-1);
+  }
+
+  .detail-title {
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+  }
+
+  .detail-technical {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .detail-meta {
+    display: flex;
+    gap: var(--gap-4);
+    margin-top: var(--gap-2);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .detail-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-1);
+  }
+
+  .detail-meta-item .sz-sm {
+    color: var(--text-tertiary);
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: var(--gap-2);
+    align-items: flex-start;
+  }
+
+  /* ===== COMPONENT: SectionAnchors =====
+     Angular: SectionAnchorsComponent
+     Input: sections[] with label + count + target element ID
+     Behavior: pill buttons in a muted bar; clicking smooth-scrolls to the target section.
+     Active state: white bg + shadow + brand color text.
+     NOT tabs — all content is on one scrollable page. These are shortcuts. */
+  .section-anchors {
+    display: flex;
+    gap: var(--gap-1);
+    margin-bottom: var(--gap-6);
+    padding: var(--gap-1);
+    background: var(--surface-muted);
+    border-radius: var(--radius);
+    width: fit-content;
+  }
+
+  .section-anchor {
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+  }
+
+  .section-anchor:hover {
+    color: var(--text-primary);
+    background: var(--surface-base);
+  }
+
+  .section-anchor.active {
+    color: var(--brand-primary);
+    background: var(--surface-base);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* ===== COMPONENT: MetadataGrid =====
+     Angular: MetadataGridComponent
+     Input: fields[] with label, type (text|select|linked), value, options
+     2-column grid on subtle background. All fields are ALWAYS editable (no view/edit toggle).
+
+     Field types:
+       .metadata-input       — text input (label, description, technical name)
+       .metadata-input.mono  — monospace input (technical names)
+       .metadata-select      — dropdown (status, type, subtype)
+       .metadata-linked      — select + .go-link icon to navigate to referenced entity
+                               The select changes the FK, the ↗ icon opens the referenced page.
+
+     On Indicator Detail: uses .indicator-type-grid (3-column variant) */
+  .metadata-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-4);
+    margin-bottom: var(--gap-6);
+    padding: var(--gap-4);
+    background: var(--surface-subtle);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+  }
+
+  .metadata-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: var(--gap-1);
+  }
+
+  .metadata-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-base);
+    transition: border-color 0.15s;
+  }
+
+  .metadata-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
+  }
+
+  .metadata-input.mono {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+  }
+
+  .metadata-select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface-base);
+    cursor: pointer;
+  }
+
+  /* Linked reference field: select + link icon */
+  .metadata-linked {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+  }
+
+  .metadata-linked .metadata-select,
+  .metadata-linked .metadata-input {
+    flex: 1;
+  }
+
+  .metadata-linked .go-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius);
+    color: var(--text-link);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    border: 1px solid var(--stroke-standard);
+    background: var(--surface-base);
+  }
+
+  .metadata-linked .go-link:hover {
+    background: var(--surface-active);
+    border-color: var(--brand-primary);
+  }
+
+  /* Section headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-4);
+    margin-top: var(--gap-8);
+    scroll-margin-top: 120px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .section-count {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: var(--gap-2);
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--stroke-standard);
+    margin: var(--gap-8) 0 0;
+  }
+
+  /* ===== COMPONENT: IndicatorCard =====
+     Angular: IndicatorCardComponent
+     Input: indicatorAssociation (indicator model + 6 parameter configs + order)
+     Output: paramChanged, removed, reordered
+
+     STATES (demonstrated in mockup):
+       Default (collapsed): header with title, technical name, type badge, param hint icons, expand chevron
+       Expanded: body with 6 ToggleRow components
+       Unsaved: .unsaved class → orange left border + warm background
+       Hover: reveals .remove-indicator-btn (✕) and .drag-handle becomes grabbable
+
+     HEADER ELEMENTS:
+       .drag-handle          — grip-vertical icon, left side, CDK DragDrop handle
+       .indicator-card-title — clickable link (navigates to indicator detail page)
+       .indicator-card-technical — monospace + .badge-type (number/list/text/etc.)
+       .param-summary        — 6x .param-hint icons showing parameter state at a glance
+       .remove-indicator-btn — ✕ button, appears on hover, confirms before removing
+       .expand-icon          — chevron, rotates 180° when expanded */
+  .indicator-card {
+    background: var(--surface-subtle);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--gap-3);
+    transition: all 0.15s;
+  }
+
+  .indicator-card.unsaved {
+    border-left: 3px solid var(--status-unsaved);
+    background: var(--status-unsaved-bg);
+  }
+
+  .indicator-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-3) var(--gap-4);
+    cursor: pointer;
+    user-select: none;
+    border-radius: var(--radius-md);
+  }
+
+  .indicator-card-header:hover {
+    background: var(--surface-muted);
+  }
+
+  .indicator-card.unsaved .indicator-card-header:hover {
+    background: #fdecd0;
+  }
+
+  .indicator-card-left {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+  }
+
+  /* Drag handle for reordering */
+  .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    color: var(--text-disabled);
+    cursor: grab;
+    font-size: 16px;
+  }
+
+  .drag-handle:hover {
+    color: var(--text-tertiary);
+  }
+
+  .indicator-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-link);
+    cursor: pointer;
+  }
+
+  .indicator-card-title:hover {
+    color: var(--brand-hover);
+    text-decoration: underline;
+  }
+
+  .indicator-card-technical {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .indicator-card-right {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+  }
+
+  /* Remove indicator button */
+  .remove-indicator-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius);
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text-disabled);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+
+  .indicator-card:hover .remove-indicator-btn {
+    opacity: 1;
+  }
+
+  .remove-indicator-btn:hover {
+    color: var(--text-error);
+    border-color: var(--text-error);
+    background: #fef2f2;
+  }
+
+  .param-summary {
+    display: flex;
+    gap: var(--gap-1);
+  }
+
+  /* ===== COMPONENT: ParamHintIcons =====
+     Angular: part of IndicatorCardComponent header
+     Shows 6 circular icons summarizing parameter state at a glance.
+
+     3 STATES per icon:
+       .off      — gray border, gray icon       → parameter is OFF
+       .on       — purple bg, purple icon        → parameter is ON (simple boolean)
+       .on-rule  — purple bg, purple icon        → parameter is ON + has a JSONLogic rule
+                   + ::after orange dot (bottom-right) to distinguish from simple ON
+
+     ICONS (Lucide):
+       asterisk    → Obligatoire (required)
+       pen-off     → Non éditable (not editable)
+       eye         → Visible
+       clipboard   → Valeur par défaut (default value)
+       copy        → Duplicable
+       brackets    → Valeurs contraintes (constrained values) */
+  .param-hint {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border: 1.5px solid;
+    position: relative;
+  }
+
+  .param-hint.off {
+    background: var(--surface-base);
+    border-color: var(--stroke-standard);
+    color: var(--text-disabled);
+  }
+
+  .param-hint.on {
+    background: var(--brand-light);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+  }
+
+  .param-hint.on-rule {
+    background: var(--brand-light);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+  }
+
+  /* Small dot indicator for "has JSONLogic rule" */
+  .param-hint.on-rule::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--brand-tertiary);
+    border: 1.5px solid white;
+  }
+
+  .param-hint[title] {
+    cursor: help;
+  }
+
+  .expand-icon {
+    color: var(--text-tertiary);
+    transition: transform 0.15s;
+    font-size: 18px;
+  }
+
+  .indicator-card.expanded .expand-icon {
+    transform: rotate(180deg);
+  }
+
+  /* Card body (expanded) */
+  .indicator-card-body {
+    display: none;
+    padding: 0 var(--gap-4) var(--gap-4);
+    background: var(--surface-muted);
+    border-top: 1px solid var(--stroke-standard);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+
+  .indicator-card.expanded .indicator-card-body {
+    display: block;
+  }
+
+  /* ===== COMPONENT: ToggleRow =====
+     Angular: ToggleRowComponent
+     Input: paramName, icon, label, isOn, ruleJson, ruleProseTranslation
+     Output: toggled, ruleChanged
+
+     LAYOUT: flex-wrap row
+       Line 1: [icon + label] .............. [toggle switch]
+       Line 2 (full width, only when ON): RuleField component
+
+     When toggle is OFF: only line 1 is visible.
+     When toggle is ON: RuleField appears below spanning full width.
+     No "Add rule" button — the rule textarea is always available when ON.
+     Empty textarea = simple ON (no conditional logic). */
+  .toggle-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px var(--gap-3);
+    border-bottom: 1px solid var(--stroke-standard);
+  }
+
+  .toggle-row:last-child { border-bottom: none; }
+
+  .toggle-row-left {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+  }
+
+  .toggle-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--icon-secondary);
+  }
+
+  .toggle-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .toggle-row-right {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+  }
+
+  /* Rule field breaks onto its own full-width line */
+  .toggle-row .rule-field {
+    flex-basis: 100%;
+  }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--stroke-medium);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle.on {
+    background: var(--brand-primary);
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .toggle.on .toggle-knob {
+    transform: translateX(20px);
+  }
+
+  /* Default value field */
+  .default-value-field {
+    margin-top: var(--gap-2);
+    padding: var(--gap-2) var(--gap-3);
+    background: var(--surface-base);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: var(--text-primary);
+    width: 100%;
+  }
+
+  .default-value-field:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
+  }
+
+  /* ===== COMPONENT: RuleField =====
+     Angular: RuleFieldComponent
+     Input: ruleJson (string), proseTranslation (string), fieldLabel ('JSONLogic Rule' | 'Default Value')
+
+     STRUCTURE (top to bottom):
+       1. .rule-field-label    — "JSONLOGIC RULE" or "DEFAULT VALUE" (uppercase label)
+       2. .rule-reference      — Human-readable prose ABOVE the textarea (e.g. "If type_batiment equals 'tertiaire'")
+                                  Left-border accent (brand-light). Read the reference BEFORE reading the code.
+       3. textarea              — Raw JSONLogic JSON (monospace, resizable)
+       4. .rule-hint           — Helper text: "Leave empty for simple ON (no conditional logic)"
+
+     The prose translation is a v2 feature (rule-to-prose engine).
+     For v1: show a static placeholder or skip the .rule-reference block. */
+  .rule-field {
+    width: 100%;
+    margin-top: var(--gap-3);
+    padding: var(--gap-3);
+    background: var(--surface-base);
+    border: 1px solid var(--stroke-brand);
+    border-radius: var(--radius-md);
+  }
+
+  .rule-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-2);
+  }
+
+  .rule-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .rule-reference {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: var(--gap-2);
+    padding: var(--gap-2) var(--gap-3);
+    background: var(--surface-subtle);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--brand-light);
+    line-height: 1.6;
+  }
+
+  .rule-reference em {
+    color: var(--text-primary);
+    font-style: italic;
+  }
+
+  .rule-field textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: var(--gap-2);
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius);
+    resize: vertical;
+    color: var(--text-primary);
+    background: var(--surface-base);
+  }
+
+  .rule-field textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
+  }
+
+  .rule-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: var(--gap-1);
+  }
+
+  /* ===== COMPONENT: SaveBar =====
+     Angular: SaveBarComponent
+     Input: hasUnsavedChanges (boolean signal)
+     Output: save, discard
+
+     Behavior: sticky to bottom of viewport. Only visible when hasUnsavedChanges is true.
+     Orange theme (--status-unsaved) — warning without alarm (not red).
+     Left: alert icon + "You have unsaved changes"
+     Right: Discard (ghost) + Save (orange fill) buttons */
+  .save-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--status-unsaved-bg);
+    border-top: 2px solid var(--status-unsaved);
+    padding: var(--gap-3) var(--gap-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+  }
+
+  .save-bar-info {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-warning);
+  }
+
+  .save-bar-actions {
+    display: flex;
+    gap: var(--gap-2);
+  }
+
+  .btn-save {
+    background: var(--status-unsaved);
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-save:hover {
+    background: #d07e15;
+  }
+
+  .btn-discard {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--stroke-standard);
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-discard:hover {
+    background: var(--surface-base);
+    color: var(--text-primary);
+  }
+
+  /* ===== COMPONENT: IndicatorPicker (CTA + Panel) =====
+     Angular: IndicatorPickerComponent
+     Input: modelId, alreadyAttachedIds[]
+     Output: indicatorAttached(indicatorModelId)
+
+     UX FLOW:
+       1. Closed state: dashed-border CTA "Attach an indicator" at bottom of indicator list
+       2. Click CTA → opens picker panel below (CTA becomes .open with solid border)
+       3. Search input auto-focuses → user types → instant filter
+       4. Results show: name, technical_name, type badge
+       5. Already-attached indicators appear dimmed (.already-attached) with "Already attached"
+       6. Click "+ Attach" → fires output → card appears in list above
+       7. Esc or click outside → closes picker
+       8. Footer: result count + "Esc to close" hint */
+  .add-indicator-cta {
+    border: 2px dashed var(--stroke-medium);
+    border-radius: var(--radius-md);
+    padding: var(--gap-4);
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+    margin-top: var(--gap-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-2);
+  }
+
+  .add-indicator-cta:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--surface-active);
+  }
+
+  .add-indicator-cta.open {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--surface-active);
+    border-style: solid;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+
+  /* ===== INDICATOR PICKER PANEL ===== */
+  .indicator-picker {
+    border: 2px solid var(--brand-primary);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: var(--surface-base);
+    margin-bottom: var(--gap-3);
+    overflow: hidden;
+  }
+
+  .indicator-picker-search {
+    padding: var(--gap-3) var(--gap-4);
+    border-bottom: 1px solid var(--stroke-standard);
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+  }
+
+  .indicator-picker-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: transparent;
+  }
+
+  .indicator-picker-search input::placeholder {
+    color: var(--text-disabled);
+  }
+
+  .indicator-picker-list {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .indicator-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px var(--gap-4);
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--stroke-standard);
+  }
+
+  .indicator-picker-item:last-child { border-bottom: none; }
+
+  .indicator-picker-item:hover {
+    background: var(--surface-hover-table);
+  }
+
+  .indicator-picker-item.already-attached {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .indicator-picker-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .indicator-picker-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .indicator-picker-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-2);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  }
+
+  .indicator-picker-item-right {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .indicator-picker-item:not(.already-attached) .indicator-picker-item-right {
+    color: var(--brand-primary);
+    font-weight: 500;
+  }
+
+  .indicator-picker-footer {
+    padding: var(--gap-2) var(--gap-4);
+    background: var(--surface-subtle);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ===== COMPONENT: ApiInspector =====
+     Angular: ApiInspectorComponent
+     Input: endpoint (method + path), responseJson (object)
+
+     Structure:
+       .api-inspector-header — dark bar with green GET badge + endpoint path + host URL
+       .api-inspector-body   — dark code panel with syntax-highlighted, indented JSON
+         Uses <pre> for whitespace preservation.
+         Syntax classes: .json-key (blue), .json-string (green), .json-number (orange),
+                         .json-bool (purple), .json-null (gray)
+
+     In Angular: use a JSON pipe + syntax highlighter (e.g. ngx-highlightjs or manual).
+     Max-height: 400px with scroll.
+     Purpose: replaces "open Postman to check" — devs see raw API response in context. */
+  .api-inspector {
+    margin-top: var(--gap-4);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .api-inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--gap-3) var(--gap-4);
+    background: var(--surface-dark);
+    color: var(--surface-muted);
+    font-size: 13px;
+  }
+
+  .api-inspector-header .method {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-2);
+    color: var(--status-published-bg);
+    font-weight: 600;
+  }
+
+  .api-inspector-header .url {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-disabled);
+  }
+
+  .api-inspector-body {
+    padding: var(--gap-4);
+    background: #1e1e2e;
+    color: #cdd6f4;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .api-inspector-body pre {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+  }
+
+  .json-key { color: #89b4fa; }
+  .json-string { color: #a6e3a1; }
+  .json-number { color: #fab387; }
+  .json-bool { color: #cba6f7; }
+  .json-null { color: #6c7086; }
+
+  /* ===== VIEW 3 SPECIFICS: Indicator Detail =====
+     Angular: IndicatorModelDetailComponent
+     Sections: Metadata (3-col grid), List Values (CRUD table), Usage (cross-ref table), API Inspector
+     .indicator-type-grid: 3-column variant of MetadataGrid (type + subtype selectors)
+     .list-values-container: simple table with label + code + edit/delete actions per row */
+  .indicator-type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--gap-4);
+    margin-bottom: var(--gap-6);
+    padding: var(--gap-4);
+    background: var(--surface-subtle);
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+  }
+
+  .list-values-container {
+    border: 1px solid var(--stroke-standard);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .list-value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px var(--gap-4);
+    border-bottom: 1px solid var(--stroke-standard);
+    font-size: 14px;
+  }
+
+  .list-value-row:last-child { border-bottom: none; }
+
+  .list-value-row:hover {
+    background: var(--surface-hover-table);
+  }
+
+  .list-value-code {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== SHOWCASE NAV BAR ===== -->
+<nav class="showcase-nav">
+  <span class="logo">UX Direction v3</span>
+  <button class="active" onclick="showView('list')">Entity List</button>
+  <button onclick="showView('workspace')">Model Workspace</button>
+  <button onclick="showView('indicator')">Indicator Detail</button>
+</nav>
+
+<!-- ============================================================ -->
+<!-- VIEW 1: ENTITY LIST (Action Themes)                          -->
+<!-- Angular: ThemeListComponent (reusable pattern for all 7 entities) -->
+<!-- Demonstrates: DataTable, StatusBadge, SearchBar, column sort/filter -->
+<!-- NOTE: This same list pattern applies to ALL entities.        -->
+<!--   Programs, Themes, Models, Indicators, Communities, Agents  -->
+<!--   only differ in columns and available actions.              -->
+<!-- ============================================================ -->
+<section id="view-list" class="showcase-section active">
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Laureat</div>
+    <div class="sidebar-section">Configuration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder"></i></span> Programmes</div>
+    <div class="sidebar-item active"><span class="sidebar-icon"><i class="icon-palette"></i></span> Thèmes d'action</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-layout-template"></i></span> Modèles d'action</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder-tree"></i></span> Modèles de dossier</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-gauge"></i></span> Indicateurs</div>
+    <div class="sidebar-section">Administration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-building-2"></i></span> Collectivités</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-users"></i></span> Agents</div>
+  </aside>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="header-breadcrumb">
+        <span class="link">Configuration</span>
+        <span class="separator">/</span>
+        <span class="current">Thèmes d'action</span>
+      </div>
+      <div class="header-user">
+        <div class="avatar">SO</div>
+        <span>Sophie</span>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Thèmes d'action</div>
+          <div class="page-subtitle">Manage action themes for funding programs</div>
+        </div>
+        <button class="btn btn-primary"><i class="icon-plus sz-sm"></i> Nouveau thème</button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <div class="search-wrapper">
+          <span class="search-icon"><i class="icon-search sz-sm"></i></span>
+          <input type="text" class="search-input" placeholder="Search themes...">
+        </div>
+      </div>
+
+      <!-- Table -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="sorted">
+              Name <span class="sort-icon">&#9650;</span>
+            </th>
+            <th>
+              Status
+              <span class="sort-icon">&#9650;&#9660;</span>
+              <div class="col-filter">
+                <div class="col-filter-option active">All</div>
+                <div class="col-filter-option">Draft</div>
+                <div class="col-filter-option">Published</div>
+                <div class="col-filter-option">Disabled</div>
+              </div>
+            </th>
+            <th>Programme <span class="sort-icon">&#9650;&#9660;</span></th>
+            <th>Updated <span class="sort-icon">&#9650;&#9660;</span></th>
+            <th>Updated by <span class="sort-icon">&#9650;&#9660;</span></th>
+            <th style="width: 100px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="table-name">Rénovation énergétique</div>
+              <div class="table-technical">renovation_energetique</div>
+            </td>
+            <td><span class="badge badge-published">Published</span></td>
+            <td><a class="link">ACTEE 2025</a></td>
+            <td class="table-meta">Feb 28, 2026</td>
+            <td class="table-meta">Sophie</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn"><i class="icon-copy sz-sm"></i></button>
+                <button class="table-action-btn"><i class="icon-ellipsis sz-sm"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Éclairage public</div>
+              <div class="table-technical">eclairage_public</div>
+            </td>
+            <td><span class="badge badge-published">Published</span></td>
+            <td><a class="link">ACTEE 2025</a></td>
+            <td class="table-meta">Feb 25, 2026</td>
+            <td class="table-meta">Alex</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn"><i class="icon-copy sz-sm"></i></button>
+                <button class="table-action-btn"><i class="icon-ellipsis sz-sm"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Mobilité durable</div>
+              <div class="table-technical">mobilite_durable</div>
+            </td>
+            <td><span class="badge badge-draft">Draft</span></td>
+            <td><a class="link">ACTEE 2026</a></td>
+            <td class="table-meta">Mar 1, 2026</td>
+            <td class="table-meta">Sophie</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn"><i class="icon-copy sz-sm"></i></button>
+                <button class="table-action-btn"><i class="icon-ellipsis sz-sm"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Gestion technique</div>
+              <div class="table-technical">gestion_technique</div>
+            </td>
+            <td><span class="badge badge-draft">Draft</span></td>
+            <td><a class="link">ACTEE 2026</a></td>
+            <td class="table-meta">Mar 2, 2026</td>
+            <td class="table-meta">Sophie</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn"><i class="icon-copy sz-sm"></i></button>
+                <button class="table-action-btn"><i class="icon-ellipsis sz-sm"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name">Sensibilisation</div>
+              <div class="table-technical">sensibilisation</div>
+            </td>
+            <td><span class="badge badge-disabled">Disabled</span></td>
+            <td><a class="link">ACTEE 2024</a></td>
+            <td class="table-meta">Jan 15, 2026</td>
+            <td class="table-meta">Alex</td>
+            <td>
+              <div class="table-actions">
+                <button class="table-action-btn"><i class="icon-copy sz-sm"></i></button>
+                <button class="table-action-btn"><i class="icon-ellipsis sz-sm"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="infinite-scroll-indicator">
+        <span class="scroll-spinner"></span> Loading more...
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- VIEW 2: MODEL WORKSPACE (Action Model detail)                -->
+<!-- Angular: ActionModelDetailComponent                          -->
+<!-- This is the MOST COMPLEX view — the "model-as-workspace".    -->
+<!-- Demonstrates ALL custom components working together:          -->
+<!--   MetadataGrid (with linked fields), SectionAnchors,         -->
+<!--   IndicatorCard (collapsed + expanded + unsaved states),     -->
+<!--   ToggleRow + RuleField, IndicatorPicker, SaveBar,           -->
+<!--   ApiInspector                                                -->
+<!-- The same pattern applies to FolderModelDetailComponent.      -->
+<!-- ============================================================ -->
+<section id="view-workspace" class="showcase-section">
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Laureat</div>
+    <div class="sidebar-section">Configuration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder"></i></span> Programmes</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-palette"></i></span> Thèmes d'action</div>
+    <div class="sidebar-item active"><span class="sidebar-icon"><i class="icon-layout-template"></i></span> Modèles d'action</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder-tree"></i></span> Modèles de dossier</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-gauge"></i></span> Indicateurs</div>
+    <div class="sidebar-section">Administration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-building-2"></i></span> Collectivités</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-users"></i></span> Agents</div>
+  </aside>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="header-breadcrumb">
+        <span class="link">Modèles d'action</span>
+        <span class="separator">/</span>
+        <span class="current">Rénovation Bâtiment Public</span>
+      </div>
+      <div class="header-user">
+        <div class="avatar">SO</div>
+        <span>Sophie</span>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <!-- Detail header -->
+      <div class="detail-header">
+        <div class="detail-title-group">
+          <div class="detail-title">
+            Rénovation Bâtiment Public
+            <span class="badge badge-draft">Draft</span>
+          </div>
+          <div class="detail-technical">renovation_batiment_public</div>
+          <div class="detail-meta">
+            <span class="detail-meta-item"><i class="icon-calendar sz-sm"></i> Updated Mar 3, 2026</span>
+            <span class="detail-meta-item"><i class="icon-user sz-sm"></i> by Sophie</span>
+            <span class="detail-meta-item"><i class="icon-hash sz-sm"></i> ID: am_4f8a2c</span>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-sm"><i class="icon-copy sz-sm"></i> Dupliquer</button>
+          <button class="btn btn-secondary btn-sm"><i class="icon-send sz-sm"></i> Publier</button>
+          <button class="btn btn-ghost btn-sm"><i class="icon-ellipsis sz-sm"></i></button>
+        </div>
+      </div>
+
+      <!-- Section anchors -->
+      <div class="section-anchors">
+        <button class="section-anchor active" onclick="scrollToSection('ws-metadata')">Metadata</button>
+        <button class="section-anchor" onclick="scrollToSection('ws-indicators')">Indicators (4)</button>
+        <button class="section-anchor" onclick="scrollToSection('ws-api')">API Inspector</button>
+      </div>
+
+      <!-- Metadata Section -->
+      <div id="ws-metadata" class="section-header" style="margin-top: 0;">
+        <div class="section-title">Metadata</div>
+      </div>
+
+      <div class="metadata-grid">
+        <div class="metadata-item">
+          <label>Label</label>
+          <input type="text" class="metadata-input" value="Rénovation Bâtiment Public">
+        </div>
+        <div class="metadata-item">
+          <label>Technical name</label>
+          <input type="text" class="metadata-input mono" value="renovation_batiment_public">
+        </div>
+        <div class="metadata-item">
+          <label>Programme</label>
+          <div class="metadata-linked">
+            <select class="metadata-select">
+              <option selected>ACTEE 2026</option>
+              <option>ACTEE 2025</option>
+              <option>ACTEE 2024</option>
+            </select>
+            <span class="go-link" title="Open ACTEE 2026"><i class="icon-external-link sz-sm"></i></span>
+          </div>
+        </div>
+        <div class="metadata-item">
+          <label>Thème d'action</label>
+          <div class="metadata-linked">
+            <select class="metadata-select">
+              <option selected>Rénovation énergétique</option>
+              <option>Éclairage public</option>
+              <option>Mobilité durable</option>
+            </select>
+            <span class="go-link" title="Open Rénovation énergétique"><i class="icon-external-link sz-sm"></i></span>
+          </div>
+        </div>
+        <div class="metadata-item">
+          <label>Status</label>
+          <select class="metadata-select">
+            <option selected>Draft</option>
+            <option>Published</option>
+            <option>Disabled</option>
+          </select>
+        </div>
+        <div class="metadata-item">
+          <label>Description</label>
+          <input type="text" class="metadata-input" value="Modèle pour les actions de rénovation de bâtiments publics" placeholder="Optional description...">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Indicators Section -->
+      <div id="ws-indicators" class="section-header">
+        <div class="section-title">Indicators <span class="section-count">4 attached</span></div>
+      </div>
+
+      <!-- ── INDICATOR CARDS ──
+           Each card = one indicator-model association on this action model.
+           Cards are CDK DragDrop items (reorderable via .drag-handle).
+           Card states shown in this mockup:
+             Card 1: collapsed, clean (default state)
+             Card 2: expanded + unsaved (orange border, shows all ToggleRows + RuleFields)
+             Card 3: collapsed, has on-rule param (orange dot on brackets icon)
+             Card 4: collapsed, minimal params active
+      -->
+
+      <!-- Indicator card 1 — COLLAPSED, CLEAN STATE -->
+      <div class="indicator-card">
+        <div class="indicator-card-header" onclick="this.closest('.indicator-card').classList.toggle('expanded')">
+          <div class="indicator-card-left">
+            <span class="drag-handle" title="Drag to reorder"><i class="icon-grip-vertical"></i></span>
+            <div>
+              <div class="indicator-card-title">Surface du bâtiment</div>
+              <div class="indicator-card-technical">surface_batiment &nbsp;<span class="badge badge-type">number</span></div>
+            </div>
+          </div>
+          <div class="indicator-card-right">
+            <div class="param-summary">
+              <span class="param-hint on" title="Required: ON"><i class="icon-asterisk" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Editable: OFF"><i class="icon-pen-off" style="font-size:12px;"></i></span>
+              <span class="param-hint on" title="Visible: ON"><i class="icon-eye" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Default value: OFF"><i class="icon-clipboard" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Duplicable: OFF"><i class="icon-copy" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Constraints: OFF"><i class="icon-brackets" style="font-size:12px;"></i></span>
+            </div>
+            <button class="remove-indicator-btn" title="Remove from model"><i class="icon-x sz-sm"></i></button>
+            <span class="expand-icon"><i class="icon-chevron-down"></i></span>
+          </div>
+        </div>
+        <div class="indicator-card-body">
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-asterisk"></i></span>
+              <span class="toggle-label">Obligatoire</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="rule-field">
+              <div class="rule-field-header">
+                <span class="rule-field-label">JSONLogic Rule</span>
+              </div>
+              <div class="rule-reference">
+                <em>If type_batiment equals "tertiaire"</em>
+              </div>
+              <textarea placeholder='e.g. {"==": [{"var": "type_batiment"}, "tertiaire"]}'></textarea>
+              <div class="rule-hint">Leave empty for simple ON (no conditional logic)</div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-pen-off"></i></span>
+              <span class="toggle-label">Non éditable</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-eye"></i></span>
+              <span class="toggle-label">Visible</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="rule-field">
+              <div class="rule-field-header">
+                <span class="rule-field-label">JSONLogic Rule</span>
+              </div>
+              <div class="rule-reference">
+                <em>If type_batiment is not "none"</em>
+              </div>
+              <textarea placeholder='e.g. {"!=": [{"var": "type_batiment"}, "none"]}'></textarea>
+              <div class="rule-hint">Leave empty for simple ON (no conditional logic)</div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-clipboard"></i></span>
+              <span class="toggle-label">Valeur par défaut</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-copy"></i></span>
+              <span class="toggle-label">Duplicable</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-brackets"></i></span>
+              <span class="toggle-label">Valeurs contraintes</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicator card 2 — EXPANDED + UNSAVED STATE
+           Shows: all 6 ToggleRows, 2 with JSONLogic rules, 1 with default value.
+           .unsaved class: orange left border + warm bg.
+           Rule fields: prose translation above textarea, full width below toggle.
+           This card demonstrates the RICHEST state of the component. -->
+      <div class="indicator-card expanded unsaved">
+        <div class="indicator-card-header" onclick="this.closest('.indicator-card').classList.toggle('expanded')">
+          <div class="indicator-card-left">
+            <span class="drag-handle" title="Drag to reorder"><i class="icon-grip-vertical"></i></span>
+            <div>
+              <div class="indicator-card-title">Mode de chauffage</div>
+              <div class="indicator-card-technical">mode_chauffe &nbsp;<span class="badge badge-type">list</span></div>
+            </div>
+          </div>
+          <div class="indicator-card-right">
+            <div class="param-summary">
+              <span class="param-hint on-rule" title="Required: ON + JSONLogic rule"><i class="icon-asterisk" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Editable: OFF"><i class="icon-pen-off" style="font-size:12px;"></i></span>
+              <span class="param-hint on-rule" title="Visible: ON + JSONLogic rule"><i class="icon-eye" style="font-size:12px;"></i></span>
+              <span class="param-hint on" title="Default value: ON"><i class="icon-clipboard" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Duplicable: OFF"><i class="icon-copy" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Constraints: OFF"><i class="icon-brackets" style="font-size:12px;"></i></span>
+            </div>
+            <button class="remove-indicator-btn" style="opacity:1;" title="Remove from model"><i class="icon-x sz-sm"></i></button>
+            <span class="expand-icon"><i class="icon-chevron-down"></i></span>
+          </div>
+        </div>
+        <div class="indicator-card-body">
+          <!-- Required — ON with JSONLogic rule -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-asterisk"></i></span>
+              <span class="toggle-label">Obligatoire</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="rule-field">
+              <div class="rule-field-header">
+                <span class="rule-field-label">JSONLogic Rule</span>
+              </div>
+              <div class="rule-reference">
+                <em>If type_batiment equals "tertiaire"</em>
+              </div>
+              <textarea>{"==": [{"var": "type_batiment"}, "tertiaire"]}</textarea>
+            </div>
+          </div>
+          <!-- Not editable — OFF -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-pen-off"></i></span>
+              <span class="toggle-label">Non éditable</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+          <!-- Visible — ON with JSONLogic rule -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-eye"></i></span>
+              <span class="toggle-label">Visible</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="rule-field">
+              <div class="rule-field-header">
+                <span class="rule-field-label">JSONLogic Rule</span>
+              </div>
+              <div class="rule-reference">
+                <em>If type_batiment is not "none"</em>
+              </div>
+              <textarea>{"!=": [{"var": "type_batiment"}, "none"]}</textarea>
+            </div>
+          </div>
+          <!-- Default value — ON with value -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-clipboard"></i></span>
+              <span class="toggle-label">Valeur par défaut</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle on"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="rule-field">
+              <div class="rule-field-header">
+                <span class="rule-field-label">Default Value</span>
+              </div>
+              <textarea style="min-height: 36px;">gaz_naturel</textarea>
+            </div>
+          </div>
+          <!-- Duplicable — OFF -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-copy"></i></span>
+              <span class="toggle-label">Duplicable</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+          <!-- Constraints — OFF -->
+          <div class="toggle-row">
+            <div class="toggle-row-left">
+              <span class="toggle-icon"><i class="icon-brackets"></i></span>
+              <span class="toggle-label">Valeurs contraintes</span>
+            </div>
+            <div class="toggle-row-right">
+              <div class="toggle"><div class="toggle-knob"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicator card 3 — collapsed -->
+      <div class="indicator-card">
+        <div class="indicator-card-header" onclick="this.closest('.indicator-card').classList.toggle('expanded')">
+          <div class="indicator-card-left">
+            <span class="drag-handle" title="Drag to reorder"><i class="icon-grip-vertical"></i></span>
+            <div>
+              <div class="indicator-card-title">Type de bâtiment</div>
+              <div class="indicator-card-technical">type_batiment &nbsp;<span class="badge badge-type">list</span></div>
+            </div>
+          </div>
+          <div class="indicator-card-right">
+            <div class="param-summary">
+              <span class="param-hint on" title="Required: ON"><i class="icon-asterisk" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Editable: OFF"><i class="icon-pen-off" style="font-size:12px;"></i></span>
+              <span class="param-hint on" title="Visible: ON"><i class="icon-eye" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Default value: OFF"><i class="icon-clipboard" style="font-size:12px;"></i></span>
+              <span class="param-hint on" title="Duplicable: ON"><i class="icon-copy" style="font-size:12px;"></i></span>
+              <span class="param-hint on-rule" title="Constraints: ON + JSONLogic rule"><i class="icon-brackets" style="font-size:12px;"></i></span>
+            </div>
+            <button class="remove-indicator-btn" title="Remove from model"><i class="icon-x sz-sm"></i></button>
+            <span class="expand-icon"><i class="icon-chevron-down"></i></span>
+          </div>
+        </div>
+        <div class="indicator-card-body">
+          <div style="padding: var(--gap-4); color: var(--text-tertiary); font-size: 13px;">Parameter configuration rows (same pattern as above)</div>
+        </div>
+      </div>
+
+      <!-- Indicator card 4 — collapsed -->
+      <div class="indicator-card">
+        <div class="indicator-card-header" onclick="this.closest('.indicator-card').classList.toggle('expanded')">
+          <div class="indicator-card-left">
+            <span class="drag-handle" title="Drag to reorder"><i class="icon-grip-vertical"></i></span>
+            <div>
+              <div class="indicator-card-title">Année de construction</div>
+              <div class="indicator-card-technical">annee_construction &nbsp;<span class="badge badge-type">number</span></div>
+            </div>
+          </div>
+          <div class="indicator-card-right">
+            <div class="param-summary">
+              <span class="param-hint off" title="Required: OFF"><i class="icon-asterisk" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Editable: OFF"><i class="icon-pen-off" style="font-size:12px;"></i></span>
+              <span class="param-hint on" title="Visible: ON"><i class="icon-eye" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Default value: OFF"><i class="icon-clipboard" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Duplicable: OFF"><i class="icon-copy" style="font-size:12px;"></i></span>
+              <span class="param-hint off" title="Constraints: OFF"><i class="icon-brackets" style="font-size:12px;"></i></span>
+            </div>
+            <button class="remove-indicator-btn" title="Remove from model"><i class="icon-x sz-sm"></i></button>
+            <span class="expand-icon"><i class="icon-chevron-down"></i></span>
+          </div>
+        </div>
+        <div class="indicator-card-body">
+          <div style="padding: var(--gap-4); color: var(--text-tertiary); font-size: 13px;">Parameter configuration rows (same pattern as above)</div>
+        </div>
+      </div>
+
+      <!-- ── INDICATOR PICKER ──
+           Shown here in OPEN state with search active (query: "con").
+           Normal state: just the dashed CTA below.
+           Open state: CTA becomes solid border + picker panel drops below.
+           Results: 3 matching + 1 already-attached (dimmed).
+           In Angular: IndicatorPickerComponent with CDK overlay or inline panel. -->
+      <div class="add-indicator-cta open">
+        <i class="icon-plus sz-md"></i> Attach an indicator
+      </div>
+      <div class="indicator-picker">
+        <div class="indicator-picker-search">
+          <i class="icon-search" style="font-size:14px; color: var(--text-tertiary);"></i>
+          <input type="text" placeholder="Search indicators by name or technical name..." value="con">
+        </div>
+        <div class="indicator-picker-list">
+          <div class="indicator-picker-item">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">Consommation énergétique</span>
+              <span class="indicator-picker-meta">consommation_energetique <span class="badge badge-type" style="margin-left:4px;">number</span></span>
+            </div>
+            <div class="indicator-picker-item-right">+ Attach</div>
+          </div>
+          <div class="indicator-picker-item">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">Contact référent</span>
+              <span class="indicator-picker-meta">contact_referent <span class="badge badge-type" style="margin-left:4px;">text</span></span>
+            </div>
+            <div class="indicator-picker-item-right">+ Attach</div>
+          </div>
+          <div class="indicator-picker-item">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">Coût des travaux</span>
+              <span class="indicator-picker-meta">cout_travaux <span class="badge badge-type" style="margin-left:4px;">number</span></span>
+            </div>
+            <div class="indicator-picker-item-right">+ Attach</div>
+          </div>
+          <div class="indicator-picker-item already-attached">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">Année de construction</span>
+              <span class="indicator-picker-meta">annee_construction <span class="badge badge-type" style="margin-left:4px;">number</span></span>
+            </div>
+            <div class="indicator-picker-item-right">Already attached</div>
+          </div>
+        </div>
+        <div class="indicator-picker-footer">
+          <span>3 results matching "con"</span>
+          <span style="color: var(--text-disabled);">Esc to close</span>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- API Inspector Section -->
+      <div id="ws-api" class="section-header">
+        <div class="section-title">API Inspector</div>
+      </div>
+
+      <div class="api-inspector">
+        <div class="api-inspector-header">
+          <span><span class="method">GET</span> /api/action-models/am_4f8a2c</span>
+          <span class="url">laureatv2-api-staging.osc-fr1.scalingo.io</span>
+        </div>
+        <div class="api-inspector-body"><pre>{
+  <span class="json-key">"id"</span>: <span class="json-string">"am_4f8a2c"</span>,
+  <span class="json-key">"label"</span>: <span class="json-string">"Rénovation Bâtiment Public"</span>,
+  <span class="json-key">"technical_name"</span>: <span class="json-string">"renovation_batiment_public"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"draft"</span>,
+  <span class="json-key">"funding_program_id"</span>: <span class="json-string">"fp_actee_2026"</span>,
+  <span class="json-key">"action_theme_id"</span>: <span class="json-string">"at_renov_energetique"</span>,
+  <span class="json-key">"indicators"</span>: [
+    {
+      <span class="json-key">"indicator_model_id"</span>: <span class="json-string">"im_surface"</span>,
+      <span class="json-key">"label"</span>: <span class="json-string">"Surface du bâtiment"</span>,
+      <span class="json-key">"order"</span>: <span class="json-number">1</span>,
+      <span class="json-key">"required"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"visible"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"editable"</span>: <span class="json-bool">false</span>
+    },
+    {
+      <span class="json-key">"indicator_model_id"</span>: <span class="json-string">"im_mode_chauffe"</span>,
+      <span class="json-key">"label"</span>: <span class="json-string">"Mode de chauffage"</span>,
+      <span class="json-key">"order"</span>: <span class="json-number">2</span>,
+      <span class="json-key">"required"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"required_rule"</span>: {<span class="json-key">"=="</span>: [{<span class="json-key">"var"</span>: <span class="json-string">"type_batiment"</span>}, <span class="json-string">"tertiaire"</span>]},
+      <span class="json-key">"visible"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"visible_rule"</span>: {<span class="json-key">"!="</span>: [{<span class="json-key">"var"</span>: <span class="json-string">"type_batiment"</span>}, <span class="json-string">"none"</span>]},
+      <span class="json-key">"default_value"</span>: <span class="json-string">"gaz_naturel"</span>
+    },
+    {
+      <span class="json-key">"indicator_model_id"</span>: <span class="json-string">"im_type_bat"</span>,
+      <span class="json-key">"label"</span>: <span class="json-string">"Type de bâtiment"</span>,
+      <span class="json-key">"order"</span>: <span class="json-number">3</span>,
+      <span class="json-key">"required"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"visible"</span>: <span class="json-bool">true</span>,
+      <span class="json-key">"duplicable"</span>: <span class="json-bool">true</span>
+    },
+    {
+      <span class="json-key">"indicator_model_id"</span>: <span class="json-string">"im_annee_constr"</span>,
+      <span class="json-key">"label"</span>: <span class="json-string">"Année de construction"</span>,
+      <span class="json-key">"order"</span>: <span class="json-number">4</span>,
+      <span class="json-key">"visible"</span>: <span class="json-bool">true</span>
+    }
+  ],
+  <span class="json-key">"updated_at"</span>: <span class="json-string">"2026-03-03T14:22:00Z"</span>,
+  <span class="json-key">"updated_by"</span>: <span class="json-string">"sophie@laureat.fr"</span>
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- Save bar -->
+    <div class="save-bar">
+      <div class="save-bar-info">
+        <i class="icon-alert-circle sz-md"></i>
+        You have unsaved changes
+      </div>
+      <div class="save-bar-actions">
+        <button class="btn-discard">Discard</button>
+        <button class="btn-save"><i class="icon-save sz-sm"></i> Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- VIEW 3: INDICATOR DETAIL (Indicator Model)                   -->
+<!-- Angular: IndicatorModelDetailComponent                       -->
+<!-- Demonstrates: 3-col MetadataGrid, list values CRUD,          -->
+<!--   cross-reference "Usage" table (which models use this),     -->
+<!--   ApiInspector, SectionAnchors                               -->
+<!-- NOTE: This is a SIMPLER detail page than the Model Workspace -->
+<!--   — no indicator cards, no toggle rows, no save bar.         -->
+<!--   Standard metadata editing + list value management.          -->
+<!-- ============================================================ -->
+<section id="view-indicator" class="showcase-section">
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Laureat</div>
+    <div class="sidebar-section">Configuration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder"></i></span> Programmes</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-palette"></i></span> Thèmes d'action</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-layout-template"></i></span> Modèles d'action</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-folder-tree"></i></span> Modèles de dossier</div>
+    <div class="sidebar-item active"><span class="sidebar-icon"><i class="icon-gauge"></i></span> Indicateurs</div>
+    <div class="sidebar-section">Administration</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-building-2"></i></span> Collectivités</div>
+    <div class="sidebar-item"><span class="sidebar-icon"><i class="icon-users"></i></span> Agents</div>
+  </aside>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="header-breadcrumb">
+        <span class="link">Indicateurs</span>
+        <span class="separator">/</span>
+        <span class="current">Mode de chauffage</span>
+      </div>
+      <div class="header-user">
+        <div class="avatar">SO</div>
+        <span>Sophie</span>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <!-- Detail header -->
+      <div class="detail-header">
+        <div class="detail-title-group">
+          <div class="detail-title">
+            Mode de chauffage
+            <span class="badge badge-published">Published</span>
+            <span class="badge badge-type">list</span>
+          </div>
+          <div class="detail-technical">mode_chauffe</div>
+          <div class="detail-meta">
+            <span class="detail-meta-item"><i class="icon-calendar sz-sm"></i> Updated Feb 28, 2026</span>
+            <span class="detail-meta-item"><i class="icon-user sz-sm"></i> by Sophie</span>
+            <span class="detail-meta-item"><i class="icon-hash sz-sm"></i> ID: im_mode_chauffe</span>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-sm"><i class="icon-copy sz-sm"></i> Dupliquer</button>
+          <button class="btn btn-danger btn-sm"><i class="icon-ban sz-sm"></i> Désactiver</button>
+          <button class="btn btn-ghost btn-sm"><i class="icon-ellipsis sz-sm"></i></button>
+        </div>
+      </div>
+
+      <!-- Section anchors -->
+      <div class="section-anchors">
+        <button class="section-anchor active" onclick="scrollToSection('ind-metadata')">Metadata</button>
+        <button class="section-anchor" onclick="scrollToSection('ind-values')">List Values (5)</button>
+        <button class="section-anchor" onclick="scrollToSection('ind-usage')">Usage (3 models)</button>
+        <button class="section-anchor" onclick="scrollToSection('ind-api')">API Inspector</button>
+      </div>
+
+      <!-- Metadata Section -->
+      <div id="ind-metadata" class="section-header" style="margin-top: 0;">
+        <div class="section-title">Metadata</div>
+      </div>
+
+      <div class="indicator-type-grid">
+        <div class="metadata-item">
+          <label>Label</label>
+          <input type="text" class="metadata-input" value="Mode de chauffage">
+        </div>
+        <div class="metadata-item">
+          <label>Technical name</label>
+          <input type="text" class="metadata-input mono" value="mode_chauffe">
+        </div>
+        <div class="metadata-item">
+          <label>Type</label>
+          <select class="metadata-select">
+            <option>text</option>
+            <option>number</option>
+            <option selected>list</option>
+            <option>boolean</option>
+            <option>date</option>
+          </select>
+        </div>
+        <div class="metadata-item">
+          <label>Sub-type</label>
+          <select class="metadata-select">
+            <option selected>single_select</option>
+            <option>multi_select</option>
+          </select>
+        </div>
+        <div class="metadata-item">
+          <label>Status</label>
+          <select class="metadata-select">
+            <option>Draft</option>
+            <option selected>Published</option>
+            <option>Disabled</option>
+          </select>
+        </div>
+        <div class="metadata-item">
+          <label>Description</label>
+          <input type="text" class="metadata-input" value="Type de chauffage principal du bâtiment">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- List Values -->
+      <div id="ind-values" class="section-header">
+        <div class="section-title">List Values <span class="section-count">5 values</span></div>
+        <button class="btn btn-secondary btn-sm"><i class="icon-plus sz-sm"></i> Add value</button>
+      </div>
+
+      <div class="list-values-container">
+        <div class="list-value-row">
+          <div>
+            <div style="font-weight: 500;">Gaz naturel</div>
+            <div class="list-value-code">gaz_naturel</div>
+          </div>
+          <div class="table-actions" style="opacity: 1;">
+            <button class="table-action-btn"><i class="icon-pencil sz-sm"></i></button>
+            <button class="table-action-btn" style="color: var(--text-error);"><i class="icon-trash-2 sz-sm"></i></button>
+          </div>
+        </div>
+        <div class="list-value-row">
+          <div>
+            <div style="font-weight: 500;">Électricité</div>
+            <div class="list-value-code">electricite</div>
+          </div>
+          <div class="table-actions" style="opacity: 1;">
+            <button class="table-action-btn"><i class="icon-pencil sz-sm"></i></button>
+            <button class="table-action-btn" style="color: var(--text-error);"><i class="icon-trash-2 sz-sm"></i></button>
+          </div>
+        </div>
+        <div class="list-value-row">
+          <div>
+            <div style="font-weight: 500;">Fioul</div>
+            <div class="list-value-code">fioul</div>
+          </div>
+          <div class="table-actions" style="opacity: 1;">
+            <button class="table-action-btn"><i class="icon-pencil sz-sm"></i></button>
+            <button class="table-action-btn" style="color: var(--text-error);"><i class="icon-trash-2 sz-sm"></i></button>
+          </div>
+        </div>
+        <div class="list-value-row">
+          <div>
+            <div style="font-weight: 500;">Réseau de chaleur</div>
+            <div class="list-value-code">reseau_chaleur</div>
+          </div>
+          <div class="table-actions" style="opacity: 1;">
+            <button class="table-action-btn"><i class="icon-pencil sz-sm"></i></button>
+            <button class="table-action-btn" style="color: var(--text-error);"><i class="icon-trash-2 sz-sm"></i></button>
+          </div>
+        </div>
+        <div class="list-value-row">
+          <div>
+            <div style="font-weight: 500;">Autre</div>
+            <div class="list-value-code">autre</div>
+          </div>
+          <div class="table-actions" style="opacity: 1;">
+            <button class="table-action-btn"><i class="icon-pencil sz-sm"></i></button>
+            <button class="table-action-btn" style="color: var(--text-error);"><i class="icon-trash-2 sz-sm"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Usage section -->
+      <div id="ind-usage" class="section-header">
+        <div class="section-title">Usage <span class="section-count">Used in 3 models</span></div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th>Updated by</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="table-name"><a class="link">Rénovation Bâtiment Public</a></div>
+              <div class="table-technical">renovation_batiment_public</div>
+            </td>
+            <td><span class="badge badge-type">Action Model</span></td>
+            <td><span class="badge badge-draft">Draft</span></td>
+            <td class="table-meta">Mar 3, 2026</td>
+            <td class="table-meta">Sophie</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name"><a class="link">Éclairage Voie Publique</a></div>
+              <div class="table-technical">eclairage_voie_publique</div>
+            </td>
+            <td><span class="badge badge-type">Action Model</span></td>
+            <td><span class="badge badge-published">Published</span></td>
+            <td class="table-meta">Feb 20, 2026</td>
+            <td class="table-meta">Alex</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="table-name"><a class="link">Dossier Thermique</a></div>
+              <div class="table-technical">dossier_thermique</div>
+            </td>
+            <td><span class="badge badge-type">Folder Model</span></td>
+            <td><span class="badge badge-published">Published</span></td>
+            <td class="table-meta">Feb 15, 2026</td>
+            <td class="table-meta">Sophie</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="section-divider">
+
+      <!-- API Inspector -->
+      <div id="ind-api" class="section-header">
+        <div class="section-title">API Inspector</div>
+      </div>
+
+      <div class="api-inspector">
+        <div class="api-inspector-header">
+          <span><span class="method">GET</span> /api/indicator-models/im_mode_chauffe</span>
+          <span class="url">laureatv2-api-staging.osc-fr1.scalingo.io</span>
+        </div>
+        <div class="api-inspector-body"><pre>{
+  <span class="json-key">"id"</span>: <span class="json-string">"im_mode_chauffe"</span>,
+  <span class="json-key">"label"</span>: <span class="json-string">"Mode de chauffage"</span>,
+  <span class="json-key">"technical_name"</span>: <span class="json-string">"mode_chauffe"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"list"</span>,
+  <span class="json-key">"sub_type"</span>: <span class="json-string">"single_select"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"published"</span>,
+  <span class="json-key">"description"</span>: <span class="json-string">"Type de chauffage principal du bâtiment"</span>,
+  <span class="json-key">"values"</span>: [
+    { <span class="json-key">"code"</span>: <span class="json-string">"gaz_naturel"</span>, <span class="json-key">"label"</span>: <span class="json-string">"Gaz naturel"</span> },
+    { <span class="json-key">"code"</span>: <span class="json-string">"electricite"</span>, <span class="json-key">"label"</span>: <span class="json-string">"Électricité"</span> },
+    { <span class="json-key">"code"</span>: <span class="json-string">"fioul"</span>, <span class="json-key">"label"</span>: <span class="json-string">"Fioul"</span> },
+    { <span class="json-key">"code"</span>: <span class="json-string">"reseau_chaleur"</span>, <span class="json-key">"label"</span>: <span class="json-string">"Réseau de chaleur"</span> },
+    { <span class="json-key">"code"</span>: <span class="json-string">"autre"</span>, <span class="json-key">"label"</span>: <span class="json-string">"Autre"</span> }
+  ],
+  <span class="json-key">"created_at"</span>: <span class="json-string">"2026-01-15T10:30:00Z"</span>,
+  <span class="json-key">"updated_at"</span>: <span class="json-string">"2026-02-28T09:15:00Z"</span>,
+  <span class="json-key">"updated_by"</span>: <span class="json-string">"sophie@laureat.fr"</span>
+}</pre></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</section>
+
+<script>
+  function showView(view) {
+    document.querySelectorAll('.showcase-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.showcase-nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Update active anchor
+      const anchors = el.closest('.content-area').querySelectorAll('.section-anchor');
+      anchors.forEach(a => a.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  }
+</script>
+
+</body>
+</html>
