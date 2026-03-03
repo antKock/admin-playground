@@ -1,3 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://laureatv2-api-staging.osc-fr1.scalingo.io/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
