@@ -1,6 +1,6 @@
 # Story 2.5: List Filtering
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -17,37 +17,37 @@ so that I can quickly find specific entities without scrolling through the full 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Design Filter UI Component/Pattern
-  - [ ] Add filter bar above DataTable (below page title, above table)
-  - [ ] Use dropdown/select for status filter (All, Draft, Published, Disabled)
-  - [ ] Style with Tailwind: `surface-subtle` background, `stroke-standard` border, inline layout
-  - [ ] Active filter indicator: badge count or highlighted state
-  - [ ] "Clear filters" button when any filter is active
+- [x] Task 1: Design Filter UI Component/Pattern
+  - [x] Add filter bar above DataTable (below page title, above table)
+  - [x] Use dropdown/select for status filter (All, Draft, Published, Disabled)
+  - [x] Style with Tailwind: `surface-subtle` background, `stroke-standard` border, inline layout
+  - [x] Active filter indicator: badge count or highlighted state
+  - [x] "Clear filters" button when any filter is active
 
-- [ ] Task 2: Implement Filter Logic for Action Themes (AC: #1, #2, #3)
-  - [ ] Add filter state signals to `action-theme-list.component.ts`
-  - [ ] On filter change: reset cursor to null, call `service.list()` with filter params
-  - [ ] Pass filter parameters to API: `?status=published` (verify API supports query params for filtering)
-  - [ ] If API does NOT support filtering: implement client-side filtering as fallback
-  - [ ] Pagination resets on filter change
-  - [ ] Active filter visually indicated
+- [x] Task 2: Implement Filter Logic for Action Themes (AC: #1, #2, #3)
+  - [x] Add filter state signals to `action-theme-list.component.ts`
+  - [x] On filter change: reset cursor to null, call `service.list()` with filter params
+  - [x] Pass filter parameters to API: `?status=published` (verify API supports query params for filtering)
+  - [x] If API does NOT support filtering: implement client-side filtering as fallback
+  - [x] Pagination resets on filter change
+  - [x] Active filter visually indicated
 
-- [ ] Task 3: Implement Filter Logic for Funding Programs (AC: #4)
-  - [ ] Add filter bar to `funding-program-list.component.ts`
-  - [ ] Apply same pattern as Action Themes
-  - [ ] Determine available filter criteria from API (may be different from Action Themes)
+- [x] Task 3: Implement Filter Logic for Funding Programs (AC: #4)
+  - [x] Add filter bar to `funding-program-list.component.ts`
+  - [x] Apply same pattern as Action Themes
+  - [x] Determine available filter criteria from API (may be different from Action Themes)
 
-- [ ] Task 4: Update DataTable or List Components
-  - [ ] Ensure DataTable handles data reset gracefully (new filtered data replaces old)
-  - [ ] Skeleton loading shows during filter application
-  - [ ] Empty state shows "No results match your filters" (different from "no data" empty state)
+- [x] Task 4: Update DataTable or List Components
+  - [x] Ensure DataTable handles data reset gracefully (new filtered data replaces old)
+  - [x] Skeleton loading shows during filter application
+  - [x] Empty state shows "No results match your filters" (different from "no data" empty state)
 
-- [ ] Task 5: Verification & Tests
-  - [ ] Filter by status shows only matching Action Themes
-  - [ ] Pagination resets on filter change
-  - [ ] Clear filters shows full list
-  - [ ] Filtering works for both Funding Programs and Action Themes
-  - [ ] All tests pass
+- [x] Task 5: Verification & Tests
+  - [x] Filter by status shows only matching Action Themes
+  - [x] Pagination resets on filter change
+  - [x] Clear filters shows full list
+  - [x] Filtering works for both Funding Programs and Action Themes
+  - [x] All tests pass
 
 ## Dev Notes
 
@@ -141,10 +141,22 @@ src/app/core/api/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+Extended BaseEntityService.list() to accept optional filter params. Action Theme list has status filter dropdown (All/Draft/Published/Disabled). Funding Program list has active status filter (All/Active/Inactive). Filter changes reset pagination. Filtered empty state shows "No results match your filters" message with clear button.
+
 ### File List
+
+- `src/app/core/api/base-entity.service.ts` (modified - added filters param to list())
+- `src/app/features/action-themes/action-theme-list.component.ts` (modified - added status filter)
+- `src/app/features/action-themes/action-theme-list.component.spec.ts` (modified - added filter tests)
+- `src/app/features/funding-programs/funding-program-list.component.ts` (modified - added active filter)
+- `src/app/features/funding-programs/funding-program-list.component.spec.ts` (modified - added filter tests)
+
+### Change Log
+
+- 2026-03-04: Story implemented — API-side filtering for both entities, filter UI with clear

@@ -33,13 +33,20 @@ export abstract class BaseEntityService<T> {
 
   constructor(protected apiPath: string) {}
 
-  list(cursor?: string, limit?: number): Observable<PaginatedResponse<T>> {
+  list(cursor?: string, limit?: number, filters?: Record<string, string>): Observable<PaginatedResponse<T>> {
     let params = new HttpParams();
     if (cursor) {
       params = params.set('cursor', cursor);
     }
     if (limit) {
       params = params.set('limit', limit.toString());
+    }
+    if (filters) {
+      for (const [key, value] of Object.entries(filters)) {
+        if (value) {
+          params = params.set(key, value);
+        }
+      }
     }
 
     const url = this.baseUrl;
@@ -144,6 +151,10 @@ export abstract class BaseEntityService<T> {
 
   clearSelection(): void {
     this._selectedItem.set(null);
+  }
+
+  protected setSelectedItem(item: T | null): void {
+    this._selectedItem.set(item);
   }
 
   clearError(): void {

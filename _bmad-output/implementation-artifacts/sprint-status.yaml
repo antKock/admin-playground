@@ -48,12 +48,12 @@ development_status:
   1-5-shared-component-library-core: done
   epic-1-retrospective: optional
 
-  epic-2: in-progress
-  2-1-funding-program-list-detail-views: ready-for-dev
-  2-2-funding-program-create-edit-delete: ready-for-dev
-  2-3-action-theme-list-detail-create-edit-delete: ready-for-dev
-  2-4-action-theme-status-workflow-duplication: ready-for-dev
-  2-5-list-filtering: ready-for-dev
+  epic-2: done
+  2-1-funding-program-list-detail-views: done
+  2-2-funding-program-create-edit-delete: done
+  2-3-action-theme-list-detail-create-edit-delete: done
+  2-4-action-theme-status-workflow-duplication: done
+  2-5-list-filtering: done
   epic-2-retrospective: optional
 
   epic-3: backlog

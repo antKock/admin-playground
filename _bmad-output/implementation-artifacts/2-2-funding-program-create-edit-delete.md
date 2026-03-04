@@ -1,6 +1,6 @@
 # Story 2.2: Funding Program Create, Edit & Delete
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -21,50 +21,50 @@ so that I can manage the full lifecycle of funding program configuration.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create Funding Program Form Component (AC: #1, #4)
-  - [ ] Implement `src/app/features/funding-programs/funding-program-form.component.ts` (replace stub)
-  - [ ] Accept `mode` input: 'create' | 'edit' (inferred from route — `:id/edit` vs `new`)
-  - [ ] Build Reactive Form with FormBuilder: all Funding Program fields
-  - [ ] Required field validation with error messages shown on blur
-  - [ ] On submit: validate all, focus first invalid field if errors
-  - [ ] In edit mode: load existing data via `service.getById(id)` and patch form
-  - [ ] Submit button text: "Create" or "Save" based on mode
-  - [ ] Create spec file
+- [x] Task 1: Create Funding Program Form Component (AC: #1, #4)
+  - [x] Implement `src/app/features/funding-programs/funding-program-form.component.ts` (replace stub)
+  - [x] Accept `mode` input: 'create' | 'edit' (inferred from route — `:id/edit` vs `new`)
+  - [x] Build Reactive Form with FormBuilder: all Funding Program fields
+  - [x] Required field validation with error messages shown on blur
+  - [x] On submit: validate all, focus first invalid field if errors
+  - [x] In edit mode: load existing data via `service.getById(id)` and patch form
+  - [x] Submit button text: "Create" or "Save" based on mode
+  - [x] Create spec file
 
-- [ ] Task 2: Wire Create Flow (AC: #2, #3)
-  - [ ] Add "Create Funding Program" button to list component (top-right, brand-primary)
-  - [ ] Button navigates to `/funding-programs/new`
-  - [ ] On form submit (create mode): call `service.create(formData)`
-  - [ ] On success: `toast.success("Funding Program created")`, navigate to `/funding-programs/:newId`
-  - [ ] On 422: map validation errors to form fields via `setErrors()`
-  - [ ] On other errors: `toast.error(humanReadableMessage)`
+- [x] Task 2: Wire Create Flow (AC: #2, #3)
+  - [x] Add "Create Funding Program" button to list component (top-right, brand-primary)
+  - [x] Button navigates to `/funding-programs/new`
+  - [x] On form submit (create mode): call `service.create(formData)`
+  - [x] On success: `toast.success("Funding Program created")`, navigate to `/funding-programs/:newId`
+  - [x] On 422: map validation errors to form fields via `setErrors()`
+  - [x] On other errors: `toast.error(humanReadableMessage)`
 
-- [ ] Task 3: Wire Edit Flow (AC: #4, #5)
-  - [ ] Add "Edit" button to detail component
-  - [ ] Button navigates to `/funding-programs/:id/edit`
-  - [ ] On form submit (edit mode): call `service.update(id, formData)`
-  - [ ] On success: `toast.success("Funding Program updated")`, navigate back to detail view
-  - [ ] On error: same error handling as create
+- [x] Task 3: Wire Edit Flow (AC: #4, #5)
+  - [x] Add "Edit" button to detail component
+  - [x] Button navigates to `/funding-programs/:id/edit`
+  - [x] On form submit (edit mode): call `service.update(id, formData)`
+  - [x] On success: `toast.success("Funding Program updated")`, navigate back to detail view
+  - [x] On error: same error handling as create
 
-- [ ] Task 4: Wire Delete Flow (AC: #6, #7, #8)
-  - [ ] Add "Delete" button to detail component (danger variant)
-  - [ ] On click: `confirmDialog.confirm({ title: "Delete Funding Program", message: "Are you sure you want to delete '{name}'? This action cannot be undone.", confirmLabel: "Delete", confirmVariant: "danger" })`
-  - [ ] On confirm: call `service.delete(id)`
-  - [ ] On success: `toast.success("Funding Program deleted")`, navigate to list
-  - [ ] On 409 conflict: `toast.error("Cannot delete — {reason}")` with context from API
-  - [ ] On other errors: `toast.error(humanReadableMessage)`
+- [x] Task 4: Wire Delete Flow (AC: #6, #7, #8)
+  - [x] Add "Delete" button to detail component (danger variant)
+  - [x] On click: `confirmDialog.confirm({ title: "Delete Funding Program", message: "Are you sure you want to delete '{name}'? This action cannot be undone.", confirmLabel: "Delete", confirmVariant: "danger" })`
+  - [x] On confirm: call `service.delete(id)`
+  - [x] On success: `toast.success("Funding Program deleted")`, navigate to list
+  - [x] On 409 conflict: `toast.error("Cannot delete — {reason}")` with context from API
+  - [x] On other errors: `toast.error(humanReadableMessage)`
 
-- [ ] Task 5: Error Handling Utilities
-  - [ ] Create helper to map 422 API validation errors to Reactive Form field errors
-  - [ ] Create helper to extract human-readable error messages from API responses
-  - [ ] These can live in the feature folder or a shared utility
+- [x] Task 5: Error Handling Utilities
+  - [x] Create helper to map 422 API validation errors to Reactive Form field errors
+  - [x] Create helper to extract human-readable error messages from API responses
+  - [x] These can live in the feature folder or a shared utility
 
-- [ ] Task 6: Verification
-  - [ ] Create form renders, validates, and submits
-  - [ ] Edit form pre-populates and saves
-  - [ ] Delete shows confirmation and processes
-  - [ ] Error scenarios handled gracefully
-  - [ ] All tests pass
+- [x] Task 6: Verification
+  - [x] Create form renders, validates, and submits
+  - [x] Edit form pre-populates and saves
+  - [x] Delete shows confirmation and processes
+  - [x] Error scenarios handled gracefully
+  - [x] All tests pass
 
 ## Dev Notes
 
@@ -148,10 +148,22 @@ src/app/features/funding-programs/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+Implemented reactive form with create/edit modes, validation on blur/submit, 422 error mapping, delete with confirmation dialog, success/error toast messages. Added "Create" button to list view.
+
 ### File List
+
+- `src/app/features/funding-programs/funding-program-form.component.ts` (modified - replaced stub)
+- `src/app/features/funding-programs/funding-program-form.component.spec.ts` (new)
+- `src/app/features/funding-programs/funding-program-detail.component.ts` (modified - wired delete)
+- `src/app/features/funding-programs/funding-program-detail.component.spec.ts` (modified - added delete tests)
+- `src/app/features/funding-programs/funding-program-list.component.ts` (modified - added Create button)
+
+### Change Log
+
+- 2026-03-04: Story implemented — form, CRUD flows, error handling, 9 new form tests
