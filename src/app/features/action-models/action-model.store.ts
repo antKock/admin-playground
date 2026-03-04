@@ -10,6 +10,8 @@ import { FundingProgramDomainStore } from '@domains/funding-programs/funding-pro
 import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { ActionTheme } from '@domains/action-themes/action-theme.models';
+import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
+import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
 
 export const ActionModelFeatureStore = signalStore(
   { providedIn: 'root' },
@@ -17,6 +19,7 @@ export const ActionModelFeatureStore = signalStore(
     const domainStore = inject(ActionModelDomainStore);
     const fpStore = inject(FundingProgramDomainStore);
     const atStore = inject(ActionThemeDomainStore);
+    const imStore = inject(IndicatorModelDomainStore);
     return {
       items: computed(() => domainStore.items() as ActionModel[]),
       selectedItem: computed(() => domainStore.selectedItem()),
@@ -38,6 +41,13 @@ export const ActionModelFeatureStore = signalStore(
       atOptions: computed(() => atStore.items() as ActionTheme[]),
       fpLoading: computed(() => fpStore.isLoading()),
       atLoading: computed(() => atStore.isLoading()),
+
+      // Cross-domain: indicator models for picker
+      availableIndicators: computed(() => imStore.items() as IndicatorModel[]),
+      indicatorsLoading: computed(() => imStore.isLoading()),
+
+      // Attached indicators (from selected action model)
+      attachedIndicators: computed(() => domainStore.selectedItem()?.indicator_models ?? []),
     };
   }),
 );

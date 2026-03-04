@@ -1,6 +1,6 @@
 # Story 2.4: Agent Status Management
 
-Status: review
+Status: done
 
 ## Story
 
@@ -210,6 +210,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-04: All 7 tasks implemented, tests passing
+- 2026-03-04: Code review — agent_type display fix and component specs applied via story 2-3 review; 242/242 tests pass
 
 ### File List
 

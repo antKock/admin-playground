@@ -55,11 +55,17 @@ export class AgentListComponent implements OnInit {
     { key: 'created_at', label: 'Created' },
   ];
 
+  private readonly agentTypeLabels: Record<string, string> = {
+    energy_performance_advisor: 'Energy Performance Advisor',
+    other: 'Other',
+  };
+
   readonly rows = computed(() =>
     this.facade.items().map(agent => ({
       ...agent,
       displayName: [agent.first_name, agent.last_name].filter(Boolean).join(' ') || '—',
       community_name: agent.community?.name ?? '—',
+      agent_type: this.agentTypeLabels[agent.agent_type] ?? agent.agent_type,
     })),
   );
 

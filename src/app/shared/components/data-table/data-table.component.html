@@ -30,6 +30,8 @@
               <td>
                 @if (col.type === 'status-badge') {
                   <app-status-badge [status]="'' + getCellValue(row, col.key)" />
+                } @else if (col.type === 'date') {
+                  {{ formatDate(getCellValue(row, col.key)) }}
                 } @else {
                   {{ getCellValue(row, col.key) }}
                 }

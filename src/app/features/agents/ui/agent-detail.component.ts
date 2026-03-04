@@ -109,7 +109,7 @@ export class AgentDetailComponent implements OnInit {
       { label: 'Email', value: a.email ?? '—', type: 'text' as const },
       { label: 'Phone', value: a.phone ?? '—', type: 'text' as const },
       { label: 'Position', value: a.position ?? '—', type: 'text' as const },
-      { label: 'Agent Type', value: a.agent_type, type: 'text' as const },
+      { label: 'Agent Type', value: this.agentTypeLabel(a.agent_type), type: 'text' as const },
       { label: 'Community', value: a.community?.name ?? '—', type: 'linked' as const, linkedRoute: `/communities/${a.community_id}` },
       { label: 'Public Comment', value: a.public_comment ?? '—', type: 'text' as const },
       { label: 'Internal Comment', value: a.internal_comment ?? '—', type: 'text' as const },
@@ -123,6 +123,15 @@ export class AgentDetailComponent implements OnInit {
     if (id) {
       this.facade.select(id);
     }
+  }
+
+  private readonly agentTypeLabels: Record<string, string> = {
+    energy_performance_advisor: 'Energy Performance Advisor',
+    other: 'Other',
+  };
+
+  agentTypeLabel(type: string): string {
+    return this.agentTypeLabels[type] ?? type;
   }
 
   transitionLabel(status: AgentStatus): string {

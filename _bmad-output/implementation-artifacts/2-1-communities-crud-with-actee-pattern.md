@@ -1,6 +1,6 @@
 # Story 2.1: Communities CRUD with ACTEE Pattern
 
-Status: review
+Status: done
 
 ## Story
 
@@ -257,9 +257,13 @@ No issues encountered. Followed canonical FundingProgram ACTEE pattern exactly.
 - src/app/features/communities/ui/community-list.component.ts (new, replaced stub)
 - src/app/features/communities/ui/community-detail.component.ts (new)
 - src/app/features/communities/ui/community-form.component.ts (new)
+- src/app/features/communities/ui/community-list.component.spec.ts (new — review fix)
+- src/app/features/communities/ui/community-detail.component.spec.ts (new — review fix)
+- src/app/features/communities/ui/community-form.component.spec.ts (new — review fix)
 - src/app/pages/communities/communities.routes.ts (modified)
 - src/app/features/communities/community-list.component.ts (deleted)
 
 ### Change Log
 
 - 2026-03-04: Story 2-1 implemented — Communities CRUD with full ACTEE pattern
+- 2026-03-04: Code review fixes — added component specs (list, detail, form), `anyMutationPending` now includes assign/remove; 242/242 tests pass

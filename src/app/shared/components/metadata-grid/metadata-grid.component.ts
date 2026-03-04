@@ -4,7 +4,7 @@ import { LucideAngularModule, ArrowUpRight } from 'lucide-angular';
 export interface MetadataField {
   label: string;
   value: string;
-  type?: 'text' | 'mono' | 'linked';
+  type?: 'text' | 'mono' | 'linked' | 'date';
   linkedRoute?: string;
 }
 
@@ -25,6 +25,8 @@ export interface MetadataField {
                 {{ field.value }}
                 <lucide-icon [img]="ArrowUpRight" [size]="14"></lucide-icon>
               </button>
+            } @else if (field.type === 'date') {
+              {{ formatDate(field.value) }}
             } @else {
               {{ field.value }}
             }
@@ -53,4 +55,11 @@ export class MetadataGridComponent {
   readonly navigateToLinked = output<string>();
 
   readonly ArrowUpRight = ArrowUpRight;
+
+  formatDate(value: string): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
 }

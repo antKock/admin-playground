@@ -1,6 +1,6 @@
 # Story 3.4: Attach Indicator Models to Action Models
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,41 +18,49 @@ So that I can define which indicators are part of each model's configuration.
 6. Action Model feature store aggregates data from both action-model and indicator-model domain stores
 7. Facade orchestrates cross-domain interactions between Action Model and Indicator Model
 
+## API Limitation Protocol
+
+If any acceptance criterion cannot be implemented due to API limitations (missing endpoints, unsupported fields, schema gaps), the dev agent **MUST**:
+1. Document the gap in `_bmad-output/api-observations.md` under the Epic 3 section
+2. Include: **Observation** (what's missing), **Impact** (which AC/FR is affected), and **Suggestion** (what the API team should add)
+3. Implement what IS possible and skip the blocked AC with a code comment explaining the gap
+4. Note the limitation in the Dev Agent Record / Completion Notes at the bottom of this file
+
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extend Action Model domain for indicator associations (AC: #6)
-  - [ ] Verify `ActionModelRead.indicator_models` field is typed as `IndicatorModelWithAssociation[]`
-  - [ ] Add mutation for updating indicator associations: `updateActionModelMutation` (if not existing) with `indicator_model_associations` payload
-  - [ ] Ensure the action-model API file handles the association data in update requests
-- [ ] Task 2: Create IndicatorPicker component (AC: #2)
-  - [ ] Create `src/app/shared/components/indicator-picker/indicator-picker.component.ts`
-  - [ ] Dashed border CTA: "Attach indicator" button
-  - [ ] Click opens inline searchable panel (CDK Overlay or inline expand)
-  - [ ] Search field: auto-focused, debounced 300ms, searches name + technical_label
-  - [ ] Results show type badge, already-attached items dimmed with "Already attached" tag
-  - [ ] Click "+ Attach" fires output event with selected indicator model
-  - [ ] Esc or click outside closes picker
-- [ ] Task 3: Indicator attachment list UI (AC: #1)
-  - [ ] Create or extend Action Model workspace component to show "Indicators" section
-  - [ ] Display attached indicators as cards: name, technical_label, type badge
-  - [ ] Each card has drag handle (left) and remove button (right, hover-revealed)
-  - [ ] Empty state: "No indicators attached yet" with the picker CTA
-- [ ] Task 4: Attach/detach operations (AC: #3, #4)
-  - [ ] On attach: build updated `indicator_model_associations` array, call Action Model update mutation
-  - [ ] On detach: show ConfirmDialog, remove from array, call update mutation
-  - [ ] Toast feedback for both operations
-  - [ ] Refresh action model data after mutation success
-- [ ] Task 5: Drag-to-reorder (AC: #5)
-  - [ ] Import `CdkDragDrop` from `@angular/cdk/drag-drop`
-  - [ ] Wrap indicator list in `cdkDropList` container
-  - [ ] Each card is a `cdkDrag` item with drag handle
-  - [ ] On drop: reorder the `indicator_model_associations` array, call update mutation to persist
-  - [ ] Optimistic UI: reorder immediately, revert on error
-- [ ] Task 6: Cross-domain feature store (AC: #6, #7)
-  - [ ] Update `features/action-models/action-model.store.ts` — add computed signals from indicator-model domain
-  - [ ] Update `features/action-models/action-model.facade.ts` — expose indicator signals + attachment methods
-  - [ ] Add facade methods: `attachIndicator()`, `detachIndicator()`, `reorderIndicators()`
-  - [ ] Facade loads indicator model list for picker via `IndicatorModelDomainStore.load()`
+- [x] Task 1: Extend Action Model domain for indicator associations (AC: #6)
+  - [x] Verify `ActionModelRead.indicator_models` field is typed as `IndicatorModelWithAssociation[]`
+  - [x] Add mutation for updating indicator associations: `updateActionModelMutation` (if not existing) with `indicator_model_associations` payload
+  - [x] Ensure the action-model API file handles the association data in update requests
+- [x] Task 2: Create IndicatorPicker component (AC: #2)
+  - [x] Create `src/app/shared/components/indicator-picker/indicator-picker.component.ts`
+  - [x] Dashed border CTA: "Attach indicator" button
+  - [x] Click opens inline searchable panel (CDK Overlay or inline expand)
+  - [x] Search field: auto-focused, debounced 300ms, searches name + technical_label
+  - [x] Results show type badge, already-attached items dimmed with "Already attached" tag
+  - [x] Click "+ Attach" fires output event with selected indicator model
+  - [x] Esc or click outside closes picker
+- [x] Task 3: Indicator attachment list UI (AC: #1)
+  - [x] Create or extend Action Model workspace component to show "Indicators" section
+  - [x] Display attached indicators as cards: name, technical_label, type badge
+  - [x] Each card has drag handle (left) and remove button (right, hover-revealed)
+  - [x] Empty state: "No indicators attached yet" with the picker CTA
+- [x] Task 4: Attach/detach operations (AC: #3, #4)
+  - [x] On attach: build updated `indicator_model_associations` array, call Action Model update mutation
+  - [x] On detach: show ConfirmDialog, remove from array, call update mutation
+  - [x] Toast feedback for both operations
+  - [x] Refresh action model data after mutation success
+- [x] Task 5: Drag-to-reorder (AC: #5)
+  - [x] Import `CdkDragDrop` from `@angular/cdk/drag-drop`
+  - [x] Wrap indicator list in `cdkDropList` container
+  - [x] Each card is a `cdkDrag` item with drag handle
+  - [x] On drop: reorder the `indicator_model_associations` array, call update mutation to persist
+  - [x] Optimistic UI: reorder immediately, revert on error
+- [x] Task 6: Cross-domain feature store (AC: #6, #7)
+  - [x] Update `features/action-models/action-model.store.ts` — add computed signals from indicator-model domain
+  - [x] Update `features/action-models/action-model.facade.ts` — expose indicator signals + attachment methods
+  - [x] Add facade methods: `attachIndicator()`, `detachIndicator()`, `reorderIndicators()`
+  - [x] Facade loads indicator model list for picker via `IndicatorModelDomainStore.load()`
 
 ## Dev Notes
 
@@ -202,8 +210,42 @@ IndicatorPicker, IndicatorCard, and ParamHintIcons go in `shared/components/` be
 
 ### Agent Model Used
 
+Claude Opus 4.6
+
 ### Debug Log References
+
+No blocking issues encountered during implementation.
 
 ### Completion Notes List
 
+- Tasks 1, 2, and 6 were already implemented from prior work (domain types, IndicatorPicker, feature store cross-domain signals, facade methods)
+- Created ParamHintIcons shared component (6 colored circles showing parameter configuration status)
+- Created IndicatorCard shared component (drag handle, name, type badge, param hints, hover-revealed remove button)
+- Updated ActionModelDetailComponent with full Indicators section: CDK DragDrop list, IndicatorPicker, attach/detach/reorder wiring
+- API gap documented: `IndicatorModelWithAssociation` missing `technical_label` field (see `_bmad-output/api-observations.md`)
+- Added 26 new tests across 4 spec files — all 287 tests pass, no regressions
+- Build succeeds with no TypeScript errors
+
 ### File List
+
+**Created:**
+- `src/app/shared/components/param-hint-icons/param-hint-icons.component.ts`
+- `src/app/shared/components/param-hint-icons/param-hint-icons.component.spec.ts`
+- `src/app/shared/components/indicator-card/indicator-card.component.ts`
+- `src/app/shared/components/indicator-card/indicator-card.component.spec.ts`
+- `src/app/shared/components/indicator-picker/indicator-picker.component.spec.ts`
+- `src/app/features/action-models/ui/action-model-detail.component.spec.ts`
+
+**Modified:**
+- `src/app/features/action-models/ui/action-model-detail.component.ts` — added Indicators section with CDK DragDrop, IndicatorPicker, IndicatorCard, attach/detach/reorder
+- `_bmad-output/api-observations.md` — documented IndicatorModelWithAssociation missing technical_label
+
+**Pre-existing (no changes needed):**
+- `src/app/domains/action-models/action-model.models.ts` — already exports IndicatorModelWithAssociation, IndicatorModelAssociationInput
+- `src/app/features/action-models/action-model.store.ts` — already has cross-domain indicator signals
+- `src/app/features/action-models/action-model.facade.ts` — already has attachIndicator/detachIndicator/reorderIndicators/loadIndicators
+- `src/app/shared/components/indicator-picker/indicator-picker.component.ts` — already created
+
+## Change Log
+
+- 2026-03-04: Story 3.4 implementation complete — Indicator attachment UI with picker, cards, drag-to-reorder on Action Model detail page. API gap (missing technical_label on IndicatorModelWithAssociation) documented.

@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
@@ -91,6 +91,14 @@ import { CommunityFacade } from '../community.facade';
 export class CommunityUsersComponent {
   readonly facade = inject(CommunityFacade);
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly el = inject(ElementRef);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showPicker() && !this.el.nativeElement.contains(event.target)) {
+      this.showPicker.set(false);
+    }
+  }
 
   readonly showPicker = signal(false);
   readonly searchQuery = signal('');

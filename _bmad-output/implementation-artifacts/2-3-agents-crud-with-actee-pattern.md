@@ -1,6 +1,6 @@
 # Story 2.3: Agents CRUD with ACTEE Pattern
 
-Status: review
+Status: done
 
 ## Story
 
@@ -342,6 +342,7 @@ Claude Opus 4.6
 ### Change Log
 
 - 2026-03-04: All 11 tasks implemented, tests passing
+- 2026-03-04: Code review fixes — agent_type now displayed as human-readable label in list and detail, added component specs (list, detail, form); 242/242 tests pass
 
 ### File List
 
@@ -354,7 +355,10 @@ Claude Opus 4.6
 - `src/app/features/agents/agent.facade.ts` (new)
 - `src/app/features/agents/agent.facade.spec.ts` (new)
 - `src/app/features/agents/ui/agent-list.component.ts` (new, replaces stub)
+- `src/app/features/agents/ui/agent-list.component.spec.ts` (new — review fix)
 - `src/app/features/agents/ui/agent-detail.component.ts` (new)
+- `src/app/features/agents/ui/agent-detail.component.spec.ts` (new — review fix)
 - `src/app/features/agents/ui/agent-form.component.ts` (new)
+- `src/app/features/agents/ui/agent-form.component.spec.ts` (new — review fix)
 - `src/app/pages/agents/agents.routes.ts` (modified)
 - `src/app/features/agents/agent-list.component.ts` (deleted)

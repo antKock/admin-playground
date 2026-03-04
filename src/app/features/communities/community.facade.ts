@@ -47,7 +47,8 @@ export class CommunityFacade {
   readonly assignIsPending = this.domainStore.assignUserMutationIsPending;
   readonly removeIsPending = this.domainStore.removeUserMutationIsPending;
   readonly anyMutationPending = computed(() =>
-    this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
+    this.createIsPending() || this.updateIsPending() || this.deleteIsPending() ||
+    this.assignIsPending() || this.removeIsPending(),
   );
 
   // Intention methods

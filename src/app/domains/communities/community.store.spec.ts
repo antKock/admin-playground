@@ -117,4 +117,52 @@ describe('CommunityDomainStore', () => {
       expect(store.selectedItem()).toBeNull();
     });
   });
+
+  describe('assignUserMutation', () => {
+    it('should send POST to assign user endpoint', async () => {
+      const resultPromise = store.assignUserMutation({ communityId: 'comm-1', userId: 'user-1' });
+
+      const req = httpTesting.expectOne((r) =>
+        r.method === 'POST' && r.url.includes('communities/comm-1/users/user-1'),
+      );
+      req.flush({ message: 'User assigned' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should handle error on assign', async () => {
+      const resultPromise = store.assignUserMutation({ communityId: 'comm-1', userId: 'user-bad' });
+
+      const req = httpTesting.expectOne((r) => r.method === 'POST');
+      req.flush({ detail: 'User not found' }, { status: 404, statusText: 'Not Found' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('error');
+    });
+  });
+
+  describe('removeUserMutation', () => {
+    it('should send DELETE to remove user endpoint', async () => {
+      const resultPromise = store.removeUserMutation({ communityId: 'comm-1', userId: 'user-1' });
+
+      const req = httpTesting.expectOne((r) =>
+        r.method === 'DELETE' && r.url.includes('communities/comm-1/users/user-1'),
+      );
+      req.flush(null);
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should handle error on remove', async () => {
+      const resultPromise = store.removeUserMutation({ communityId: 'comm-1', userId: 'user-bad' });
+
+      const req = httpTesting.expectOne((r) => r.method === 'DELETE');
+      req.flush({ detail: 'User not found' }, { status: 404, statusText: 'Not Found' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('error');
+    });
+  });
 });

@@ -1,6 +1,6 @@
 # Story 2.2: Community User Assignment & Removal
 
-Status: review
+Status: done
 
 ## Story
 
@@ -192,8 +192,10 @@ API investigation: Found dedicated endpoints `POST /communities/{id}/users/{user
 - src/app/features/communities/community.facade.ts (modified — added assignUser, removeUser, loadUsers, communityUsers, assignIsPending, removeIsPending)
 - src/app/features/communities/community.facade.spec.ts (modified — added assign/remove tests)
 - src/app/features/communities/ui/community-users.component.ts (new)
+- src/app/features/communities/ui/community-users.component.spec.ts (new — review fix)
 - src/app/features/communities/ui/community-detail.component.ts (modified — integrated community-users)
 
 ### Change Log
 
 - 2026-03-04: Story 2-2 implemented — Community user assignment and removal with dedicated picker component
+- 2026-03-04: Code review fixes — added assignUserMutation/removeUserMutation domain store tests, created community-users.component.spec.ts, implemented click-outside-to-close on picker, `anyMutationPending` includes assign/remove; 242/242 tests pass

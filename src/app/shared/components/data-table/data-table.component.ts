@@ -6,7 +6,7 @@ export interface ColumnDef {
   key: string;
   label: string;
   width?: string;
-  type?: 'text' | 'status-badge';
+  type?: 'text' | 'status-badge' | 'date';
 }
 
 @Component({
@@ -51,6 +51,13 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
 
   getCellValue(row: Record<string, unknown>, key: string): unknown {
     return row[key];
+  }
+
+  formatDate(value: unknown): string {
+    if (!value || typeof value !== 'string') return '—';
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   private setupInfiniteScroll(): void {

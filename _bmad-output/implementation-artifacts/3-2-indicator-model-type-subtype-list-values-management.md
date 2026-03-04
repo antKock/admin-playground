@@ -1,6 +1,6 @@
 # Story 3.2: Indicator Model Type, Subtype & List Values Management
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -28,20 +28,28 @@ The API (`IndicatorModelRead`, `IndicatorModelCreate`, `IndicatorModelUpdate`) o
 4. Unit field contextually relevant (more common with "number" type but available for both)
 5. API observations documented for missing subtype and list values features
 
+## API Limitation Protocol
+
+If any acceptance criterion cannot be implemented due to API limitations (missing endpoints, unsupported fields, schema gaps), the dev agent **MUST**:
+1. Document the gap in `_bmad-output/api-observations.md` under the Epic 3 section
+2. Include: **Observation** (what's missing), **Impact** (which AC/FR is affected), and **Suggestion** (what the API team should add)
+3. Implement what IS possible and skip the blocked AC with a code comment explaining the gap
+4. Note the limitation in the Dev Agent Record / Completion Notes at the bottom of this file
+
 ## Tasks / Subtasks
 
-- [ ] Task 1: Enhance form with type selector (AC: #1, #2)
-  - [ ] Update `indicator-model.form.ts` — add type field as required FormControl with validator
-  - [ ] Update `indicator-model-form.component.ts` — add `<select>` for type with "text"/"number" options
-  - [ ] Ensure type field patches correctly in edit mode
-- [ ] Task 2: Type display in list and detail (AC: #3)
-  - [ ] Update `indicator-model-list.component.ts` — add type column with StatusBadge (variant: type badge, purple)
-  - [ ] Update `indicator-model-detail.component.ts` — show type in MetadataGrid with badge styling
-- [ ] Task 3: Unit field context (AC: #4)
-  - [ ] Ensure unit field is available on form for both types
-  - [ ] Display unit in detail view alongside type
-- [ ] Task 4: Document API gaps (AC: #5)
-  - [ ] Append to `_bmad-output/api-observations.md`:
+- [x] Task 1: Enhance form with type selector (AC: #1, #2)
+  - [x] Update `indicator-model.form.ts` — add type field as required FormControl with validator (done in Story 3.1)
+  - [x] Update `indicator-model-form.component.ts` — add `<select>` for type with "text"/"number" options (done in Story 3.1)
+  - [x] Ensure type field patches correctly in edit mode (done in Story 3.1)
+- [x] Task 2: Type display in list and detail (AC: #3)
+  - [x] Update `indicator-model-list.component.ts` — add type column with StatusBadge via DataTable `type: 'status-badge'`
+  - [x] Update `indicator-model-detail.component.ts` — show type in MetadataGrid (done in Story 3.1)
+- [x] Task 3: Unit field context (AC: #4)
+  - [x] Ensure unit field is available on form for both types (done in Story 3.1)
+  - [x] Display unit in detail view alongside type (done in Story 3.1)
+- [x] Task 4: Document API gaps (AC: #5)
+  - [x] Append to `_bmad-output/api-observations.md`:
     - Missing: `subtype` field on IndicatorModel (FR25 partial)
     - Missing: List values management endpoints and fields (FR26)
     - Missing: `status` field to enforce type-change constraints on published models (FR27)
@@ -108,9 +116,23 @@ Per UX spec (single-column, API payload order):
 ## Dev Agent Record
 
 ### Agent Model Used
+Claude Opus 4.6
 
 ### Debug Log References
+- Tests: 259/259 pass, 0 regressions
 
 ### Completion Notes List
+- Form field order reordered to match UX spec: Name, Technical Label, Type, Unit, Description
+- Type column in list view now uses DataTable's `type: 'status-badge'` for badge rendering
+- Type display in detail view was already implemented in Story 3.1
+- Unit field available on form for both types (no conditional visibility needed per story)
+- API gaps documented in api-observations.md: subtype field, list values, type-change constraints
+- Most of Story 3.2's functional requirements were already satisfied by Story 3.1's implementation
+
+### Change Log
+- 2026-03-04: Story 3.2 implemented — type badge in list, form reorder, API gap docs
 
 ### File List
+- src/app/features/indicator-models/ui/indicator-model-form.component.ts (modified — field reorder)
+- src/app/features/indicator-models/ui/indicator-model-list.component.ts (modified — type badge column)
+- _bmad-output/api-observations.md (modified — added 3 new gap entries)

@@ -1,15 +1,34 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, effect, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import {
+  IndicatorPickerComponent,
+  IndicatorOption,
+} from '@app/shared/components/indicator-picker/indicator-picker.component';
+import {
+  IndicatorCardComponent,
+  IndicatorCardData,
+  IndicatorParams,
+} from '@app/shared/components/indicator-card/indicator-card.component';
+import { ParamState } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
+import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { ActionModelFacade } from '../action-model.facade';
 
 @Component({
   selector: 'app-action-model-detail',
-  imports: [MetadataGridComponent],
+  imports: [
+    MetadataGridComponent,
+    IndicatorPickerComponent,
+    IndicatorCardComponent,
+    SaveBarComponent,
+    CdkDropList,
+    CdkDrag,
+  ],
   template: `
-    <div class="p-6">
+    <div class="p-6" [class.pb-20]="facade.unsavedCount() > 0">
       @if (facade.isLoadingDetail()) {
         <div class="animate-pulse space-y-4">
           <div class="h-8 bg-surface-muted rounded w-1/3"></div>
@@ -51,8 +70,49 @@ import { ActionModelFacade } from '../action-model.facade';
         </div>
 
         <app-metadata-grid [fields]="fields()" />
+
+        <!-- Indicators Section -->
+        <div class="mt-8">
+          <h2 class="text-lg font-semibold text-text-primary mb-4">Indicators</h2>
+
+          @if (indicatorCards().length === 0) {
+            <p class="text-sm text-text-secondary mb-3">No indicators attached yet</p>
+          } @else {
+            <div
+              cdkDropList
+              class="space-y-2 mb-3"
+              (cdkDropListDropped)="onDrop($event)"
+            >
+              @for (card of indicatorCards(); track card.id) {
+                <div cdkDrag cdkDragLockAxis="y">
+                  <app-indicator-card
+                    [indicator]="card"
+                    [params]="getParams(card.id)"
+                    [modified]="isModified(card.id)"
+                    (remove)="onDetach($event)"
+                    (paramsChange)="onParamsChange(card.id, $event)"
+                  />
+                </div>
+              }
+            </div>
+          }
+
+          <app-indicator-picker
+            [options]="pickerOptions()"
+            [attachedIds]="attachedIds()"
+            [loading]="facade.indicatorsLoading()"
+            (attach)="onAttach($event)"
+          />
+        </div>
       }
     </div>
+
+    <app-save-bar
+      [count]="facade.unsavedCount()"
+      [saving]="facade.updateIsPending()"
+      (save)="onSave()"
+      (discard)="onDiscard()"
+    />
   `,
 })
 export class ActionModelDetailComponent implements OnInit {
@@ -78,11 +138,90 @@ export class ActionModelDetailComponent implements OnInit {
     ];
   });
 
+  private readonly serverCards = computed<IndicatorCardData[]>(() => {
+    const attached = this.facade.attachedIndicators();
+    const edits = this.facade.paramEdits();
+    return attached.map((im) => {
+      const edited = edits.get(im.id);
+      const p = edited ?? im;
+      return {
+        id: im.id,
+        name: im.name,
+        type: im.type,
+        paramHints: {
+          visibility: this.ruleState(p.visibility_rule, 'true'),
+          required: this.ruleState(p.required_rule, 'false'),
+          editable: this.ruleState(p.editable_rule, 'true'),
+          defaultValue: (p.default_value_rule ?? null) != null ? 'on' as ParamState : 'off' as ParamState,
+          duplicable: p.duplicable != null ? 'on' as ParamState : 'off' as ParamState,
+          constrained: p.constrained_values != null ? 'on' as ParamState : 'off' as ParamState,
+        },
+      };
+    });
+  });
+
+  // Local override for optimistic drag-to-reorder — cleared when server data refreshes
+  private readonly _localCardOrder = signal<IndicatorCardData[] | null>(null);
+
+  readonly indicatorCards = computed(() => this._localCardOrder() ?? this.serverCards());
+
+  readonly attachedIds = computed(() => this.facade.attachedIndicators().map((im) => im.id));
+
+  readonly pickerOptions = computed<IndicatorOption[]>(() =>
+    this.facade.availableIndicators().map((im) => ({
+      id: im.id,
+      name: im.name,
+      technical_label: im.technical_label,
+      type: im.type,
+    })),
+  );
+
+  constructor() {
+    // Clear local order override when server data changes
+    effect(() => {
+      this.serverCards();
+      this._localCardOrder.set(null);
+    });
+  }
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.facade.select(id);
+      this.facade.loadIndicators();
     }
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.facade.unsavedCount() > 0) {
+        this.onSave();
+      }
+    }
+  }
+
+  getParams(indicatorId: string): IndicatorParams {
+    return this.facade.getParamsForIndicator(indicatorId);
+  }
+
+  isModified(indicatorId: string): boolean {
+    return this.facade.modifiedIds().includes(indicatorId);
+  }
+
+  onParamsChange(indicatorId: string, params: IndicatorParams): void {
+    this.facade.updateParams(indicatorId, params);
+  }
+
+  async onSave(): Promise<void> {
+    const m = this.model();
+    if (!m) return;
+    await this.facade.saveParamEdits(m.id);
+  }
+
+  onDiscard(): void {
+    this.facade.discardParamEdits();
   }
 
   async onDelete(): Promise<void> {
@@ -99,5 +238,47 @@ export class ActionModelDetailComponent implements OnInit {
     if (!confirmed) return;
 
     await this.facade.delete(m.id);
+  }
+
+  async onAttach(indicator: IndicatorOption): Promise<void> {
+    const m = this.model();
+    if (!m) return;
+    await this.facade.attachIndicator(m.id, indicator.id);
+  }
+
+  async onDetach(indicatorId: string): Promise<void> {
+    const m = this.model();
+    if (!m) return;
+
+    const indicator = this.facade.attachedIndicators().find((im) => im.id === indicatorId);
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Remove Indicator',
+      message: `Are you sure you want to remove '${indicator?.name ?? 'this indicator'}'?`,
+      confirmLabel: 'Remove',
+      confirmVariant: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    await this.facade.detachIndicator(m.id, indicatorId);
+  }
+
+  onDrop(event: CdkDragDrop<unknown>): void {
+    const m = this.model();
+    if (!m || event.previousIndex === event.currentIndex) return;
+
+    // Optimistic UI: reorder locally before API call
+    const cards = [...this.indicatorCards()];
+    moveItemInArray(cards, event.previousIndex, event.currentIndex);
+    this._localCardOrder.set(cards);
+
+    const ids = cards.map((c) => c.id);
+    this.facade.reorderIndicators(m.id, ids);
+  }
+
+  private ruleState(value: string, defaultVal: string): ParamState {
+    if (value === defaultVal) return 'off';
+    if (value === 'true' || value === 'false') return 'on';
+    return 'rule';
   }
 }
