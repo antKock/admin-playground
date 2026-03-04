@@ -72,8 +72,7 @@ describe('IndicatorCardComponent', () => {
     const removeSpy = vi.fn();
     component.remove.subscribe(removeSpy);
 
-    const buttons = fixture.nativeElement.querySelectorAll('button');
-    const removeBtn = buttons[buttons.length - 1]; // last button is remove
+    const removeBtn = fixture.nativeElement.querySelector('.remove-indicator-btn');
     removeBtn.click();
 
     expect(removeSpy).toHaveBeenCalledWith('ind-1');
@@ -123,11 +122,29 @@ describe('IndicatorCardComponent', () => {
     );
   });
 
-  it('should show orange border when modified', () => {
+  it('should show unsaved class when modified', () => {
     fixture.componentRef.setInput('modified', true);
     fixture.detectChanges();
 
-    const card = fixture.nativeElement.querySelector('.border-l-4');
+    const card = fixture.nativeElement.querySelector('.unsaved');
     expect(card).toBeTruthy();
+  });
+
+  it('should emit paramsChange with empty string on default value toggle on', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onDefaultValueToggle(true);
+
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ default_value_rule: '' }));
+  });
+
+  it('should emit paramsChange with null on default value toggle off', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onDefaultValueToggle(false);
+
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ default_value_rule: null }));
   });
 });

@@ -26,16 +26,17 @@ function extractVariables(jsonLogicStr: string): string[] {
 @Component({
   selector: 'app-rule-field',
   template: `
-    <div class="mt-1 space-y-1">
-      <p class="text-xs text-text-secondary">
-        {{ variablesLabel() }}
-      </p>
+    <div class="rule-field">
+      <div class="rule-field-header">
+        <span class="rule-field-label">{{ label() }}</span>
+      </div>
+      @if (variablesLabel()) {
+        <div class="rule-reference">
+          <em>{{ variablesLabel() }}</em>
+        </div>
+      }
       <textarea
-        class="w-full px-3 py-2 border rounded-lg text-sm bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand font-mono"
-        [class.border-border]="!hasError()"
-        [class.border-red-500]="hasError()"
-        [class.text-text-primary]="!hasError()"
-        [class.text-red-600]="hasError()"
+        [class.error]="hasError()"
         [placeholder]="placeholder()"
         [value]="value()"
         [rows]="3"
@@ -43,29 +44,94 @@ function extractVariables(jsonLogicStr: string): string[] {
         (blur)="onBlur()"
       ></textarea>
       @if (hasError()) {
-        <p class="text-xs text-red-500">Invalid JSON syntax</p>
+        <div class="rule-hint" style="color: var(--color-text-error, #dc2626);">Invalid JSON syntax</div>
+      } @else {
+        <div class="rule-hint">Leave empty for simple ON (no conditional logic)</div>
       }
-      <p class="text-xs text-text-secondary">Enter a valid JSONLogic expression</p>
     </div>
   `,
+  styles: [`
+    .rule-field {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--color-surface-base);
+      border: 1px solid var(--color-stroke-brand, #1400cc33);
+      border-radius: 8px;
+    }
+    .rule-field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .rule-field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-brand, #1400cc);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .rule-reference {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      background: var(--color-surface-subtle);
+      border-radius: 6px;
+      border-left: 3px solid var(--color-brand-light, #f0edff);
+      line-height: 1.6;
+    }
+    .rule-reference em {
+      color: var(--color-text-primary);
+      font-style: italic;
+    }
+    textarea {
+      width: 100%;
+      min-height: 60px;
+      padding: 8px;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      border: 1px solid var(--color-stroke-standard);
+      border-radius: 6px;
+      resize: vertical;
+      color: var(--color-text-primary);
+      background: var(--color-surface-base);
+      box-sizing: border-box;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--color-brand, #1400cc);
+      box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
+    }
+    textarea.error {
+      border-color: var(--color-text-error, #dc2626);
+      color: var(--color-text-error, #dc2626);
+    }
+    .rule-hint {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      margin-top: 4px;
+    }
+  `],
 })
 export class RuleFieldComponent {
   readonly value = input('');
-  readonly label = input('JSONLOGIC RULE');
+  readonly label = input('JSONLogic Rule');
   readonly placeholder = input('{"==": [{"var": "field_name"}, "value"]}');
 
   readonly valueChange = output<string>();
   readonly validChange = output<boolean>();
 
   readonly hasError = signal(false);
-  // Track local textarea value for blur validation (avoids stale input signal timing)
   private localValue = '';
 
   readonly variablesLabel = computed(() => {
     const vars = extractVariables(this.value());
     return vars.length > 0
       ? `Rule references: ${vars.join(', ')}`
-      : 'No rule variables detected';
+      : '';
   });
 
   onInput(event: Event): void {

@@ -33,12 +33,12 @@ describe('IndicatorPickerComponent', () => {
 
   it('should open picker on CTA click', () => {
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('button');
-    button.click();
+    const cta = fixture.nativeElement.querySelector('.add-indicator-cta');
+    cta.click();
     fixture.detectChanges();
 
     expect(component.isOpen()).toBe(true);
-    expect(fixture.nativeElement.querySelector('input[placeholder="Search indicators..."]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('input[placeholder="Search indicators by name or technical name..."]')).toBeTruthy();
   });
 
   it('should filter options by search term', () => {

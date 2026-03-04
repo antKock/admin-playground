@@ -72,8 +72,12 @@ import { ActionModelFacade } from '../action-model.facade';
         <app-metadata-grid [fields]="fields()" />
 
         <!-- Indicators Section -->
-        <div class="mt-8">
-          <h2 class="text-lg font-semibold text-text-primary mb-4">Indicators</h2>
+        <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
+        <div class="mt-6">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicators</h2>
+            <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attached</span>
+          </div>
 
           @if (indicatorCards().length === 0) {
             <p class="text-sm text-text-secondary mb-3">No indicators attached yet</p>

@@ -32,7 +32,7 @@ describe('ToggleRowComponent', () => {
     const toggleSpy = vi.fn();
     component.toggle.subscribe(toggleSpy);
 
-    const button = fixture.nativeElement.querySelector('button');
+    const button = fixture.nativeElement.querySelector('button.toggle');
     button.click();
 
     expect(toggleSpy).toHaveBeenCalledWith(true);
@@ -42,15 +42,22 @@ describe('ToggleRowComponent', () => {
     fixture.componentRef.setInput('enabled', true);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('button');
-    expect(button.classList.contains('bg-brand')).toBe(true);
+    const button = fixture.nativeElement.querySelector('button.toggle');
+    expect(button.classList.contains('on')).toBe(true);
   });
 
   it('should show disabled state', () => {
     fixture.componentRef.setInput('enabled', false);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('button');
-    expect(button.classList.contains('bg-surface-muted')).toBe(true);
+    const button = fixture.nativeElement.querySelector('button.toggle');
+    expect(button.classList.contains('on')).toBe(false);
+  });
+
+  it('should not render icon when null', () => {
+    fixture.componentRef.setInput('icon', null);
+    fixture.detectChanges();
+    const icon = fixture.nativeElement.querySelector('.toggle-icon');
+    expect(icon).toBeFalsy();
   });
 });

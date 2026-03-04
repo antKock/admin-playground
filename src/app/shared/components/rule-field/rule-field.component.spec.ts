@@ -24,9 +24,9 @@ describe('RuleFieldComponent', () => {
     expect(fixture.nativeElement.querySelector('textarea')).toBeTruthy();
   });
 
-  it('should show "No rule variables detected" when empty', () => {
+  it('should return empty string for variables label when empty', () => {
     fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('No rule variables detected');
+    expect(component.variablesLabel()).toBe('');
   });
 
   it('should extract variable names from JSONLogic', () => {

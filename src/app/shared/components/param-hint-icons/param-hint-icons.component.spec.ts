@@ -19,13 +19,13 @@ describe('ParamHintIconsComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render 6 hint circles', () => {
+  it('should render 6 hint icons', () => {
     fixture.detectChanges();
-    const circles = fixture.nativeElement.querySelectorAll('span.rounded-full:not(.bg-amber-500)');
-    expect(circles.length).toBe(6);
+    const hints = fixture.nativeElement.querySelectorAll('.param-hint');
+    expect(hints.length).toBe(6);
   });
 
-  it('should show all gray when all defaults', () => {
+  it('should show all off when all defaults', () => {
     fixture.detectChanges();
     expect(component.hintList().every((h) => h.state === 'off')).toBe(true);
   });
@@ -42,12 +42,14 @@ describe('ParamHintIconsComponent', () => {
     fixture.componentRef.setInput('hints', hints);
     fixture.detectChanges();
 
-    expect(component.hintList()[0].state).toBe('on');
-    expect(component.hintList()[1].state).toBe('on');
-    expect(component.hintList()[2].state).toBe('off');
+    // Order: required, editable, visibility, defaultValue, duplicable, constrained
+    const list = component.hintList();
+    expect(list.find(h => h.label === 'required')!.state).toBe('on');
+    expect(list.find(h => h.label === 'visibility')!.state).toBe('on');
+    expect(list.find(h => h.label === 'editable')!.state).toBe('off');
   });
 
-  it('should generate tooltip for configured params', () => {
+  it('should generate correct tooltips for configured params', () => {
     const hints: ParamHints = {
       visibility: 'on',
       required: 'off',
@@ -59,15 +61,13 @@ describe('ParamHintIconsComponent', () => {
     fixture.componentRef.setInput('hints', hints);
     fixture.detectChanges();
 
-    expect(component.tooltip()).toBe('Configured: visibility, default value (rule)');
+    const list = component.hintList();
+    expect(list.find(h => h.label === 'visibility')!.tooltip).toBe('Visible: ON');
+    expect(list.find(h => h.label === 'defaultValue')!.tooltip).toBe('Default value: ON + JSONLogic rule');
+    expect(list.find(h => h.label === 'required')!.tooltip).toBe('Required: OFF');
   });
 
-  it('should show default tooltip when no params configured', () => {
-    fixture.detectChanges();
-    expect(component.tooltip()).toBe('All parameters at defaults');
-  });
-
-  it('should support rule state with orange dot indicator', () => {
+  it('should support rule state with on-rule class', () => {
     const hints: ParamHints = {
       visibility: 'rule',
       required: 'off',
@@ -79,6 +79,8 @@ describe('ParamHintIconsComponent', () => {
     fixture.componentRef.setInput('hints', hints);
     fixture.detectChanges();
 
-    expect(component.hintList()[0].state).toBe('rule');
+    const list = component.hintList();
+    expect(list.find(h => h.label === 'visibility')!.state).toBe('rule');
+    expect(list.find(h => h.label === 'visibility')!.stateClass).toBe('on-rule');
   });
 });
