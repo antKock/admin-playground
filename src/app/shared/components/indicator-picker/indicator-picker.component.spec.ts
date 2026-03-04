@@ -28,7 +28,7 @@ describe('IndicatorPickerComponent', () => {
 
   it('should show attach CTA when closed', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Attach indicator');
+    expect(fixture.nativeElement.textContent).toContain('Attach an indicator');
   });
 
   it('should open picker on CTA click', () => {
