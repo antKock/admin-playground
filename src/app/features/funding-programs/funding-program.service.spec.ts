@@ -43,7 +43,7 @@ describe('FundingProgramService', () => {
   it('should extend BaseEntityService with correct API path', () => {
     service.list().subscribe();
 
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`);
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`);
     expect(req.request.method).toBe('GET');
     req.flush({ data: [], pagination: { total_count: 0, page_size: 50, has_next_page: false, has_previous_page: false, cursors: { start_cursor: null, end_cursor: null }, _links: { self: '', next: null, prev: null, first: '' } } });
   });
@@ -54,7 +54,7 @@ describe('FundingProgramService', () => {
       expect(response.data[0].name).toBe('Test Program');
     });
 
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`);
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`);
     req.flush({
       data: [mockProgram],
       pagination: { total_count: 1, page_size: 50, has_next_page: false, has_previous_page: false, cursors: { start_cursor: null, end_cursor: null }, _links: { self: '', next: null, prev: null, first: '' } },
@@ -80,10 +80,10 @@ describe('FundingProgramService', () => {
     const pagination = { total_count: 2, page_size: 1, has_next_page: true, has_previous_page: false, cursors: { start_cursor: 'c1', end_cursor: 'c2' }, _links: { self: '', next: null, prev: null, first: '' } };
 
     service.list().subscribe();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination });
 
     service.list('c2').subscribe();
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs` && r.params.get('cursor') === 'c2');
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/` && r.params.get('cursor') === 'c2');
     req.flush({ data: [secondProgram], pagination: { ...pagination, has_next_page: false } });
 
     expect(service.items()).toHaveLength(2);
@@ -92,7 +92,7 @@ describe('FundingProgramService', () => {
 
   it('should correctly extract ID from funding program', () => {
     service.list().subscribe();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({
       data: [mockProgram],
       pagination: { total_count: 1, page_size: 50, has_next_page: false, has_previous_page: false, cursors: { start_cursor: null, end_cursor: null }, _links: { self: '', next: null, prev: null, first: '' } },
     });

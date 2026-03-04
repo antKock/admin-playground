@@ -51,20 +51,20 @@ describe('FundingProgramListComponent', () => {
 
   it('should create and load programs', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination: emptyPagination });
     expect(component.items()).toHaveLength(1);
   });
 
   it('should display empty state when no programs exist', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [], pagination: emptyPagination });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No funding programs found');
   });
 
   it('should navigate to detail view on row click', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination: emptyPagination });
     const navigateSpy = vi.spyOn(router, 'navigate');
     component.onRowClick({ id: mockProgram.id });
     expect(navigateSpy).toHaveBeenCalledWith(['/funding-programs', mockProgram.id]);
@@ -72,7 +72,7 @@ describe('FundingProgramListComponent', () => {
 
   it('should support infinite scroll pagination', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({
       data: [mockProgram],
       pagination: { ...emptyPagination, total_count: 2, has_next_page: true, cursors: { start_cursor: 'c1', end_cursor: 'c2' } },
     });
@@ -80,7 +80,7 @@ describe('FundingProgramListComponent', () => {
     expect(component.hasMore).toBe(true);
     component.onLoadMore();
 
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs` && r.params.get('cursor') === 'c2');
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/` && r.params.get('cursor') === 'c2');
     req.flush({ data: [{ ...mockProgram, id: 'second-id' }], pagination: { ...emptyPagination, has_next_page: false } });
     expect(component.items()).toHaveLength(2);
     expect(component.hasMore).toBe(false);
@@ -96,23 +96,23 @@ describe('FundingProgramListComponent', () => {
 
   it('should filter by active status', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination: emptyPagination });
 
     component.onActiveFilterChange({ target: { value: 'true' } } as unknown as Event);
 
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs` && r.params.get('is_active') === 'true');
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/` && r.params.get('is_active') === 'true');
     req.flush({ data: [mockProgram], pagination: emptyPagination });
     expect(component.activeFilter()).toBe('true');
   });
 
   it('should clear filters', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination: emptyPagination });
 
     component.activeFilter.set('true');
     component.clearFilters();
 
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs` && !r.params.has('is_active')).flush({
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/` && !r.params.has('is_active')).flush({
       data: [mockProgram],
       pagination: emptyPagination,
     });
@@ -121,10 +121,10 @@ describe('FundingProgramListComponent', () => {
 
   it('should show filtered empty state', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [mockProgram], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [mockProgram], pagination: emptyPagination });
 
     component.onActiveFilterChange({ target: { value: 'false' } } as unknown as Event);
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs`).flush({ data: [], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/funding-programs/`).flush({ data: [], pagination: emptyPagination });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No funding programs match your filters');

@@ -71,7 +71,7 @@ describe('FundingProgramFormComponent - Create Mode', () => {
     component.form.patchValue({ name: 'New Program' });
     component.onSubmit();
 
-    const req = httpTesting.expectOne(`${environment.apiBaseUrl}/funding-programs`);
+    const req = httpTesting.expectOne(`${environment.apiBaseUrl}/funding-programs/`);
     expect(req.request.method).toBe('POST');
     req.flush(mockProgram);
 

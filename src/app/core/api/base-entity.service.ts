@@ -28,7 +28,7 @@ export abstract class BaseEntityService<T> {
   readonly lastResponse = this._lastResponse.asReadonly();
 
   protected get baseUrl(): string {
-    return `${environment.apiBaseUrl}/${this.apiPath}`;
+    return `${environment.apiBaseUrl}/${this.apiPath}/`;
   }
 
   constructor(protected apiPath: string) {}
@@ -72,7 +72,7 @@ export abstract class BaseEntityService<T> {
   }
 
   getById(id: string): Observable<T> {
-    const url = `${this.baseUrl}/${id}`;
+    const url = `${this.baseUrl}${id}`;
     this._isLoading.set(true);
     this._error.set(null);
 
@@ -110,7 +110,7 @@ export abstract class BaseEntityService<T> {
   }
 
   update(id: string, data: Partial<T>): Observable<T> {
-    const url = `${this.baseUrl}/${id}`;
+    const url = `${this.baseUrl}${id}`;
     this._isLoading.set(true);
     this._error.set(null);
 
@@ -130,7 +130,7 @@ export abstract class BaseEntityService<T> {
   }
 
   delete(id: string): Observable<void> {
-    const url = `${this.baseUrl}/${id}`;
+    const url = `${this.baseUrl}${id}`;
     this._isLoading.set(true);
     this._error.set(null);
 

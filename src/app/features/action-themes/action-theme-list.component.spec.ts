@@ -51,7 +51,7 @@ describe('ActionThemeListComponent', () => {
 
   it('should create and load themes', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({
       data: [mockTheme],
       pagination: emptyPagination,
     });
@@ -60,14 +60,14 @@ describe('ActionThemeListComponent', () => {
 
   it('should display empty state', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [], pagination: emptyPagination });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No action themes found');
   });
 
   it('should navigate to detail on row click', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [mockTheme], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [mockTheme], pagination: emptyPagination });
     const navigateSpy = vi.spyOn(router, 'navigate');
     component.onRowClick({ id: mockTheme.id });
     expect(navigateSpy).toHaveBeenCalledWith(['/action-themes', mockTheme.id]);
@@ -79,23 +79,23 @@ describe('ActionThemeListComponent', () => {
 
   it('should filter by status', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [mockTheme], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [mockTheme], pagination: emptyPagination });
 
     component.onStatusFilterChange({ target: { value: 'published' } } as unknown as Event);
 
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes` && r.params.get('status') === 'published');
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/` && r.params.get('status') === 'published');
     req.flush({ data: [], pagination: emptyPagination });
     expect(component.statusFilter()).toBe('published');
   });
 
   it('should clear filters and reload', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [mockTheme], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [mockTheme], pagination: emptyPagination });
 
     component.statusFilter.set('draft');
     component.clearFilters();
 
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes` && !r.params.has('status')).flush({
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/` && !r.params.has('status')).flush({
       data: [mockTheme],
       pagination: emptyPagination,
     });
@@ -104,10 +104,10 @@ describe('ActionThemeListComponent', () => {
 
   it('should show filtered empty state message', () => {
     fixture.detectChanges();
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [mockTheme], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [mockTheme], pagination: emptyPagination });
 
     component.onStatusFilterChange({ target: { value: 'disabled' } } as unknown as Event);
-    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`).flush({ data: [], pagination: emptyPagination });
+    httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`).flush({ data: [], pagination: emptyPagination });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('No action themes match your filters');

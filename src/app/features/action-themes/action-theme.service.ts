@@ -27,12 +27,12 @@ export class ActionThemeService extends BaseEntityService<ActionTheme> {
   }
 
   duplicate(id: string): Observable<ActionTheme> {
-    const url = `${this.baseUrl}/${id}/duplicate`;
+    const url = `${this.baseUrl}${id}/duplicate`;
     return this.http.post<ActionTheme>(url, {});
   }
 
   private statusAction(id: string, action: string): Observable<ActionTheme> {
-    const url = `${this.baseUrl}/${id}/${action}`;
+    const url = `${this.baseUrl}${id}/${action}`;
     return this.http.put<ActionTheme>(url, {}).pipe(
       tap((response) => this.setSelectedItem(response)),
     );

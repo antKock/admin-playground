@@ -39,7 +39,7 @@ describe('ActionThemeService', () => {
 
   it('should list action themes', () => {
     service.list().subscribe((res) => expect(res.data).toHaveLength(1));
-    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes`);
+    const req = httpTesting.expectOne((r) => r.url === `${environment.apiBaseUrl}/action-themes/`);
     expect(req.request.method).toBe('GET');
     req.flush({
       data: [mockTheme],

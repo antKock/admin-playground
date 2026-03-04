@@ -61,7 +61,7 @@ describe('ActionThemeFormComponent - Create Mode', () => {
     component.form.patchValue({ name: 'New Theme', technical_label: 'new_theme' });
     component.onSubmit();
 
-    const req = httpTesting.expectOne(`${environment.apiBaseUrl}/action-themes`);
+    const req = httpTesting.expectOne(`${environment.apiBaseUrl}/action-themes/`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body.status).toBe('draft');
     req.flush(mockTheme);
