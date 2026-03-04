@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -27,6 +27,9 @@ import { ActionModelFacade } from '../action-model.facade';
           (change)="onFpFilterChange($event)"
         >
           <option value="">All Funding Programs</option>
+          @for (fp of facade.fpOptions(); track fp.id) {
+            <option [value]="fp.id">{{ fp.name }}</option>
+          }
         </select>
         @if (fpFilter()) {
           <button
@@ -38,7 +41,7 @@ import { ActionModelFacade } from '../action-model.facade';
         }
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (fpFilter()) {
             <p class="text-text-secondary mb-4">No action models match your filters.</p>
@@ -75,6 +78,7 @@ export class ActionModelListComponent implements OnInit {
   readonly facade = inject(ActionModelFacade);
   readonly router = inject(Router);
   readonly fpFilter = signal<string>('');
+  readonly hasLoaded = signal(false);
 
   readonly rows = computed(() =>
     this.facade.items().map((item) => ({
@@ -84,6 +88,14 @@ export class ActionModelListComponent implements OnInit {
     })),
   );
 
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
+
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Name' },
     { key: 'funding_program_name', label: 'Funding Program' },
@@ -92,6 +104,7 @@ export class ActionModelListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.facade.loadAssociationData();
     this.facade.load(this.buildFilters());
   }
 

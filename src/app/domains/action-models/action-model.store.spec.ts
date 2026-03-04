@@ -117,7 +117,7 @@ describe('ActionModelDomainStore', () => {
       expect(store.isLoadingDetail()).toBe(false);
     });
 
-    it('should handle error on selectById', () => {
+    it('should handle error on selectById and set detailError', () => {
       store.selectById('am-bad');
 
       const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-bad'));
@@ -125,6 +125,7 @@ describe('ActionModelDomainStore', () => {
 
       expect(store.selectedItem()).toBeNull();
       expect(store.isLoadingDetail()).toBe(false);
+      expect(store.detailError()).toBeTruthy();
     });
   });
 
@@ -137,6 +138,52 @@ describe('ActionModelDomainStore', () => {
 
       store.clearSelection();
       expect(store.selectedItem()).toBeNull();
+    });
+  });
+
+  describe('mutations', () => {
+    it('should send POST for createMutation', async () => {
+      const createData = { name: 'New AM', description: 'desc', funding_program_id: 'fp-1', action_theme_id: 'at-1' };
+      const resultPromise = store.createMutation(createData);
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models') && r.method === 'POST');
+      expect(req.request.body).toEqual(createData);
+      req.flush(mockActionModel);
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send PUT for updateMutation', async () => {
+      const updateData = { name: 'Updated AM' };
+      const resultPromise = store.updateMutation({ id: 'am-1', data: updateData });
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1') && r.method === 'PUT');
+      expect(req.request.body).toEqual(updateData);
+      req.flush(mockActionModel);
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send DELETE for deleteMutation', async () => {
+      const resultPromise = store.deleteMutation('am-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1') && r.method === 'DELETE');
+      req.flush(null);
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should return error status on mutation failure', async () => {
+      const resultPromise = store.createMutation({ name: 'Bad', description: null, funding_program_id: 'fp-1', action_theme_id: 'at-1' });
+
+      const req = httpTesting.expectOne((r) => r.method === 'POST');
+      req.flush({ detail: 'Validation error' }, { status: 422, statusText: 'Unprocessable Entity' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('error');
     });
   });
 });

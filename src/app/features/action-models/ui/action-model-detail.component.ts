@@ -98,6 +98,6 @@ export class ActionModelDetailComponent implements OnInit {
 
     if (!confirmed) return;
 
-    this.facade.delete(m.id);
+    await this.facade.delete(m.id);
   }
 }

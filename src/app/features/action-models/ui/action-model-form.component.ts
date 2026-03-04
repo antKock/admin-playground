@@ -159,7 +159,7 @@ export class ActionModelFormComponent implements OnInit {
     return !!control && control.invalid && (control.dirty || control.touched);
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       const firstInvalid = this.el.nativeElement.querySelector('.ng-invalid[formControlName]') as HTMLElement | null;
@@ -171,9 +171,9 @@ export class ActionModelFormComponent implements OnInit {
     const data = { ...raw, name: raw.name! };
 
     if (this.isEditMode && this.editId) {
-      this.facade.update(this.editId, data);
+      await this.facade.update(this.editId, data);
     } else {
-      this.facade.create(data);
+      await this.facade.create(data);
     }
   }
 

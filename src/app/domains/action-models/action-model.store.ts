@@ -10,10 +10,6 @@ import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { ActionModel, ActionModelCreate, ActionModelUpdate } from './action-model.models';
-
-function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
-  patchState(store, state as never);
-}
 import {
   actionModelListLoader,
   loadActionModel,
@@ -22,11 +18,16 @@ import {
   deleteActionModelRequest,
 } from './action-model.api';
 
+function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
+  patchState(store, state as never);
+}
+
 export const ActionModelDomainStore = signalStore(
   { providedIn: 'root' },
   withState({
     selectedItem: null as ActionModel | null,
     isLoadingDetail: false,
+    detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -58,9 +59,9 @@ export const ActionModelDomainStore = signalStore(
         tap(() => patch(store, { isLoadingDetail: true })),
         switchMap((id) =>
           loadActionModel(store._http, id).pipe(
-            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false })),
+            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { error: err?.message ?? 'Failed to load item', isLoadingDetail: false });
+              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),

@@ -1,6 +1,6 @@
 # Story 1.5: Folder Model — Funding Program Association
 
-Status: review
+Status: done
 
 ## Story
 
@@ -212,6 +212,16 @@ Claude Opus 4.6
 
 - Build: `npx ng build` — zero errors
 - Tests: `npx ng test --watch=false` — 167 tests pass across 23 files, zero regressions
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Anthony (via adversarial code review workflow)
+**Date:** 2026-03-04
+**Outcome:** Approved with fixes applied
+
+**Issues found and fixed:**
+- [H6] Multi-selector click-outside bug — replaced `target.closest('app-multi-selector')` with `ElementRef.nativeElement.contains(target)` for correct per-instance detection
+- [H3] FP options pagination limit — documented with TODO (fix: add loadAll to withCursorPagination)
 
 ### Completion Notes List
 

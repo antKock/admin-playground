@@ -1,6 +1,6 @@
 # Story 1.4: Folder Models CRUD with ACTEE Pattern
 
-Status: review
+Status: done
 
 ## Story
 
@@ -209,6 +209,23 @@ Claude Opus 4.6
 
 - Build: `npx ng build` — zero errors, only CSS warning (pre-existing)
 - Tests: `npx ng test --watch=false` — 156 tests pass across 22 files, zero regressions
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Anthony (via adversarial code review workflow)
+**Date:** 2026-03-04
+**Outcome:** Approved with fixes applied
+
+**Issues found and fixed:**
+- [H1] Domain store `error` state collision — added `detailError` to `withState`
+- [H2] No mutation tests — added 4 mutation tests to domain store spec
+- [H4] `facade.delete()` not awaited — added `await`
+- [H5] `facade.create()`/`facade.update()` not awaited — added `await`, async `onSubmit`
+- [M1] Facade bypassed feature store — added mutation/loading signal projections
+- [M2] `handleMutationError` 409 message — made generic
+- [M7] Empty state flash — added `hasLoaded` tracking
+- [M9] `update()` discarded filters — changed to `refresh()`
+- [M11] Error test assertion — added `detailError` check
 
 ### Completion Notes List
 

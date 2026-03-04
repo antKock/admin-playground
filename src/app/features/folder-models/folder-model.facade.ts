@@ -27,19 +27,22 @@ export class FolderModelFacade {
   readonly error = this.featureStore.error;
   readonly isEmpty = this.featureStore.isEmpty;
 
-  // Cross-domain FP signals
+  // Cross-domain FP signals (projected through feature store)
   readonly fpOptions = this.featureStore.fpOptions;
-  readonly fpLoading = this.fpDomainStore.isLoading;
+  readonly fpLoading = this.featureStore.fpLoading;
 
-  // Per-mutation CRUD status signals
-  readonly createIsPending = this.domainStore.createMutationIsPending;
-  readonly updateIsPending = this.domainStore.updateMutationIsPending;
-  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
+  // Per-mutation CRUD status signals (projected through feature store)
+  readonly createIsPending = this.featureStore.createIsPending;
+  readonly updateIsPending = this.featureStore.updateIsPending;
+  readonly deleteIsPending = this.featureStore.deleteIsPending;
   readonly anyMutationPending = computed(() =>
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
   );
 
   // Intention methods
+  // TODO: [H3] load() only fetches the first page (default limit ~20). If there are >20 FPs,
+  // multi-selector options will be incomplete. Fix: add a loadAll() to withCursorPagination or
+  // use a dedicated non-paginated endpoint for association selectors.
   loadAssociationData(): void {
     this.fpDomainStore.load(undefined);
   }
@@ -74,7 +77,7 @@ export class FolderModelFacade {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
       this.toast.success('Folder Model updated');
-      this.domainStore.load(undefined);
+      this.domainStore.refresh(undefined);
       this.router.navigate(['/folder-models', id]);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -94,8 +97,8 @@ export class FolderModelFacade {
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'This model is linked to other resources';
-      this.toast.error(`Cannot delete — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'This resource is linked to other resources';
+      this.toast.error(`Conflict — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
       this.toast.error('Please fix the validation errors');
     } else {

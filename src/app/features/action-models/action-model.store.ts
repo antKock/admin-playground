@@ -24,12 +24,20 @@ export const ActionModelFeatureStore = signalStore(
       isLoadingDetail: computed(() => domainStore.isLoadingDetail()),
       hasMore: computed(() => domainStore.hasMore()),
       error: computed(() => domainStore.error()),
+      detailError: computed(() => domainStore.detailError()),
       isEmpty: computed(() => domainStore.isEmpty()),
       totalLoaded: computed(() => domainStore.totalLoaded()),
+
+      // Per-mutation status signals
+      createIsPending: computed(() => domainStore.createMutationIsPending()),
+      updateIsPending: computed(() => domainStore.updateMutationIsPending()),
+      deleteIsPending: computed(() => domainStore.deleteMutationIsPending()),
 
       // Cross-domain signals for FP/AT dropdowns
       fpOptions: computed(() => fpStore.items() as FundingProgram[]),
       atOptions: computed(() => atStore.items() as ActionTheme[]),
+      fpLoading: computed(() => fpStore.isLoading()),
+      atLoading: computed(() => atStore.isLoading()),
     };
   }),
 );

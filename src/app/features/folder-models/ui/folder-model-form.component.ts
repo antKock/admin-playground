@@ -133,7 +133,7 @@ export class FolderModelFormComponent implements OnInit {
     ctrl.markAsDirty();
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       const firstInvalid = this.el.nativeElement.querySelector('.ng-invalid[formControlName]') as HTMLElement | null;
@@ -145,9 +145,9 @@ export class FolderModelFormComponent implements OnInit {
     const data = { ...raw, name: raw.name! };
 
     if (this.isEditMode && this.editId) {
-      this.facade.update(this.editId, data);
+      await this.facade.update(this.editId, data);
     } else {
-      this.facade.create(data);
+      await this.facade.create(data);
     }
   }
 

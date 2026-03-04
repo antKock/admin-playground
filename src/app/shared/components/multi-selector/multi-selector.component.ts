@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, ElementRef, inject, input, output, signal, computed } from '@angular/core';
 
 export interface SelectorOption {
   id: string;
@@ -77,6 +77,7 @@ export interface SelectorOption {
   },
 })
 export class MultiSelectorComponent {
+  private readonly el = inject(ElementRef<HTMLElement>);
   readonly options = input.required<SelectorOption[]>();
   readonly selectedIds = input.required<string[]>();
   readonly placeholder = input('Select...');
@@ -115,8 +116,7 @@ export class MultiSelectorComponent {
   }
 
   onDocumentClick(event: Event): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('app-multi-selector')) {
+    if (!this.el.nativeElement.contains(event.target as Node)) {
       this.isOpen.set(false);
     }
   }

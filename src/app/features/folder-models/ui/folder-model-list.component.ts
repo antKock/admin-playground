@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -19,7 +19,7 @@ import { FolderModelFacade } from '../folder-model.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           <p class="text-text-secondary mb-4">No folder models found.</p>
           <button
@@ -45,6 +45,15 @@ import { FolderModelFacade } from '../folder-model.facade';
 export class FolderModelListComponent implements OnInit {
   readonly facade = inject(FolderModelFacade);
   readonly router = inject(Router);
+  readonly hasLoaded = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
 
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Name' },

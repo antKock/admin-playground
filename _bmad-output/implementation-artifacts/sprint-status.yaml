@@ -51,11 +51,11 @@ development_status:
 
   # Epic 1: Action Models & Folder Models
   epic-1: in-progress
-  1-1-action-models-crud-with-actee-pattern: review
-  1-2-action-model-funding-program-action-theme-association: review
+  1-1-action-models-crud-with-actee-pattern: done
+  1-2-action-model-funding-program-action-theme-association: done
   1-3-action-model-status-workflow: blocked
-  1-4-folder-models-crud-with-actee-pattern: review
-  1-5-folder-model-funding-program-association: review
+  1-4-folder-models-crud-with-actee-pattern: done
+  1-5-folder-model-funding-program-association: done
   epic-1-retrospective: optional
 
   # Epic 2: Communities & Agents
