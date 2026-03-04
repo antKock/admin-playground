@@ -33,11 +33,6 @@ import { LucideAngularModule, LucideIconData } from 'lucide-angular';
       align-items: center;
       justify-content: space-between;
       padding: 10px 12px;
-      border-bottom: 1px solid var(--color-stroke-standard);
-    }
-    :host:last-child .toggle-row,
-    .toggle-row:last-child {
-      border-bottom: none;
     }
     .toggle-row-left {
       display: flex;

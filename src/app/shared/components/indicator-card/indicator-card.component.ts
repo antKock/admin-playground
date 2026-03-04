@@ -63,82 +63,93 @@ export interface IndicatorParams {
       @if (expanded()) {
         <div class="indicator-card-body">
           <!-- Required -->
-          <app-toggle-row
-            label="Obligatoire"
-            [icon]="AsteriskIcon"
-            [enabled]="params().required_rule !== 'false'"
-            (toggle)="onRequiredToggle($event)"
-          />
-          @if (params().required_rule !== 'false') {
-            <app-rule-field
-              [value]="isCustomRule(params().required_rule) ? params().required_rule : ''"
-              (valueChange)="onRuleChange('required_rule', $event)"
+          <div class="param-section">
+            <app-toggle-row
+              label="Obligatoire"
+              [icon]="AsteriskIcon"
+              [enabled]="params().required_rule !== 'false'"
+              (toggle)="onRequiredToggle($event)"
             />
-          }
+            @if (params().required_rule !== 'false') {
+              <app-rule-field
+                [value]="isCustomRule(params().required_rule) ? params().required_rule : ''"
+                (valueChange)="onRuleChange('required_rule', $event)"
+              />
+            }
+          </div>
 
           <!-- Not Editable -->
-          <app-toggle-row
-            label="Non éditable"
-            [icon]="PenOffIcon"
-            [enabled]="params().editable_rule !== 'false'"
-            (toggle)="onEditableToggle($event)"
-          />
-          @if (params().editable_rule !== 'false') {
-            <app-rule-field
-              [value]="isCustomRule(params().editable_rule) ? params().editable_rule : ''"
-              (valueChange)="onRuleChange('editable_rule', $event)"
+          <div class="param-section">
+            <app-toggle-row
+              label="Non éditable"
+              [icon]="PenOffIcon"
+              [enabled]="params().editable_rule !== 'false'"
+              (toggle)="onEditableToggle($event)"
             />
-          }
+            @if (params().editable_rule !== 'false') {
+              <app-rule-field
+                [value]="isCustomRule(params().editable_rule) ? params().editable_rule : ''"
+                (valueChange)="onRuleChange('editable_rule', $event)"
+              />
+            }
+          </div>
 
           <!-- Visible -->
-          <app-toggle-row
-            label="Visible"
-            [icon]="EyeIcon"
-            [enabled]="params().visibility_rule !== 'false'"
-            (toggle)="onVisibilityToggle($event)"
-          />
-          @if (params().visibility_rule !== 'false') {
-            <app-rule-field
-              [value]="isCustomRule(params().visibility_rule) ? params().visibility_rule : ''"
-              (valueChange)="onRuleChange('visibility_rule', $event)"
+          <div class="param-section">
+            <app-toggle-row
+              label="Visible"
+              [icon]="EyeIcon"
+              [enabled]="params().visibility_rule !== 'false'"
+              (toggle)="onVisibilityToggle($event)"
             />
-          }
+            @if (params().visibility_rule !== 'false') {
+              <app-rule-field
+                [value]="isCustomRule(params().visibility_rule) ? params().visibility_rule : ''"
+                (valueChange)="onRuleChange('visibility_rule', $event)"
+              />
+            }
+          </div>
 
           <!-- Default Value -->
-          <app-toggle-row
-            label="Valeur par défaut"
-            [icon]="ClipboardIcon"
-            [enabled]="params().default_value_rule != null"
-            (toggle)="onDefaultValueToggle($event)"
-          />
-          @if (params().default_value_rule != null) {
-            <div class="default-value-container">
-              <div class="default-value-label">Default Value</div>
-              <input
-                type="text"
-                class="default-value-field"
-                [value]="params().default_value_rule ?? ''"
-                placeholder="Enter default value..."
-                (input)="onDefaultValueChange($event)"
-              />
-            </div>
-          }
+          <div class="param-section">
+            <app-toggle-row
+              label="Valeur par défaut"
+              [icon]="ClipboardIcon"
+              [enabled]="params().default_value_rule != null"
+              (toggle)="onDefaultValueToggle($event)"
+            />
+            @if (params().default_value_rule != null) {
+              <div class="default-value-container">
+                <input
+                  type="text"
+                  class="default-value-field"
+                  [value]="params().default_value_rule ?? ''"
+                  placeholder="Enter default value..."
+                  (input)="onDefaultValueChange($event)"
+                />
+              </div>
+            }
+          </div>
 
           <!-- Duplicable -->
-          <app-toggle-row
-            label="Duplicable"
-            [icon]="CopyIcon"
-            [enabled]="params().duplicable?.enabled ?? false"
-            (toggle)="onDuplicableToggle($event)"
-          />
+          <div class="param-section">
+            <app-toggle-row
+              label="Duplicable"
+              [icon]="CopyIcon"
+              [enabled]="params().duplicable?.enabled ?? false"
+              (toggle)="onDuplicableToggle($event)"
+            />
+          </div>
 
           <!-- Constrained Values -->
-          <app-toggle-row
-            label="Valeurs contraintes"
-            [icon]="BracesIcon"
-            [enabled]="params().constrained_values?.enabled ?? false"
-            (toggle)="onConstrainedToggle($event)"
-          />
+          <div class="param-section last">
+            <app-toggle-row
+              label="Valeurs contraintes"
+              [icon]="BracesIcon"
+              [enabled]="params().constrained_values?.enabled ?? false"
+              (toggle)="onConstrainedToggle($event)"
+            />
+          </div>
         </div>
       }
     </div>
@@ -252,6 +263,16 @@ export interface IndicatorParams {
       border-radius: 0 0 8px 8px;
     }
 
+    .param-section {
+      border-bottom: 1px solid var(--color-stroke-standard);
+      padding-bottom: 4px;
+    }
+    .param-section.last,
+    .param-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
     .default-value-container {
       width: 100%;
       margin-top: 12px;
@@ -259,14 +280,6 @@ export interface IndicatorParams {
       background: var(--color-surface-base);
       border: 1px solid var(--color-stroke-brand, #1400cc33);
       border-radius: 8px;
-    }
-    .default-value-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-brand, #1400cc);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      margin-bottom: 8px;
     }
     .default-value-field {
       width: 100%;

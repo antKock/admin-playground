@@ -144,21 +144,27 @@ export class ActionModelDetailComponent implements OnInit {
 
   private readonly serverCards = computed<IndicatorCardData[]>(() => {
     const attached = this.facade.attachedIndicators();
+    const available = this.facade.availableIndicators();
+    const availableMap = new Map(available.map((a) => [a.id, a]));
     const edits = this.facade.paramEdits();
     return attached.map((im) => {
       const edited = edits.get(im.id);
       const p = edited ?? im;
+      const full = availableMap.get(im.id);
+      const dup = p.duplicable;
+      const con = p.constrained_values;
       return {
         id: im.id,
         name: im.name,
+        technical_label: full?.technical_label,
         type: im.type,
         paramHints: {
           visibility: this.ruleState(p.visibility_rule, 'true'),
           required: this.ruleState(p.required_rule, 'false'),
           editable: this.ruleState(p.editable_rule, 'true'),
-          defaultValue: (p.default_value_rule ?? null) != null ? 'on' as ParamState : 'off' as ParamState,
-          duplicable: p.duplicable != null ? 'on' as ParamState : 'off' as ParamState,
-          constrained: p.constrained_values != null ? 'on' as ParamState : 'off' as ParamState,
+          defaultValue: p.default_value_rule != null ? (p.default_value_rule !== '' ? 'rule' as ParamState : 'on' as ParamState) : 'off' as ParamState,
+          duplicable: dup != null ? ((dup.min_count != null || dup.max_count != null) ? 'rule' as ParamState : 'on' as ParamState) : 'off' as ParamState,
+          constrained: con != null ? ((con.min_value != null || con.max_value != null) ? 'rule' as ParamState : 'on' as ParamState) : 'off' as ParamState,
         },
       };
     });

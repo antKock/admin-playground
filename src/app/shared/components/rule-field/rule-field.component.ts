@@ -45,8 +45,6 @@ function extractVariables(jsonLogicStr: string): string[] {
       ></textarea>
       @if (hasError()) {
         <div class="rule-hint" style="color: var(--color-text-error, #dc2626);">Invalid JSON syntax</div>
-      } @else {
-        <div class="rule-hint">Leave empty for simple ON (no conditional logic)</div>
       }
     </div>
   `,
