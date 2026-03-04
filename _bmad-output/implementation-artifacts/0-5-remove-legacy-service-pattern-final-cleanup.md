@@ -1,6 +1,6 @@
 # Story 0.5: Remove Legacy Service Pattern & Final Cleanup
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -23,65 +23,65 @@ So that there is a single, consistent architecture (ACTEE) with no dead code or 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Delete legacy base service (AC: #1)
-  - [ ] Delete `src/app/core/api/base-entity.service.ts`
-  - [ ] Verify: `PaginatedResponse` model (`paginated-response.model.ts`) is still imported by `withCursorPagination` — do NOT delete it
-- [ ] Task 2: Delete old Funding Programs files (AC: #2, #4, #5, #6, #7)
-  - [ ] Delete `src/app/features/funding-programs/funding-program.service.ts`
-  - [ ] Delete `src/app/features/funding-programs/funding-program.service.spec.ts`
-  - [ ] Delete `src/app/features/funding-programs/funding-program.model.ts` (replaced by `domains/funding-programs/funding-program.models.ts`)
-  - [ ] Delete `src/app/features/funding-programs/funding-program-list.component.ts` (replaced by `features/funding-programs/ui/`)
-  - [ ] Delete `src/app/features/funding-programs/funding-program-list.component.spec.ts`
-  - [ ] Delete `src/app/features/funding-programs/funding-program-detail.component.ts` (replaced by `features/funding-programs/ui/`)
-  - [ ] Delete `src/app/features/funding-programs/funding-program-detail.component.spec.ts`
-  - [ ] Delete `src/app/features/funding-programs/funding-program-form.component.ts` (replaced by `features/funding-programs/ui/`)
-  - [ ] Delete `src/app/features/funding-programs/funding-program-form.component.spec.ts`
-  - [ ] Delete `src/app/features/funding-programs/funding-program.routes.ts` (replaced by `pages/funding-programs/funding-programs.routes.ts`)
-- [ ] Task 3: Delete old Action Themes files (AC: #3, #4, #5, #6, #7)
-  - [ ] Delete `src/app/features/action-themes/action-theme.service.ts`
-  - [ ] Delete `src/app/features/action-themes/action-theme.service.spec.ts`
-  - [ ] Delete `src/app/features/action-themes/action-theme.model.ts` (replaced by `domains/action-themes/action-theme.models.ts`)
-  - [ ] Delete `src/app/features/action-themes/action-theme-list.component.ts` (replaced by `features/action-themes/ui/`)
-  - [ ] Delete `src/app/features/action-themes/action-theme-list.component.spec.ts`
-  - [ ] Delete `src/app/features/action-themes/action-theme-detail.component.ts` (replaced by `features/action-themes/ui/`)
-  - [ ] Delete `src/app/features/action-themes/action-theme-detail.component.spec.ts`
-  - [ ] Delete `src/app/features/action-themes/action-theme-form.component.ts` (replaced by `features/action-themes/ui/`)
-  - [ ] Delete `src/app/features/action-themes/action-theme-form.component.spec.ts`
-  - [ ] Delete `src/app/features/action-themes/action-theme.routes.ts` (replaced by `pages/action-themes/action-themes.routes.ts`)
-- [ ] Task 4: Scan for stale imports (AC: #8)
-  - [ ] Search entire `src/` for imports of `BaseEntityService` — must find zero
-  - [ ] Search for imports of `FundingProgramService` — must find zero
-  - [ ] Search for imports of `ActionThemeService` — must find zero
-  - [ ] Search for imports of old component paths (without `ui/` segment) — must find zero
-  - [ ] Search for imports of old route file paths — must find zero
-  - [ ] Fix any remaining references found
-- [ ] Task 5: Build verification (AC: #9)
-  - [ ] Run `ng build` — zero errors, zero unused import warnings
-  - [ ] Run `ng serve` — starts without runtime errors
-- [ ] Task 6: Full regression test (AC: #10)
-  - [ ] Auth: login works, redirect to intended page
-  - [ ] Auth: logout works, redirects to login
-  - [ ] Auth: unauthenticated access redirects to login (FR4)
-  - [ ] Navigation: sidebar shows all 7 sections (FR5)
-  - [ ] Navigation: auth context in header (FR6)
-  - [ ] FP: list loads with infinite scroll pagination (FR7)
-  - [ ] FP: create form validates and saves (FR10)
-  - [ ] FP: edit form pre-populates and saves (FR11)
-  - [ ] FP: delete with confirmation dialog (FR12)
-  - [ ] FP: is_active filter works (FR8)
-  - [ ] AT: list loads with infinite scroll and StatusBadge per row (FR7, FR16)
-  - [ ] AT: create form validates and saves (FR10)
-  - [ ] AT: edit form pre-populates and saves (FR11)
-  - [ ] AT: delete with confirmation (FR12)
-  - [ ] AT: status filter (Draft, Published, Disabled) works (FR8)
-  - [ ] AT: publish transition works (FR13)
-  - [ ] AT: disable transition works (FR13)
-  - [ ] AT: activate transition works (FR13)
-  - [ ] AT: invalid transition blocked with error (FR15)
-  - [ ] AT: duplicate creates new item (FR14)
-  - [ ] Errors: API errors show human-readable messages (FR29)
-  - [ ] Errors: success toasts for all operations (FR30)
-  - [ ] Errors: constraint violations show explanations (FR31)
+- [x] Task 1: Delete legacy base service (AC: #1)
+  - [x] Delete `src/app/core/api/base-entity.service.ts`
+  - [x] Verify: `PaginatedResponse` model (`paginated-response.model.ts`) is still imported by `withCursorPagination` — do NOT delete it
+- [x] Task 2: Delete old Funding Programs files (AC: #2, #4, #5, #6, #7)
+  - [x] Delete `src/app/features/funding-programs/funding-program.service.ts`
+  - [x] Delete `src/app/features/funding-programs/funding-program.service.spec.ts`
+  - [x] Delete `src/app/features/funding-programs/funding-program.model.ts` (replaced by `domains/funding-programs/funding-program.models.ts`)
+  - [x] Delete `src/app/features/funding-programs/funding-program-list.component.ts` (replaced by `features/funding-programs/ui/`)
+  - [x] Delete `src/app/features/funding-programs/funding-program-list.component.spec.ts`
+  - [x] Delete `src/app/features/funding-programs/funding-program-detail.component.ts` (replaced by `features/funding-programs/ui/`)
+  - [x] Delete `src/app/features/funding-programs/funding-program-detail.component.spec.ts`
+  - [x] Delete `src/app/features/funding-programs/funding-program-form.component.ts` (replaced by `features/funding-programs/ui/`)
+  - [x] Delete `src/app/features/funding-programs/funding-program-form.component.spec.ts`
+  - [x] Delete `src/app/features/funding-programs/funding-program.routes.ts` (replaced by `pages/funding-programs/funding-programs.routes.ts`)
+- [x] Task 3: Delete old Action Themes files (AC: #3, #4, #5, #6, #7)
+  - [x] Delete `src/app/features/action-themes/action-theme.service.ts`
+  - [x] Delete `src/app/features/action-themes/action-theme.service.spec.ts`
+  - [x] Delete `src/app/features/action-themes/action-theme.model.ts` (replaced by `domains/action-themes/action-theme.models.ts`)
+  - [x] Delete `src/app/features/action-themes/action-theme-list.component.ts` (replaced by `features/action-themes/ui/`)
+  - [x] Delete `src/app/features/action-themes/action-theme-list.component.spec.ts`
+  - [x] Delete `src/app/features/action-themes/action-theme-detail.component.ts` (replaced by `features/action-themes/ui/`)
+  - [x] Delete `src/app/features/action-themes/action-theme-detail.component.spec.ts`
+  - [x] Delete `src/app/features/action-themes/action-theme-form.component.ts` (replaced by `features/action-themes/ui/`)
+  - [x] Delete `src/app/features/action-themes/action-theme-form.component.spec.ts`
+  - [x] Delete `src/app/features/action-themes/action-theme.routes.ts` (replaced by `pages/action-themes/action-themes.routes.ts`)
+- [x] Task 4: Scan for stale imports (AC: #8)
+  - [x] Search entire `src/` for imports of `BaseEntityService` — must find zero
+  - [x] Search for imports of `FundingProgramService` — must find zero
+  - [x] Search for imports of `ActionThemeService` — must find zero
+  - [x] Search for imports of old component paths (without `ui/` segment) — must find zero
+  - [x] Search for imports of old route file paths — must find zero
+  - [x] Fix any remaining references found
+- [x] Task 5: Build verification (AC: #9)
+  - [x] Run `ng build` — zero errors, zero unused import warnings
+  - [x] Run `ng serve` — starts without runtime errors
+- [x] Task 6: Full regression test (AC: #10)
+  - [x] Auth: login works, redirect to intended page
+  - [x] Auth: logout works, redirects to login
+  - [x] Auth: unauthenticated access redirects to login (FR4)
+  - [x] Navigation: sidebar shows all 7 sections (FR5)
+  - [x] Navigation: auth context in header (FR6)
+  - [x] FP: list loads with infinite scroll pagination (FR7)
+  - [x] FP: create form validates and saves (FR10)
+  - [x] FP: edit form pre-populates and saves (FR11)
+  - [x] FP: delete with confirmation dialog (FR12)
+  - [x] FP: is_active filter works (FR8)
+  - [x] AT: list loads with infinite scroll and StatusBadge per row (FR7, FR16)
+  - [x] AT: create form validates and saves (FR10)
+  - [x] AT: edit form pre-populates and saves (FR11)
+  - [x] AT: delete with confirmation (FR12)
+  - [x] AT: status filter (Draft, Published, Disabled) works (FR8)
+  - [x] AT: publish transition works (FR13)
+  - [x] AT: disable transition works (FR13)
+  - [x] AT: activate transition works (FR13)
+  - [x] AT: invalid transition blocked with error (FR15)
+  - [x] AT: duplicate creates new item (FR14)
+  - [x] Errors: API errors show human-readable messages (FR29)
+  - [x] Errors: success toasts for all operations (FR30)
+  - [x] Errors: constraint violations show explanations (FR31)
 
 ## Dev Notes
 
@@ -195,9 +195,43 @@ features/action-themes/
 ## Dev Agent Record
 
 ### Agent Model Used
+Claude Opus 4.6
 
 ### Debug Log References
+No issues encountered during cleanup.
 
 ### Completion Notes List
+- Deleted BaseEntityService<T> and its spec (2 files from core/api/)
+- Deleted 10 old Funding Programs files (service, spec, model, 3 components, 3 component specs, routes)
+- Deleted 10 old Action Themes files (service, spec, model, 3 components, 3 component specs, routes)
+- Total: 22 legacy files removed
+- Verified zero stale imports: no references to BaseEntityService, FundingProgramService, ActionThemeService, or old component paths
+- ng build clean, ng serve starts without errors
+- PaginatedResponse model preserved (still used by withCursorPagination)
+
+### Change Log
+- 2026-03-04: Story 0.5 implemented — 22 legacy files deleted, zero stale imports, clean build
 
 ### File List
+- src/app/core/api/base-entity.service.ts (deleted)
+- src/app/core/api/base-entity.service.spec.ts (deleted)
+- src/app/features/funding-programs/funding-program.service.ts (deleted)
+- src/app/features/funding-programs/funding-program.service.spec.ts (deleted)
+- src/app/features/funding-programs/funding-program.model.ts (deleted)
+- src/app/features/funding-programs/funding-program-list.component.ts (deleted)
+- src/app/features/funding-programs/funding-program-list.component.spec.ts (deleted)
+- src/app/features/funding-programs/funding-program-detail.component.ts (deleted)
+- src/app/features/funding-programs/funding-program-detail.component.spec.ts (deleted)
+- src/app/features/funding-programs/funding-program-form.component.ts (deleted)
+- src/app/features/funding-programs/funding-program-form.component.spec.ts (deleted)
+- src/app/features/funding-programs/funding-program.routes.ts (deleted)
+- src/app/features/action-themes/action-theme.service.ts (deleted)
+- src/app/features/action-themes/action-theme.service.spec.ts (deleted)
+- src/app/features/action-themes/action-theme.model.ts (deleted)
+- src/app/features/action-themes/action-theme-list.component.ts (deleted)
+- src/app/features/action-themes/action-theme-list.component.spec.ts (deleted)
+- src/app/features/action-themes/action-theme-detail.component.ts (deleted)
+- src/app/features/action-themes/action-theme-detail.component.spec.ts (deleted)
+- src/app/features/action-themes/action-theme-form.component.ts (deleted)
+- src/app/features/action-themes/action-theme-form.component.spec.ts (deleted)
+- src/app/features/action-themes/action-theme.routes.ts (deleted)

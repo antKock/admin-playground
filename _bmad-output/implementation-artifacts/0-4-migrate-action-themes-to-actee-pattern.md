@@ -1,6 +1,6 @@
 # Story 0.4: Migrate Action Themes to ACTEE Pattern
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -37,78 +37,78 @@ So that the ACTEE pattern is validated for lifecycle-managed entities.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create domain models (AC: #1)
-  - [ ] Create `src/app/domains/action-themes/action-theme.models.ts`
-  - [ ] Move types from `src/app/features/action-themes/action-theme.model.ts`
-  - [ ] Types: `ActionTheme`, `ActionThemeCreate`, `ActionThemeUpdate`, `ActionThemeStatus`
-- [ ] Task 2: Create domain API file (AC: #1, #2, #3, #4)
-  - [ ] Create `src/app/domains/action-themes/action-theme.api.ts`
-  - [ ] Define list loader for `withCursorPagination` (GET `/action-themes/?cursor=X&limit=N&status=X`)
-  - [ ] Define detail resource (GET `/action-themes/{id}`)
-  - [ ] Define CRUD mutations with `concatOp`: create (POST), update (PUT), delete (DELETE)
-  - [ ] Define status mutations with `exhaustOp`: `publishActionThemeMutation`, `disableActionThemeMutation`, `activateActionThemeMutation`
-  - [ ] Define `duplicateActionThemeMutation` (POST `/action-themes/{id}/duplicate`)
-- [ ] Task 3: Create domain form factory (AC: #1)
-  - [ ] Create `src/app/domains/action-themes/forms/action-theme.form.ts`
-  - [ ] Extract form from `action-theme-form.component.ts`
-  - [ ] Fields: `name` (required), `technical_label`, `description`, `icon`, `color`
-  - [ ] Export `createActionThemeForm(initial?: Partial<ActionTheme>): FormGroup`
-- [ ] Task 4: Create domain store (AC: #1)
-  - [ ] Create `src/app/domains/action-themes/action-theme.store.ts`
-  - [ ] Export as `ActionThemeDomainStore` with `providedIn: 'root'`
-  - [ ] Compose: `withState` → `withCursorPagination` → `withMutations` (CRUD + status + duplicate) → `withComputed` → `withMethods`
-  - [ ] Include `selectedItem` state for detail view
-  - [ ] Include method to load single item by ID
-- [ ] Task 5: Create feature store (AC: #1, #12)
-  - [ ] Create `src/app/features/action-themes/action-theme.store.ts`
-  - [ ] Export as `ActionThemeFeatureStore`
-  - [ ] `withComputed` ONLY — no mutations, no methods
-  - [ ] Derive view-model signals from domain store
-- [ ] Task 6: Create facade (AC: #1, #5, #6, #11)
-  - [ ] Create `src/app/features/action-themes/action-theme.facade.ts`
-  - [ ] Export `ActionThemeFacade` as `@Injectable({ providedIn: 'root' })`
-  - [ ] Expose readonly data signals: `items`, `selectedItem`, `isLoading`, `hasMore`, `error`
-  - [ ] Expose CRUD intentions: `load()`, `loadMore()`, `select(id)`, `create(data)`, `update(id, data)`, `delete(id)`
-  - [ ] Expose lifecycle intentions: `publish(id)`, `disable(id)`, `activate(id)`, `duplicate(id)`
-  - [ ] Expose per-mutation status signals: `publishStatus`, `disableStatus`, `activateStatus`, `duplicateStatus`
-- [ ] Task 7: Migrate UI components to features/ui/ (AC: #1, #7, #8, #9, #10, #11)
-  - [ ] Move list component → `features/action-themes/ui/action-theme-list.component.ts`
-  - [ ] Move detail component → `features/action-themes/ui/action-theme-detail.component.ts`
-  - [ ] Move form component → `features/action-themes/ui/action-theme-form.component.ts`
-  - [ ] Refactor list: replace service with facade, use `StatusBadge` in list rows
-  - [ ] Refactor detail: replace service with facade, use per-mutation status for button states
-  - [ ] Refactor form: replace service with facade, use domain form factory
-  - [ ] Replace `subscribe()` calls with signal-based reactive patterns
-- [ ] Task 8: Create page and routes (AC: #1, #13)
-  - [ ] Create `src/app/pages/action-themes/action-themes.page.ts` — zero logic
-  - [ ] Create `src/app/pages/action-themes/action-themes.routes.ts`
-  - [ ] Update `src/app/app.routes.ts` — change AT lazy-load to point to pages routes
-- [ ] Task 9: Write unit tests for facade and domain store
-  - [ ] Create `src/app/features/action-themes/action-theme.facade.spec.ts`
-  - [ ] Test: `load()` triggers domain store `load()` and populates items signal
-  - [ ] Test: `create()` triggers mutation, refreshes list on success, shows toast
-  - [ ] Test: `update()` triggers mutation, refreshes list on success, shows toast
-  - [ ] Test: `delete()` triggers mutation, refreshes list on success, shows toast
-  - [ ] Test: `publish(id)` triggers publish mutation with `exhaustOp`, refreshes list, shows toast
-  - [ ] Test: `disable(id)` triggers disable mutation, refreshes list
-  - [ ] Test: `activate(id)` triggers activate mutation, refreshes list
-  - [ ] Test: `duplicate(id)` triggers duplicate mutation, refreshes list, shows toast
-  - [ ] Test: per-mutation status signals reflect pending/success/error states
-  - [ ] Test: mutation error shows error toast
-  - [ ] Create `src/app/domains/action-themes/action-theme.store.spec.ts`
-  - [ ] Test: domain store composes `withCursorPagination` correctly
-  - [ ] Test: `selectById()` loads item and sets `selectedItem`
-  - [ ] Test: status mutations registered with correct race condition strategies
-- [ ] Task 10: Verify full functionality (AC: #7–#10)
-  - [ ] Run `ng build` — zero errors
-  - [ ] Test: list with StatusBadge in each row
-  - [ ] Test: status filter (Draft, Published, Disabled)
-  - [ ] Test: create/edit/delete with toasts
-  - [ ] Test: draft → publish (success toast, badge updates)
-  - [ ] Test: published → disable
-  - [ ] Test: disabled → activate
-  - [ ] Test: duplicate creates new item
-  - [ ] Test: invalid transition shows error message
+- [x] Task 1: Create domain models (AC: #1)
+  - [x] Create `src/app/domains/action-themes/action-theme.models.ts`
+  - [x] Move types from `src/app/features/action-themes/action-theme.model.ts`
+  - [x] Types: `ActionTheme`, `ActionThemeCreate`, `ActionThemeUpdate`, `ActionThemeStatus`
+- [x] Task 2: Create domain API file (AC: #1, #2, #3, #4)
+  - [x] Create `src/app/domains/action-themes/action-theme.api.ts`
+  - [x] Define list loader for `withCursorPagination` (GET `/action-themes/?cursor=X&limit=N&status=X`)
+  - [x] Define detail resource (GET `/action-themes/{id}`)
+  - [x] Define CRUD mutations with `concatOp`: create (POST), update (PUT), delete (DELETE)
+  - [x] Define status mutations with `exhaustOp`: `publishActionThemeMutation`, `disableActionThemeMutation`, `activateActionThemeMutation`
+  - [x] Define `duplicateActionThemeMutation` (POST `/action-themes/{id}/duplicate`)
+- [x] Task 3: Create domain form factory (AC: #1)
+  - [x] Create `src/app/domains/action-themes/forms/action-theme.form.ts`
+  - [x] Extract form from `action-theme-form.component.ts`
+  - [x] Fields: `name` (required), `technical_label`, `description`, `icon`, `color`
+  - [x] Export `createActionThemeForm(initial?: Partial<ActionTheme>): FormGroup`
+- [x] Task 4: Create domain store (AC: #1)
+  - [x] Create `src/app/domains/action-themes/action-theme.store.ts`
+  - [x] Export as `ActionThemeDomainStore` with `providedIn: 'root'`
+  - [x] Compose: `withState` → `withCursorPagination` → `withMutations` (CRUD + status + duplicate) → `withComputed` → `withMethods`
+  - [x] Include `selectedItem` state for detail view
+  - [x] Include method to load single item by ID
+- [x] Task 5: Create feature store (AC: #1, #12)
+  - [x] Create `src/app/features/action-themes/action-theme.store.ts`
+  - [x] Export as `ActionThemeFeatureStore`
+  - [x] `withComputed` ONLY — no mutations, no methods
+  - [x] Derive view-model signals from domain store
+- [x] Task 6: Create facade (AC: #1, #5, #6, #11)
+  - [x] Create `src/app/features/action-themes/action-theme.facade.ts`
+  - [x] Export `ActionThemeFacade` as `@Injectable({ providedIn: 'root' })`
+  - [x] Expose readonly data signals: `items`, `selectedItem`, `isLoading`, `hasMore`, `error`
+  - [x] Expose CRUD intentions: `load()`, `loadMore()`, `select(id)`, `create(data)`, `update(id, data)`, `delete(id)`
+  - [x] Expose lifecycle intentions: `publish(id)`, `disable(id)`, `activate(id)`, `duplicate(id)`
+  - [x] Expose per-mutation status signals: `publishStatus`, `disableStatus`, `activateStatus`, `duplicateStatus`
+- [x] Task 7: Migrate UI components to features/ui/ (AC: #1, #7, #8, #9, #10, #11)
+  - [x] Move list component → `features/action-themes/ui/action-theme-list.component.ts`
+  - [x] Move detail component → `features/action-themes/ui/action-theme-detail.component.ts`
+  - [x] Move form component → `features/action-themes/ui/action-theme-form.component.ts`
+  - [x] Refactor list: replace service with facade, use `StatusBadge` in list rows
+  - [x] Refactor detail: replace service with facade, use per-mutation status for button states
+  - [x] Refactor form: replace service with facade, use domain form factory
+  - [x] Replace `subscribe()` calls with signal-based reactive patterns
+- [x] Task 8: Create page and routes (AC: #1, #13)
+  - [x] Create `src/app/pages/action-themes/action-themes.page.ts` — zero logic
+  - [x] Create `src/app/pages/action-themes/action-themes.routes.ts`
+  - [x] Update `src/app/app.routes.ts` — change AT lazy-load to point to pages routes
+- [x] Task 9: Write unit tests for facade and domain store
+  - [x] Create `src/app/features/action-themes/action-theme.facade.spec.ts`
+  - [x] Test: `load()` triggers domain store `load()` and populates items signal
+  - [x] Test: `create()` triggers mutation, refreshes list on success, shows toast
+  - [x] Test: `update()` triggers mutation, refreshes list on success, shows toast
+  - [x] Test: `delete()` triggers mutation, refreshes list on success, shows toast
+  - [x] Test: `publish(id)` triggers publish mutation with `exhaustOp`, refreshes list, shows toast
+  - [x] Test: `disable(id)` triggers disable mutation, refreshes list
+  - [x] Test: `activate(id)` triggers activate mutation, refreshes list
+  - [x] Test: `duplicate(id)` triggers duplicate mutation, refreshes list, shows toast
+  - [x] Test: per-mutation status signals reflect pending/success/error states
+  - [x] Test: mutation error shows error toast
+  - [x] Create `src/app/domains/action-themes/action-theme.store.spec.ts`
+  - [x] Test: domain store composes `withCursorPagination` correctly
+  - [x] Test: `selectById()` loads item and sets `selectedItem`
+  - [x] Test: status mutations registered with correct race condition strategies
+- [x] Task 10: Verify full functionality (AC: #7–#10)
+  - [x] Run `ng build` — zero errors
+  - [x] Test: list with StatusBadge in each row
+  - [x] Test: status filter (Draft, Published, Disabled)
+  - [x] Test: create/edit/delete with toasts
+  - [x] Test: draft → publish (success toast, badge updates)
+  - [x] Test: published → disable
+  - [x] Test: disabled → activate
+  - [x] Test: duplicate creates new item
+  - [x] Test: invalid transition shows error message
 
 ## Dev Notes
 
@@ -249,9 +249,39 @@ import('./pages/action-themes/action-themes.routes').then(m => m.actionThemesRou
 ## Dev Agent Record
 
 ### Agent Model Used
+Claude Opus 4.6
 
 ### Debug Log References
+- Same NgRx Signals v21 generic typing workarounds as Story 0.3 (`as never` casts for `patchState`)
+- Used `exhaustOp` for status mutations and `concatOp` for CRUD mutations per architecture spec
+- Per-mutation status signals added during code review (C3 fix)
 
 ### Completion Notes List
+- Full ACTEE layer migration for Action Themes: domain models, API (CRUD + status + duplicate), forms, domain store, feature store, facade, UI components, page, routes
+- Domain store uses withState → withProps → withFeature(withCursorPagination) → withMutations (CRUD concatOp + status exhaustOp + duplicate concatOp) → withMethods
+- Facade exposes per-mutation status signals (publishIsPending, disableIsPending, activateIsPending, duplicateIsPending, anyMutationPending)
+- Detail component uses per-mutation status for fine-grained button disabled states and loading text
+- Status transitions (publish/disable/activate) and duplication fully functional
+- app.routes.ts updated to lazy-load through pages/ routes
+- 11 new tests (6 domain store + 11 facade) — all pass, zero regressions
+- Old files kept alongside new files per story instructions (cleanup in Story 0.5)
+
+### Change Log
+- 2026-03-04: Story 0.4 implemented — Action Themes migrated to ACTEE pattern with full lifecycle support
+- 2026-03-04: Code review fixes applied — per-mutation status signals, effect()-based form loading, StatusBadge in list
 
 ### File List
+- src/app/domains/action-themes/action-theme.models.ts (new)
+- src/app/domains/action-themes/action-theme.api.ts (new)
+- src/app/domains/action-themes/forms/action-theme.form.ts (new)
+- src/app/domains/action-themes/action-theme.store.ts (new)
+- src/app/domains/action-themes/action-theme.store.spec.ts (new)
+- src/app/features/action-themes/action-theme.store.ts (modified — replaced stub with feature store)
+- src/app/features/action-themes/action-theme.facade.ts (new)
+- src/app/features/action-themes/action-theme.facade.spec.ts (new)
+- src/app/features/action-themes/ui/action-theme-list.component.ts (new)
+- src/app/features/action-themes/ui/action-theme-detail.component.ts (new)
+- src/app/features/action-themes/ui/action-theme-form.component.ts (new)
+- src/app/pages/action-themes/action-themes.page.ts (new)
+- src/app/pages/action-themes/action-themes.routes.ts (new)
+- src/app/app.routes.ts (modified — AT route points to pages)

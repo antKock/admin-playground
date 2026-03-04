@@ -22,6 +22,16 @@ export class ActionThemeFacade {
   readonly error = this.featureStore.error;
   readonly isEmpty = this.featureStore.isEmpty;
 
+  // Per-mutation status signals — for fine-grained UI feedback
+  readonly publishIsPending = this.domainStore.publishMutationIsPending;
+  readonly disableIsPending = this.domainStore.disableMutationIsPending;
+  readonly activateIsPending = this.domainStore.activateMutationIsPending;
+  readonly duplicateIsPending = this.domainStore.duplicateMutationIsPending;
+  readonly anyMutationPending = computed(() =>
+    this.publishIsPending() || this.disableIsPending() ||
+    this.activateIsPending() || this.duplicateIsPending(),
+  );
+
   // Intention methods
   load(filters?: Record<string, string>): void {
     this.domainStore.load(filters);
@@ -55,6 +65,7 @@ export class ActionThemeFacade {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
       this.toast.success('Action Theme updated');
+      this.domainStore.load(undefined);
       this.router.navigate(['/action-themes', id]);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);

@@ -82,7 +82,7 @@ export class ActionThemeListComponent implements OnInit {
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Name' },
     { key: 'technical_label', label: 'Technical Label' },
-    { key: 'status', label: 'Status' },
+    { key: 'status', label: 'Status', type: 'status-badge' },
     { key: 'created_at', label: 'Created' },
   ];
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -107,29 +107,30 @@ export class ActionThemeFormComponent implements OnInit {
   readonly submitting = signal(false);
   readonly form = createActionThemeForm(this.fb);
 
+  private formPatched = false;
+
+  constructor() {
+    effect(() => {
+      const item = this.facade.selectedItem();
+      if (this.isEditMode && item && item.id === this.editId && !this.formPatched) {
+        this.formPatched = true;
+        this.form.patchValue({
+          name: item.name,
+          technical_label: item.technical_label,
+          description: item.description ?? null,
+          icon: item.icon ?? null,
+          color: item.color ?? null,
+        });
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
 
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
-      // Wait for the item to load, then patch the form
-      const checkLoaded = setInterval(() => {
-        const item = this.facade.selectedItem();
-        if (item && item.id === this.editId) {
-          this.form.patchValue({
-            name: item.name,
-            technical_label: item.technical_label,
-            description: item.description ?? null,
-            icon: item.icon ?? null,
-            color: item.color ?? null,
-          });
-          clearInterval(checkLoaded);
-        }
-        if (!this.facade.isLoadingDetail()) {
-          clearInterval(checkLoaded);
-        }
-      }, 50);
     }
   }
 

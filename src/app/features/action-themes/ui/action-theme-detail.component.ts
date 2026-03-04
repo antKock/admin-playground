@@ -43,35 +43,35 @@ import { ActionThemeFacade } from '../action-theme.facade';
               <button
                 class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
                 (click)="onPublish()"
-                [disabled]="actionLoading()"
+                [disabled]="facade.publishIsPending() || facade.anyMutationPending()"
               >
-                {{ actionLoading() ? 'Publishing...' : 'Publish' }}
+                {{ facade.publishIsPending() ? 'Publishing...' : 'Publish' }}
               </button>
             }
             @if (theme()!.status === 'published') {
               <button
                 class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
                 (click)="onDisable()"
-                [disabled]="actionLoading()"
+                [disabled]="facade.disableIsPending() || facade.anyMutationPending()"
               >
-                {{ actionLoading() ? 'Disabling...' : 'Disable' }}
+                {{ facade.disableIsPending() ? 'Disabling...' : 'Disable' }}
               </button>
             }
             @if (theme()!.status === 'disabled') {
               <button
                 class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
                 (click)="onActivate()"
-                [disabled]="actionLoading()"
+                [disabled]="facade.activateIsPending() || facade.anyMutationPending()"
               >
-                {{ actionLoading() ? 'Activating...' : 'Activate' }}
+                {{ facade.activateIsPending() ? 'Activating...' : 'Activate' }}
               </button>
             }
             <button
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
               (click)="onDuplicate()"
-              [disabled]="actionLoading()"
+              [disabled]="facade.duplicateIsPending() || facade.anyMutationPending()"
             >
-              Duplicate
+              {{ facade.duplicateIsPending() ? 'Duplicating...' : 'Duplicate' }}
             </button>
             @if (theme()!.status === 'draft') {
               <button
@@ -104,7 +104,6 @@ export class ActionThemeDetailComponent implements OnInit {
   readonly router = inject(Router);
 
   readonly theme = this.facade.selectedItem;
-  readonly actionLoading = this.facade.isLoadingDetail;
   readonly skeletonFields = Array(6).fill(0);
 
   private get themeId(): string {

@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { ActionThemeFacade } from './action-theme.facade';
 import { ActionTheme } from '@domains/action-themes/action-theme.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { ToastService } from '@app/shared/services/toast.service';
 
 const mockActionTheme: ActionTheme = {
   id: 'at-1',
@@ -35,6 +36,9 @@ const mockPaginatedResponse: PaginatedResponse<ActionTheme> = {
 describe('ActionThemeFacade', () => {
   let facade: ActionThemeFacade;
   let httpTesting: HttpTestingController;
+  let toastService: ToastService;
+  let successSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -46,6 +50,11 @@ describe('ActionThemeFacade', () => {
     });
     facade = TestBed.inject(ActionThemeFacade);
     httpTesting = TestBed.inject(HttpTestingController);
+    toastService = TestBed.inject(ToastService);
+    successSpy = vi.spyOn(toastService, 'success');
+    errorSpy = vi.spyOn(toastService, 'error');
+    // Prevent unhandled router navigation rejections in tests
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -96,13 +105,15 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('create', () => {
-    it('should trigger mutation and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const createPromise = facade.create({ name: 'New Theme', technical_label: 'new_theme', status: 'draft' });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('action-themes'));
       createReq.flush({ ...mockActionTheme, id: 'at-new', name: 'New Theme' });
 
       await createPromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Action Theme created');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
@@ -111,24 +122,32 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('update', () => {
-    it('should trigger mutation on update', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const updatePromise = facade.update('at-1', { name: 'Updated Theme' });
 
       const updateReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-themes/at-1'));
       updateReq.flush({ ...mockActionTheme, name: 'Updated Theme' });
 
       await updatePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Action Theme updated');
+
+      // After success, it triggers a list refresh
+      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
+      refreshReq.flush(mockPaginatedResponse);
     });
   });
 
   describe('delete', () => {
-    it('should trigger mutation and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const deletePromise = facade.delete('at-1');
 
       const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE' && r.url.includes('action-themes/at-1'));
       deleteReq.flush(null);
 
       await deletePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Action Theme deleted');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
@@ -137,13 +156,15 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('publish', () => {
-    it('should trigger publish mutation and reload detail on success', async () => {
+    it('should trigger publish mutation, show toast, and reload detail on success', async () => {
       const publishPromise = facade.publish('at-1');
 
       const publishReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-themes/at-1/publish'));
       publishReq.flush({ ...mockActionTheme, status: 'published' });
 
       await publishPromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Action Theme published');
 
       // After success, it reloads the detail
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
@@ -152,7 +173,7 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('disable', () => {
-    it('should trigger disable mutation and reload detail on success', async () => {
+    it('should trigger disable mutation, show toast, and reload detail on success', async () => {
       const disablePromise = facade.disable('at-1');
 
       const disableReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-themes/at-1/disable'));
@@ -160,13 +181,15 @@ describe('ActionThemeFacade', () => {
 
       await disablePromise;
 
+      expect(successSpy).toHaveBeenCalledWith('Action Theme disabled');
+
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
       detailReq.flush({ ...mockActionTheme, status: 'disabled' });
     });
   });
 
   describe('activate', () => {
-    it('should trigger activate mutation and reload detail on success', async () => {
+    it('should trigger activate mutation, show toast, and reload detail on success', async () => {
       const activatePromise = facade.activate('at-1');
 
       const activateReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-themes/at-1/activate'));
@@ -174,19 +197,23 @@ describe('ActionThemeFacade', () => {
 
       await activatePromise;
 
+      expect(successSpy).toHaveBeenCalledWith('Action Theme activated');
+
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
       detailReq.flush({ ...mockActionTheme, status: 'published' });
     });
   });
 
   describe('duplicate', () => {
-    it('should trigger duplicate mutation and navigate to new item', async () => {
+    it('should trigger duplicate mutation, show toast, and navigate to new item', async () => {
       const duplicatePromise = facade.duplicate('at-1');
 
       const dupReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('action-themes/at-1/duplicate'));
       dupReq.flush({ ...mockActionTheme, id: 'at-dup', name: 'Test Theme (copy)' });
 
       await duplicatePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Action Theme duplicated');
     });
   });
 
@@ -200,6 +227,8 @@ describe('ActionThemeFacade', () => {
       await createPromise;
 
       expect(facade.items().length).toBe(0);
+      expect(errorSpy).toHaveBeenCalled();
+      expect(successSpy).not.toHaveBeenCalled();
     });
   });
 });

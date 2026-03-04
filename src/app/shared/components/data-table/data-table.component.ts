@@ -1,15 +1,19 @@
 import { Component, ElementRef, input, output, AfterViewInit, OnDestroy, viewChild } from '@angular/core';
 
+import { StatusBadgeComponent } from '../status-badge/status-badge.component';
+
 export interface ColumnDef {
   key: string;
   label: string;
   width?: string;
+  type?: 'text' | 'status-badge';
 }
 
 @Component({
   selector: 'app-data-table',
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
+  imports: [StatusBadgeComponent],
 })
 export class DataTableComponent implements AfterViewInit, OnDestroy {
   readonly columns = input.required<ColumnDef[]>();

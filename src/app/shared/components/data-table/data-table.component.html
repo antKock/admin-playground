@@ -27,7 +27,13 @@
             (keydown)="onRowKeydown($event, row)"
           >
             @for (col of columns(); track col.key) {
-              <td>{{ getCellValue(row, col.key) }}</td>
+              <td>
+                @if (col.type === 'status-badge') {
+                  <app-status-badge [status]="'' + getCellValue(row, col.key)" />
+                } @else {
+                  {{ getCellValue(row, col.key) }}
+                }
+              </td>
             }
           </tr>
         }

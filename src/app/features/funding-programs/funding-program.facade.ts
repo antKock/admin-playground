@@ -54,6 +54,7 @@ export class FundingProgramFacade {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
       this.toast.success('Funding Program updated');
+      this.domainStore.load(undefined);
       this.router.navigate(['/funding-programs', id]);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);

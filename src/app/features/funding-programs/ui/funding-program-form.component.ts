@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect, DestroyRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -115,30 +115,31 @@ export class FundingProgramFormComponent implements OnInit {
   readonly submitting = signal(false);
   readonly form = createFundingProgramForm(this.fb);
 
+  private formPatched = false;
+
+  constructor() {
+    effect(() => {
+      const item = this.facade.selectedItem();
+      if (this.isEditMode && item && item.id === this.editId && !this.formPatched) {
+        this.formPatched = true;
+        this.form.patchValue({
+          name: item.name,
+          description: item.description ?? null,
+          budget: item.budget ?? null,
+          is_active: item.is_active,
+          start_date: item.start_date ?? null,
+          end_date: item.end_date ?? null,
+        });
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
 
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
-      // Wait for the item to load, then patch the form
-      const checkLoaded = setInterval(() => {
-        const item = this.facade.selectedItem();
-        if (item && item.id === this.editId) {
-          this.form.patchValue({
-            name: item.name,
-            description: item.description ?? null,
-            budget: item.budget ?? null,
-            is_active: item.is_active,
-            start_date: item.start_date ?? null,
-            end_date: item.end_date ?? null,
-          });
-          clearInterval(checkLoaded);
-        }
-        if (!this.facade.isLoadingDetail()) {
-          clearInterval(checkLoaded);
-        }
-      }, 50);
     }
   }
 

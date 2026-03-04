@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 
 import { FundingProgramFacade } from './funding-program.facade';
 import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { ToastService } from '@app/shared/services/toast.service';
 
 const mockFundingProgram: FundingProgram = {
   id: 'fp-1',
@@ -34,6 +35,9 @@ const mockPaginatedResponse: PaginatedResponse<FundingProgram> = {
 describe('FundingProgramFacade', () => {
   let facade: FundingProgramFacade;
   let httpTesting: HttpTestingController;
+  let toastService: ToastService;
+  let successSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -45,6 +49,11 @@ describe('FundingProgramFacade', () => {
     });
     facade = TestBed.inject(FundingProgramFacade);
     httpTesting = TestBed.inject(HttpTestingController);
+    toastService = TestBed.inject(ToastService);
+    successSpy = vi.spyOn(toastService, 'success');
+    errorSpy = vi.spyOn(toastService, 'error');
+    // Prevent unhandled router navigation rejections in tests
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -95,13 +104,15 @@ describe('FundingProgramFacade', () => {
   });
 
   describe('create', () => {
-    it('should trigger mutation and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const createPromise = facade.create({ name: 'New Program', is_active: true });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('funding-programs'));
       createReq.flush({ ...mockFundingProgram, id: 'fp-new', name: 'New Program' });
 
       await createPromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Funding Program created');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
@@ -110,24 +121,32 @@ describe('FundingProgramFacade', () => {
   });
 
   describe('update', () => {
-    it('should trigger mutation on update', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const updatePromise = facade.update('fp-1', { name: 'Updated Program', is_active: true });
 
       const updateReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('funding-programs/fp-1'));
       updateReq.flush({ ...mockFundingProgram, name: 'Updated Program' });
 
       await updatePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Funding Program updated');
+
+      // After success, it triggers a list refresh
+      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
+      refreshReq.flush(mockPaginatedResponse);
     });
   });
 
   describe('delete', () => {
-    it('should trigger mutation and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and refresh list on success', async () => {
       const deletePromise = facade.delete('fp-1');
 
       const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE' && r.url.includes('funding-programs/fp-1'));
       deleteReq.flush(null);
 
       await deletePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Funding Program deleted');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
@@ -145,6 +164,8 @@ describe('FundingProgramFacade', () => {
       await createPromise;
 
       expect(facade.items().length).toBe(0);
+      expect(errorSpy).toHaveBeenCalled();
+      expect(successSpy).not.toHaveBeenCalled();
     });
   });
 });
