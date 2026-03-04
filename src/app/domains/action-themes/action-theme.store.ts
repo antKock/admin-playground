@@ -2,18 +2,15 @@
 // Composition order matters: withState → withProps → withFeature(pagination) → withMutations → withMethods.
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
+import { signalStore, withState, withMethods, withProps, withFeature } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
 import { httpMutation, concatOp, exhaustOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
+import { patch } from '@domains/shared/store.utils';
 import { ActionTheme, ActionThemeCreate, ActionThemeUpdate } from './action-theme.models';
-
-function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
-  patchState(store, state as never);
-}
 import {
   actionThemeListLoader,
   loadActionTheme,

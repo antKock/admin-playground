@@ -56,7 +56,7 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   formatDate(value: unknown): string {
     if (!value || typeof value !== 'string') return '—';
     const date = new Date(value);
-    if (isNaN(date.getTime())) return String(value);
+    if (isNaN(date.getTime())) return '—';
     return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
   }
 

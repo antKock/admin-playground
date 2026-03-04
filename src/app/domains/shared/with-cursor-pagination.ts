@@ -6,13 +6,13 @@ import {
   withState,
   withMethods,
   withComputed,
-  patchState,
   WritableStateSource,
 } from '@ngrx/signals';
 import { pipe, switchMap, tap, catchError, filter, EMPTY, Observable } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { patch } from './store.utils';
 
 export interface CursorPaginationState {
   items: unknown[];
@@ -39,13 +39,10 @@ const initialState: CursorPaginationState = {
   error: null,
 };
 
-// Centralizes the `as never` cast required by patchState's strict typing on signalStoreFeature stores.
-function patch(store: WritableStateSource<object>, state: Partial<CursorPaginationState>): void {
-  patchState(store, state as never);
-}
+export const DEFAULT_PAGE_SIZE = 20;
 
 export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
-  const limit = config.defaultLimit ?? 20;
+  const limit = config.defaultLimit ?? DEFAULT_PAGE_SIZE;
 
   return signalStoreFeature(
     withState(initialState),

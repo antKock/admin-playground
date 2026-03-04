@@ -3,8 +3,13 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
+import { environment } from '@app/../environments/environment';
 import { AuthService } from './auth.service';
 import { ToastService } from '@app/shared/services/toast.service';
+
+function isSameOrigin(url: string): boolean {
+  return url.startsWith(environment.apiBaseUrl) || url.startsWith('/');
+}
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -15,7 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (
   const toastService = inject(ToastService);
   const token = authService.getToken();
 
-  const authReq = token
+  const authReq = token && isSameOrigin(req.url)
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 

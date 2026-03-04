@@ -49,7 +49,10 @@ export function deleteIndicatorModelRequest(id: string) {
 
 // Cross-domain: load action models that reference a given indicator model.
 // Fetches first page of action models and filters client-side by indicator_models array.
+// WARNING: Only checks the first CROSS_DOMAIN_QUERY_LIMIT action models — usage beyond that page is missed.
+// TODO: Replace with server-side filter endpoint (GET /action-models?indicator_id=X) when available.
 const ACTION_MODELS_URL = `${environment.apiBaseUrl}/action-models/`;
+const CROSS_DOMAIN_QUERY_LIMIT = 100;
 
 export function loadUsageByIndicatorModel(
   http: HttpClient,
@@ -57,7 +60,7 @@ export function loadUsageByIndicatorModel(
 ): Observable<{ id: string; name: string }[]> {
   return http
     .get<PaginatedResponse<ActionModel>>(ACTION_MODELS_URL, {
-      params: new HttpParams().set('limit', '100'),
+      params: new HttpParams().set('limit', String(CROSS_DOMAIN_QUERY_LIMIT)),
     })
     .pipe(
       map((response) =>

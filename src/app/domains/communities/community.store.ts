@@ -2,18 +2,15 @@
 // Composition order matters: withState → withProps → withFeature(pagination) → withMutations → withMethods.
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
+import { signalStore, withState, withMethods, withProps, withFeature } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
 import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
+import { patch } from '@domains/shared/store.utils';
 import { CommunityRead, CommunityCreate, CommunityUpdate, UserRead } from './community.models';
-
-function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
-  patchState(store, state as never);
-}
 import {
   communityListLoader,
   loadCommunity,
@@ -33,6 +30,7 @@ export const CommunityDomainStore = signalStore(
     detailError: null as string | null,
     allUsers: [] as UserRead[],
     isLoadingUsers: false,
+    usersError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -86,12 +84,12 @@ export const CommunityDomainStore = signalStore(
     },
     loadUsers: rxMethod<void>(
       pipe(
-        tap(() => patch(store, { isLoadingUsers: true })),
+        tap(() => patch(store, { isLoadingUsers: true, usersError: null })),
         switchMap(() =>
           loadAllUsers(store._http).pipe(
             tap((users) => patch(store, { allUsers: users, isLoadingUsers: false })),
-            catchError(() => {
-              patch(store, { isLoadingUsers: false });
+            catchError((err) => {
+              patch(store, { isLoadingUsers: false, usersError: err?.message ?? 'Failed to load users' });
               return EMPTY;
             }),
           ),

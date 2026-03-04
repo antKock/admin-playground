@@ -46,5 +46,5 @@ export function deleteAgentRequest(id: string) {
 
 // Status mutation — exhaustOp (prevents double-click on transition buttons)
 export function changeAgentStatusRequest(params: { id: string; status: AgentStatus }) {
-  return { url: `${BASE_URL}${params.id}`, method: 'PUT' as const, body: { status: params.status } };
+  return { url: `${BASE_URL}${params.id}`, method: 'PUT', body: { status: params.status } };
 }

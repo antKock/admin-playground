@@ -2,13 +2,14 @@
 // Composition order matters: withState → withProps → withFeature(pagination) → withMutations → withMethods.
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
+import { signalStore, withState, withMethods, withProps, withFeature } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
 import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
+import { patch } from '@domains/shared/store.utils';
 import { IndicatorModel, IndicatorModelCreate, IndicatorModelUpdate } from './indicator-model.models';
 import {
   indicatorModelListLoader,
@@ -19,10 +20,6 @@ import {
   loadUsageByIndicatorModel,
 } from './indicator-model.api';
 
-function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
-  patchState(store, state as never);
-}
-
 export const IndicatorModelDomainStore = signalStore(
   { providedIn: 'root' },
   withState({
@@ -31,6 +28,7 @@ export const IndicatorModelDomainStore = signalStore(
     detailError: null as string | null,
     usedInActionModels: [] as { id: string; name: string }[],
     isLoadingUsage: false,
+    usageError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -76,12 +74,12 @@ export const IndicatorModelDomainStore = signalStore(
     },
     loadUsage: rxMethod<string>(
       pipe(
-        tap(() => patch(store, { isLoadingUsage: true })),
+        tap(() => patch(store, { isLoadingUsage: true, usageError: null })),
         switchMap((indicatorModelId) =>
           loadUsageByIndicatorModel(store._http, indicatorModelId).pipe(
             tap((models) => patch(store, { usedInActionModels: models, isLoadingUsage: false })),
-            catchError(() => {
-              patch(store, { isLoadingUsage: false });
+            catchError((err) => {
+              patch(store, { isLoadingUsage: false, usageError: err?.message ?? 'Failed to load usage' });
               return EMPTY;
             }),
           ),
