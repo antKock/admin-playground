@@ -59,21 +59,21 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Communities & Agents
-  epic-2: backlog
-  2-1-communities-crud-with-actee-pattern: backlog
-  2-2-community-user-assignment-removal: backlog
-  2-3-agents-crud-with-actee-pattern: backlog
-  2-4-agent-status-management: backlog
+  epic-2: in-progress
+  2-1-communities-crud-with-actee-pattern: review
+  2-2-community-user-assignment-removal: review
+  2-3-agents-crud-with-actee-pattern: review
+  2-4-agent-status-management: review
   epic-2-retrospective: optional
 
   # Epic 3: Indicator Models & Parameter Configuration
-  epic-3: backlog
-  3-1-indicator-models-crud-with-actee-pattern: backlog
-  3-2-indicator-model-type-subtype-list-values-management: backlog
-  3-3-indicator-model-status-workflow-usage-visibility: backlog
-  3-4-attach-indicator-models-to-action-models: backlog
-  3-5-indicator-parameter-configuration-6-parameters: backlog
-  3-6-jsonlogic-rule-input-for-indicator-parameters: backlog
+  epic-3: in-progress
+  3-1-indicator-models-crud-with-actee-pattern: ready-for-dev
+  3-2-indicator-model-type-subtype-list-values-management: ready-for-dev
+  3-3-indicator-model-status-workflow-usage-visibility: ready-for-dev
+  3-4-attach-indicator-models-to-action-models: ready-for-dev
+  3-5-indicator-parameter-configuration-6-parameters: ready-for-dev
+  3-6-jsonlogic-rule-input-for-indicator-parameters: ready-for-dev
   epic-3-retrospective: optional
 
   # Epic 4: Developer Tooling & Cross-Entity Polish
