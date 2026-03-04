@@ -1,3 +1,5 @@
+// Reusable signalStoreFeature that adds cursor-based pagination to any domain store.
+// Composed via withFeature() — provides: load, loadMore, refresh, reset methods + pagination state.
 import { computed } from '@angular/core';
 import {
   signalStoreFeature,
@@ -37,6 +39,7 @@ const initialState: CursorPaginationState = {
   error: null,
 };
 
+// Centralizes the `as never` cast required by patchState's strict typing on signalStoreFeature stores.
 function patch(store: WritableStateSource<object>, state: Partial<CursorPaginationState>): void {
   patchState(store, state as never);
 }
@@ -96,6 +99,8 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
           ),
         ),
 
+        // rxMethod wraps the pipe in a managed subscription (cleaned up if host store is destroyed).
+        // filter() guard prevents duplicate calls when already loading or no more pages.
         loadMore: rxMethod<void>(
           pipe(
             filter(() => hasMore() && !isLoading()),

@@ -1,3 +1,5 @@
+// Feature store — ONLY withComputed, no mutations or methods.
+// Projects typed signals from the domain store for UI consumption.
 import { computed, inject } from '@angular/core';
 import { signalStore, withComputed } from '@ngrx/signals';
 

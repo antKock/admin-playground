@@ -1,3 +1,6 @@
+// Facade — single entry point for UI components.
+// Exposes readonly signals (via feature store) and intention methods (via domain store).
+// Handles toast feedback, navigation, and error mapping so components stay presentation-only.
 import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 

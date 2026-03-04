@@ -1,3 +1,5 @@
+// Domain store — owns all server state and mutations for action themes.
+// Composition order matters: withState → withProps → withFeature(pagination) → withMutations → withMethods.
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
@@ -36,8 +38,9 @@ export const ActionThemeDomainStore = signalStore(
       loader: (params) => actionThemeListLoader(store._http, params),
     }),
   ),
+  // httpMutation auto-generates per-mutation status signals (e.g. createMutationIsPending).
   withMutations(() => ({
-    // CRUD mutations — concatOp
+    // CRUD mutations — concatOp (queues requests sequentially)
     createMutation: httpMutation({
       request: (data: ActionThemeCreate) => createActionThemeRequest(data),
       operator: concatOp,
@@ -51,7 +54,7 @@ export const ActionThemeDomainStore = signalStore(
       request: (id: string) => deleteActionThemeRequest(id),
       operator: concatOp,
     }),
-    // Status mutations — exhaustOp (prevent double-clicks)
+    // Status mutations — exhaustOp (ignores new calls while in-flight, prevents double-clicks)
     publishMutation: httpMutation({
       request: (id: string) => publishActionThemeRequest(id),
       operator: exhaustOp,
@@ -71,6 +74,7 @@ export const ActionThemeDomainStore = signalStore(
     }),
   })),
   withMethods((store) => ({
+    // switchMap in the pipe below auto-cancels the previous HTTP request on rapid re-calls.
     selectById: rxMethod<string>(
       pipe(
         tap(() => patch(store, { isLoadingDetail: true })),

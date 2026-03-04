@@ -1,3 +1,5 @@
+// Domain store — owns all server state and mutations for funding programs.
+// Composition order matters: withState → withProps → withFeature(pagination) → withMutations → withMethods.
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
@@ -32,6 +34,8 @@ export const FundingProgramDomainStore = signalStore(
       loader: (params) => fundingProgramListLoader(store._http, params),
     }),
   ),
+  // httpMutation auto-generates per-mutation status signals (e.g. createMutationIsPending).
+  // concatOp queues requests sequentially — safe for CRUD where order matters.
   withMutations(() => ({
     createMutation: httpMutation({
       request: (data: FundingProgramCreate) => createFundingProgramRequest(data),
@@ -48,6 +52,7 @@ export const FundingProgramDomainStore = signalStore(
     }),
   })),
   withMethods((store) => ({
+    // switchMap in the pipe below auto-cancels the previous HTTP request on rapid re-calls.
     selectById: rxMethod<string>(
       pipe(
         tap(() => patch(store, { isLoadingDetail: true })),

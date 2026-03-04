@@ -103,6 +103,8 @@ export class ActionThemeDetailComponent implements OnInit {
   readonly facade = inject(ActionThemeFacade);
   readonly router = inject(Router);
 
+  // Lifecycle buttons are status-gated in the template: draft→Publish, published→Disable, disabled→Activate.
+  // Each button disables on its own isPending OR anyMutationPending to prevent concurrent mutations.
   readonly theme = this.facade.selectedItem;
   readonly skeletonFields = Array(6).fill(0);
 

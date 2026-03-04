@@ -1,3 +1,5 @@
+// API layer — standalone functions, no inject() calls.
+// List/detail return Observables (used by rxMethod). Mutations return config objects (consumed by httpMutation).
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 

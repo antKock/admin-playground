@@ -113,11 +113,13 @@ export class FundingProgramFormComponent implements OnInit {
 
   isEditMode = false;
   private editId: string | null = null;
+  // Derived from facade mutation signals — no local state to manage or clean up.
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createFundingProgramForm(this.fb);
 
   private formPatched = false;
 
+  // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   constructor() {
     effect(() => {
       const item = this.facade.selectedItem();
