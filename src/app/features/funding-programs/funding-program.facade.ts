@@ -1,8 +1,8 @@
-import { Injectable, inject, computed, Signal } from '@angular/core';
+import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
-import { FundingProgram, FundingProgramCreate, FundingProgramUpdate } from '@domains/funding-programs/funding-program.models';
+import { FundingProgramCreate, FundingProgramUpdate } from '@domains/funding-programs/funding-program.models';
 import { ToastService } from '@app/shared/services/toast.service';
 import { FundingProgramFeatureStore } from './funding-program.store';
 
@@ -13,14 +13,22 @@ export class FundingProgramFacade {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
-  // Data signals — readonly (typed cast from unknown[] to FundingProgram[])
-  readonly items: Signal<FundingProgram[]> = computed(() => this.featureStore.items() as FundingProgram[]);
+  // Data signals — readonly
+  readonly items = this.featureStore.items;
   readonly selectedItem = this.featureStore.selectedItem;
   readonly isLoading = this.featureStore.isLoading;
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
   readonly hasMore = this.featureStore.hasMore;
   readonly error = this.featureStore.error;
   readonly isEmpty = this.featureStore.isEmpty;
+
+  // Per-mutation CRUD status signals
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
+  readonly anyMutationPending = computed(() =>
+    this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
+  );
 
   // Intention methods
   load(filters?: Record<string, string>): void {
@@ -43,7 +51,6 @@ export class FundingProgramFacade {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
       this.toast.success('Funding Program created');
-      this.domainStore.load(undefined);
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -65,7 +72,6 @@ export class FundingProgramFacade {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
       this.toast.success('Funding Program deleted');
-      this.domainStore.load(undefined);
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);

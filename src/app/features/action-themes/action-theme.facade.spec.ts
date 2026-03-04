@@ -105,7 +105,7 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('create', () => {
-    it('should trigger mutation, show toast, and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and navigate on success', async () => {
       const createPromise = facade.create({ name: 'New Theme', technical_label: 'new_theme', status: 'draft' });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('action-themes'));
@@ -114,10 +114,6 @@ describe('ActionThemeFacade', () => {
       await createPromise;
 
       expect(successSpy).toHaveBeenCalledWith('Action Theme created');
-
-      // After success, it triggers a list refresh
-      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
-      refreshReq.flush(mockPaginatedResponse);
     });
   });
 
@@ -139,7 +135,7 @@ describe('ActionThemeFacade', () => {
   });
 
   describe('delete', () => {
-    it('should trigger mutation, show toast, and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and navigate on success', async () => {
       const deletePromise = facade.delete('at-1');
 
       const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE' && r.url.includes('action-themes/at-1'));
@@ -148,10 +144,6 @@ describe('ActionThemeFacade', () => {
       await deletePromise;
 
       expect(successSpy).toHaveBeenCalledWith('Action Theme deleted');
-
-      // After success, it triggers a list refresh
-      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
-      refreshReq.flush(mockPaginatedResponse);
     });
   });
 

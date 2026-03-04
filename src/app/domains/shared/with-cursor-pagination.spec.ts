@@ -256,7 +256,7 @@ describe('withCursorPagination', () => {
       loaderSpy.mockReturnValue(
         of(createMockResponse([{ id: '2', name: 'B' }], false)),
       );
-      store.refresh();
+      store.refresh(undefined);
 
       expect(loaderSpy).toHaveBeenLastCalledWith({
         cursor: null,

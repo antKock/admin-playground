@@ -7,7 +7,7 @@ import {
   patchState,
   WritableStateSource,
 } from '@ngrx/signals';
-import { pipe, switchMap, tap, catchError, EMPTY, Observable } from 'rxjs';
+import { pipe, switchMap, tap, catchError, filter, EMPTY, Observable } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -96,72 +96,70 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
           ),
         ),
 
-        loadMore(): void {
-          if (!hasMore() || isLoading()) {
-            return;
-          }
-
-          patch(store, { isLoading: true, error: null });
-
-          config
-            .loader({ cursor: cursor(), limit, filters: currentFilters })
-            .pipe(
-              tap((response) => {
-                patch(store, {
-                  items: [...items(), ...response.data],
-                  cursor: response.pagination.cursors.end_cursor,
-                  hasMore: response.pagination.has_next_page,
-                  isLoading: false,
-                });
-              }),
-              catchError((err) => {
-                patch(store, {
-                  error: err?.message ?? 'Failed to load more items',
-                  isLoading: false,
-                });
-                return EMPTY;
-              }),
-            )
-            .subscribe();
-        },
+        loadMore: rxMethod<void>(
+          pipe(
+            filter(() => hasMore() && !isLoading()),
+            tap(() => patch(store, { isLoading: true, error: null })),
+            switchMap(() =>
+              config.loader({ cursor: cursor(), limit, filters: currentFilters }).pipe(
+                tap((response) => {
+                  patch(store, {
+                    items: [...items(), ...response.data],
+                    cursor: response.pagination.cursors.end_cursor,
+                    hasMore: response.pagination.has_next_page,
+                    isLoading: false,
+                  });
+                }),
+                catchError((err) => {
+                  patch(store, {
+                    error: err?.message ?? 'Failed to load more items',
+                    isLoading: false,
+                  });
+                  return EMPTY;
+                }),
+              ),
+            ),
+          ),
+        ),
 
         reset(): void {
           currentFilters = undefined;
           patch(store, { ...initialState });
         },
 
-        refresh(filters?: Record<string, string>): void {
-          const filtersToUse = filters ?? currentFilters;
-          currentFilters = filtersToUse;
-          patch(store, {
-            items: [],
-            cursor: null,
-            hasMore: false,
-            isLoading: true,
-            error: null,
-          });
-
-          config
-            .loader({ cursor: null, limit, filters: filtersToUse })
-            .pipe(
-              tap((response) => {
-                patch(store, {
-                  items: response.data,
-                  cursor: response.pagination.cursors.end_cursor,
-                  hasMore: response.pagination.has_next_page,
-                  isLoading: false,
-                });
-              }),
-              catchError((err) => {
-                patch(store, {
-                  error: err?.message ?? 'Failed to refresh items',
-                  isLoading: false,
-                });
-                return EMPTY;
-              }),
-            )
-            .subscribe();
-        },
+        refresh: rxMethod<Record<string, string> | undefined>(
+          pipe(
+            tap((filters) => {
+              currentFilters = filters ?? currentFilters;
+              patch(store, {
+                items: [],
+                cursor: null,
+                hasMore: false,
+                isLoading: true,
+                error: null,
+              });
+            }),
+            switchMap(() =>
+              config.loader({ cursor: null, limit, filters: currentFilters }).pipe(
+                tap((response) => {
+                  patch(store, {
+                    items: response.data,
+                    cursor: response.pagination.cursors.end_cursor,
+                    hasMore: response.pagination.has_next_page,
+                    isLoading: false,
+                  });
+                }),
+                catchError((err) => {
+                  patch(store, {
+                    error: err?.message ?? 'Failed to refresh items',
+                    isLoading: false,
+                  });
+                  return EMPTY;
+                }),
+              ),
+            ),
+          ),
+        ),
       };
     }),
   );

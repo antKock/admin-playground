@@ -1,4 +1,4 @@
-import { Injectable, inject, computed, Signal } from '@angular/core';
+import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
@@ -13,8 +13,8 @@ export class ActionThemeFacade {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
-  // Data signals — readonly (typed cast from unknown[] to ActionTheme[])
-  readonly items: Signal<ActionTheme[]> = computed(() => this.featureStore.items() as ActionTheme[]);
+  // Data signals — readonly
+  readonly items = this.featureStore.items;
   readonly selectedItem = this.featureStore.selectedItem;
   readonly isLoading = this.featureStore.isLoading;
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
@@ -22,12 +22,18 @@ export class ActionThemeFacade {
   readonly error = this.featureStore.error;
   readonly isEmpty = this.featureStore.isEmpty;
 
-  // Per-mutation status signals — for fine-grained UI feedback
+  // Per-mutation CRUD status signals
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
+
+  // Per-mutation lifecycle status signals
   readonly publishIsPending = this.domainStore.publishMutationIsPending;
   readonly disableIsPending = this.domainStore.disableMutationIsPending;
   readonly activateIsPending = this.domainStore.activateMutationIsPending;
   readonly duplicateIsPending = this.domainStore.duplicateMutationIsPending;
   readonly anyMutationPending = computed(() =>
+    this.createIsPending() || this.updateIsPending() || this.deleteIsPending() ||
     this.publishIsPending() || this.disableIsPending() ||
     this.activateIsPending() || this.duplicateIsPending(),
   );
@@ -54,7 +60,6 @@ export class ActionThemeFacade {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
       this.toast.success('Action Theme created');
-      this.domainStore.load(undefined);
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -76,7 +81,6 @@ export class ActionThemeFacade {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
       this.toast.success('Action Theme deleted');
-      this.domainStore.load(undefined);
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -101,10 +101,11 @@ export class ActionThemeFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly facade = inject(ActionThemeFacade);
+  private readonly el = inject(ElementRef);
 
   isEditMode = false;
   private editId: string | null = null;
-  readonly submitting = signal(false);
+  readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionThemeForm(this.fb);
 
   private formPatched = false;
@@ -142,19 +143,18 @@ export class ActionThemeFormComponent implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      const firstInvalid = document.querySelector<HTMLElement>('.ng-invalid[formControlName]');
+      const firstInvalid = this.el.nativeElement.querySelector('.ng-invalid[formControlName]') as HTMLElement | null;
       firstInvalid?.focus();
       return;
     }
 
-    this.submitting.set(true);
     const raw = this.form.getRawValue();
     const data = { ...raw, name: raw.name!, technical_label: raw.technical_label! };
 
     if (this.isEditMode && this.editId) {
-      this.facade.update(this.editId, data).finally(() => this.submitting.set(false));
+      this.facade.update(this.editId, data);
     } else {
-      this.facade.create({ ...data, status: 'draft' }).finally(() => this.submitting.set(false));
+      this.facade.create({ ...data, status: 'draft' });
     }
   }
 

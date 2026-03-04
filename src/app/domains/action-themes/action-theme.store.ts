@@ -1,11 +1,17 @@
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { signalStore, withState, withMethods, withProps, withFeature, patchState } from '@ngrx/signals';
+import { signalStore, withState, withMethods, withProps, withFeature, patchState, WritableStateSource } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
 import { httpMutation, concatOp, exhaustOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { ActionTheme, ActionThemeCreate, ActionThemeUpdate } from './action-theme.models';
+
+function patch(store: WritableStateSource<object>, state: Record<string, unknown>): void {
+  patchState(store, state as never);
+}
 import {
   actionThemeListLoader,
   loadActionTheme,
@@ -64,19 +70,23 @@ export const ActionThemeDomainStore = signalStore(
       operator: concatOp,
     }),
   })),
-  withMethods((store) => {
-    const http = inject(HttpClient);
-    return {
-      selectById(id: string): void {
-        patchState(store, { isLoadingDetail: true } as never);
-        loadActionTheme(http, id).subscribe({
-          next: (item) => patchState(store, { selectedItem: item, isLoadingDetail: false } as never),
-          error: (err) => patchState(store, { error: err?.message ?? 'Failed to load item', isLoadingDetail: false } as never),
-        });
-      },
-      clearSelection(): void {
-        patchState(store, { selectedItem: null } as never);
-      },
-    };
-  }),
+  withMethods((store) => ({
+    selectById: rxMethod<string>(
+      pipe(
+        tap(() => patch(store, { isLoadingDetail: true })),
+        switchMap((id) =>
+          loadActionTheme(store._http, id).pipe(
+            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false })),
+            catchError((err) => {
+              patch(store, { error: err?.message ?? 'Failed to load item', isLoadingDetail: false });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+    clearSelection(): void {
+      patch(store, { selectedItem: null });
+    },
+  })),
 );

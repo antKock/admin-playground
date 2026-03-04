@@ -2,13 +2,14 @@ import { computed, inject } from '@angular/core';
 import { signalStore, withComputed } from '@ngrx/signals';
 
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
+import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 
 export const FundingProgramFeatureStore = signalStore(
   { providedIn: 'root' },
   withComputed(() => {
     const domainStore = inject(FundingProgramDomainStore);
     return {
-      items: computed(() => domainStore.items()),
+      items: computed(() => domainStore.items() as FundingProgram[]),
       selectedItem: computed(() => domainStore.selectedItem()),
       isLoading: computed(() => domainStore.isLoading()),
       isLoadingDetail: computed(() => domainStore.isLoadingDetail()),

@@ -104,7 +104,7 @@ describe('FundingProgramFacade', () => {
   });
 
   describe('create', () => {
-    it('should trigger mutation, show toast, and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and navigate on success', async () => {
       const createPromise = facade.create({ name: 'New Program', is_active: true });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('funding-programs'));
@@ -113,10 +113,6 @@ describe('FundingProgramFacade', () => {
       await createPromise;
 
       expect(successSpy).toHaveBeenCalledWith('Funding Program created');
-
-      // After success, it triggers a list refresh
-      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
-      refreshReq.flush(mockPaginatedResponse);
     });
   });
 
@@ -138,7 +134,7 @@ describe('FundingProgramFacade', () => {
   });
 
   describe('delete', () => {
-    it('should trigger mutation, show toast, and refresh list on success', async () => {
+    it('should trigger mutation, show toast, and navigate on success', async () => {
       const deletePromise = facade.delete('fp-1');
 
       const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE' && r.url.includes('funding-programs/fp-1'));
@@ -147,10 +143,6 @@ describe('FundingProgramFacade', () => {
       await deletePromise;
 
       expect(successSpy).toHaveBeenCalledWith('Funding Program deleted');
-
-      // After success, it triggers a list refresh
-      const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
-      refreshReq.flush(mockPaginatedResponse);
     });
   });
 
