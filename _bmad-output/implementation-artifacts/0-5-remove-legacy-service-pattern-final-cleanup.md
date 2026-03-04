@@ -1,6 +1,6 @@
 # Story 0.5: Remove Legacy Service Pattern & Final Cleanup
 
-Status: review
+Status: done
 
 ## Story
 

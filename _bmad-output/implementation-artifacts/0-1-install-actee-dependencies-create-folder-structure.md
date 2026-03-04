@@ -1,6 +1,6 @@
 # Story 0.1: Install ACTEE Dependencies & Create Folder Structure
 
-Status: review
+Status: done
 
 ## Story
 

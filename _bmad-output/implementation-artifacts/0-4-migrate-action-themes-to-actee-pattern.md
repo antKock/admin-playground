@@ -1,6 +1,6 @@
 # Story 0.4: Migrate Action Themes to ACTEE Pattern
 
-Status: review
+Status: done
 
 ## Story
 

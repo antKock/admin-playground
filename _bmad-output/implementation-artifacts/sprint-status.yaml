@@ -41,21 +41,21 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 0: ACTEE Architecture Migration - Preserving FP & AT Operator Workflows
-  epic-0: in-progress
-  0-1-install-actee-dependencies-create-folder-structure: review
-  0-2-create-reusable-cursor-pagination-store-feature: review
-  0-3-migrate-funding-programs-to-actee-pattern-pilot: review
-  0-4-migrate-action-themes-to-actee-pattern: review
-  0-5-remove-legacy-service-pattern-final-cleanup: review
-  epic-0-retrospective: optional
+  epic-0: done
+  0-1-install-actee-dependencies-create-folder-structure: done
+  0-2-create-reusable-cursor-pagination-store-feature: done
+  0-3-migrate-funding-programs-to-actee-pattern-pilot: done
+  0-4-migrate-action-themes-to-actee-pattern: done
+  0-5-remove-legacy-service-pattern-final-cleanup: done
+  epic-0-retrospective: done
 
   # Epic 1: Action Models & Folder Models
-  epic-1: backlog
-  1-1-action-models-crud-with-actee-pattern: backlog
-  1-2-action-model-funding-program-action-theme-association: backlog
-  1-3-action-model-status-workflow: backlog
-  1-4-folder-models-crud-with-actee-pattern: backlog
-  1-5-folder-model-funding-program-association: backlog
+  epic-1: in-progress
+  1-1-action-models-crud-with-actee-pattern: review
+  1-2-action-model-funding-program-action-theme-association: review
+  1-3-action-model-status-workflow: blocked
+  1-4-folder-models-crud-with-actee-pattern: review
+  1-5-folder-model-funding-program-association: review
   epic-1-retrospective: optional
 
   # Epic 2: Communities & Agents

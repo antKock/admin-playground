@@ -29,15 +29,15 @@ export const routes: Routes = [
       {
         path: 'action-models',
         loadChildren: () =>
-          import('./features/action-models/action-model.routes').then(
-            (m) => m.actionModelRoutes,
+          import('./pages/action-models/action-models.routes').then(
+            (m) => m.actionModelsRoutes,
           ),
       },
       {
         path: 'folder-models',
         loadChildren: () =>
-          import('./features/folder-models/folder-model.routes').then(
-            (m) => m.folderModelRoutes,
+          import('./pages/folder-models/folder-models.routes').then(
+            (m) => m.folderModelsRoutes,
           ),
       },
       {

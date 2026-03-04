@@ -1,6 +1,6 @@
 # Story 0.2: Create Reusable Cursor Pagination Store Feature
 
-Status: review
+Status: done
 
 ## Story
 
