@@ -96,7 +96,7 @@ describe('FundingProgramDomainStore', () => {
       expect(store.isLoadingDetail()).toBe(false);
     });
 
-    it('should handle error on selectById', () => {
+    it('should handle error on selectById and set detailError', () => {
       store.selectById('fp-bad');
 
       const req = httpTesting.expectOne((r) => r.url.includes('funding-programs/fp-bad'));
@@ -104,6 +104,7 @@ describe('FundingProgramDomainStore', () => {
 
       expect(store.selectedItem()).toBeNull();
       expect(store.isLoadingDetail()).toBe(false);
+      expect(store.detailError()).toBeTruthy();
     });
   });
 

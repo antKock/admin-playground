@@ -17,6 +17,7 @@ export const ActionThemeFeatureStore = signalStore(
       isLoadingDetail: computed(() => domainStore.isLoadingDetail()),
       hasMore: computed(() => domainStore.hasMore()),
       error: computed(() => domainStore.error()),
+      detailError: computed(() => domainStore.detailError()),
       isEmpty: computed(() => domainStore.isEmpty()),
       totalLoaded: computed(() => domainStore.totalLoaded()),
     };

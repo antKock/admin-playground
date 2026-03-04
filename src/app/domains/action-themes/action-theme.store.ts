@@ -31,6 +31,7 @@ export const ActionThemeDomainStore = signalStore(
   withState({
     selectedItem: null as ActionTheme | null,
     isLoadingDetail: false,
+    detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -80,9 +81,9 @@ export const ActionThemeDomainStore = signalStore(
         tap(() => patch(store, { isLoadingDetail: true })),
         switchMap((id) =>
           loadActionTheme(store._http, id).pipe(
-            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false })),
+            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { error: err?.message ?? 'Failed to load item', isLoadingDetail: false });
+              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),

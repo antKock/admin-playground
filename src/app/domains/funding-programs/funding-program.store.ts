@@ -27,6 +27,7 @@ export const FundingProgramDomainStore = signalStore(
   withState({
     selectedItem: null as FundingProgram | null,
     isLoadingDetail: false,
+    detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -58,9 +59,9 @@ export const FundingProgramDomainStore = signalStore(
         tap(() => patch(store, { isLoadingDetail: true })),
         switchMap((id) =>
           loadFundingProgram(store._http, id).pipe(
-            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false })),
+            tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { error: err?.message ?? 'Failed to load item', isLoadingDetail: false });
+              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),

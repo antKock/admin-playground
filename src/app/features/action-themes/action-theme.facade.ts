@@ -23,6 +23,7 @@ export class ActionThemeFacade {
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
   readonly hasMore = this.featureStore.hasMore;
   readonly error = this.featureStore.error;
+  readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
 
   // Per-mutation CRUD status signals

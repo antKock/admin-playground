@@ -75,33 +75,71 @@ helpers de la librairie ngrx-toolkit.
 Ils peuvent être composés avec :
 
 -   `withState`
+-   `withProps`
+-   `withFeature` (ex : `withCursorPagination`)
 -   `withComputed`
 -   `withMethods`
--   `withEntityResources`
 -   `withMutations`
 
 ------------------------------------------------------------------------
 
-### Gestion des entités --- withEntityResources
+### Récupération de données --- withCursorPagination & rxMethod
 
-La récupération de données depuis l'API se fait via
-**withEntityResources**.
+La récupération de données depuis l'API se fait via :
+
+-   **`withCursorPagination`** — un `signalStoreFeature` réutilisable
+    pour les listes paginées (cursor-based)
+-   **`rxMethod`** — pour les appels unitaires (ex : chargement d'un
+    détail par ID)
+
+#### withCursorPagination
 
 Ce mécanisme permet :
 
--   de connecter un store à une resource HTTP
+-   de connecter un store à un loader HTTP paginé
 -   de gérer automatiquement :
-    -   loading
-    -   error
-    -   état des entités
--   d'intégrer proprement les données retournées par l'API
+    -   `items`, `cursor`, `hasMore`
+    -   `isLoading`, `error`
+    -   `isEmpty`, `totalLoaded`
+-   d'exposer les méthodes : `load()`, `loadMore()`, `refresh()`,
+    `reset()`
 
-Les resources sont définies dans le fichier :
+Le loader est défini dans `{domain_name}.api.ts` et passé en
+configuration :
 
-{domain_name}.api.ts
+```ts
+withFeature((store) =>
+  withCursorPagination<Entity>({
+    loader: (params) => entityListLoader(store._http, params),
+  }),
+)
+```
+
+#### rxMethod (détail)
+
+Le chargement d'une entité unique utilise `rxMethod` dans
+`withMethods` :
+
+```ts
+selectById: rxMethod<string>(
+  pipe(
+    tap(() => patch(store, { isLoadingDetail: true })),
+    switchMap((id) =>
+      loadEntity(store._http, id).pipe(
+        tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
+        catchError((err) => {
+          patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
+          return EMPTY;
+        }),
+      ),
+    ),
+  ),
+),
+```
 
 Le domain store ne fait jamais d'appel HTTP direct :\
-il consomme uniquement des resources exposées par l'API du domain.
+il consomme uniquement des loaders et des mutation requests exposés par
+l'API du domain.
 
 ------------------------------------------------------------------------
 
@@ -136,9 +174,9 @@ Chaque domain possède un fichier :
 
 Il expose :
 
-1.  Des resources\
-    Pour la récupération de données (listes, détails, etc.)\
-    Ces resources sont utilisées par `withEntityResources`.
+1.  Des loaders\
+    Pour la récupération de données (listes paginées, détails, etc.)\
+    Ces loaders sont consommés par `withCursorPagination` et `rxMethod`.
 
 2.  Des `HttpMutationRequest`\
     Pour :
@@ -155,7 +193,7 @@ Il expose :
 
 -   Un domain store :
     -   expose de l'état
-    -   enregistre ses resources via `withEntityResources`
+    -   intègre la pagination via `withFeature` (`withCursorPagination`)
     -   enregistre ses mutations via `withMutations`
     -   ne contient aucun scénario
     -   ne déclenche aucun effet I/O direct
@@ -283,8 +321,8 @@ Elles servent uniquement à :
 -   Aucun Observable exposé à l'UI
 -   La réactivité UI est assurée exclusivement par des Signals
 -   Les appels HTTP passent par :
-    -   des resources (withEntityResources)
-    -   des HttpMutationRequest (withMutations)
+    -   des loaders (`withCursorPagination`, `rxMethod`)
+    -   des `HttpMutationRequest` (`withMutations`)
 
 ### Appels asynchrones
 

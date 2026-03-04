@@ -97,7 +97,7 @@ describe('ActionThemeDomainStore', () => {
       expect(store.isLoadingDetail()).toBe(false);
     });
 
-    it('should handle error on selectById', () => {
+    it('should handle error on selectById and set detailError', () => {
       store.selectById('at-bad');
 
       const req = httpTesting.expectOne((r) => r.url.includes('action-themes/at-bad'));
@@ -105,6 +105,7 @@ describe('ActionThemeDomainStore', () => {
 
       expect(store.selectedItem()).toBeNull();
       expect(store.isLoadingDetail()).toBe(false);
+      expect(store.detailError()).toBeTruthy();
     });
   });
 

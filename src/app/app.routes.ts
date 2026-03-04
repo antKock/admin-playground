@@ -43,18 +43,18 @@ export const routes: Routes = [
       {
         path: 'communities',
         loadChildren: () =>
-          import('./features/communities/community.routes').then((m) => m.communityRoutes),
+          import('./pages/communities/communities.routes').then((m) => m.communitiesRoutes),
       },
       {
         path: 'agents',
         loadChildren: () =>
-          import('./features/agents/agent.routes').then((m) => m.agentRoutes),
+          import('./pages/agents/agents.routes').then((m) => m.agentsRoutes),
       },
       {
         path: 'indicator-models',
         loadChildren: () =>
-          import('./features/indicator-models/indicator-model.routes').then(
-            (m) => m.indicatorModelRoutes,
+          import('./pages/indicator-models/indicator-models.routes').then(
+            (m) => m.indicatorModelsRoutes,
           ),
       },
     ],
