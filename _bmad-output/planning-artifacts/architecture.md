@@ -2,20 +2,21 @@
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 lastStep: 8
 status: 'complete'
-completedAt: '2026-03-03'
+completedAt: '2026-03-04'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/product-brief-admin-playground-2026-03-03.md
   - _bmad-output/planning-artifacts/ux-design-specification.md
-  - _bmad-output/planning-artifacts/ux-design-directions.html
+  - _bmad-output/planning-artifacts/epics.md
   - docs/BRIEF_CLAUDE_PROJET_ADMIN_LAUREAT.md
+  - docs/architecture-ACTEE.md
+  - docs/comparison-report-ACTEE-vs-admin-playground.md
   - docs/color-palette.md
   - docs/reference-links.md
-  - openapi.json (remote: https://laureatv2-api-staging.osc-fr1.scalingo.io/openapi.json)
 workflowType: 'architecture'
 project_name: 'admin-playground'
 user_name: 'Anthony'
-date: '2026-03-03'
+date: '2026-03-04'
 ---
 
 # Architecture Decision Document
@@ -24,429 +25,278 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ## Project Context Analysis
 
+### Migration Context
+
+**This architecture document replaces the previous flat-architecture design (2026-03-03).** The project is being realigned to the **ACTEE corporate architecture guidelines** (Domain → Feature → UI layered architecture with NgRx Signal Stores, facades, and strict separation of concerns).
+
+**Current Implementation State:**
+
+| Component | Status | Migration Impact |
+|-----------|--------|-----------------|
+| **Auth system** (JWT, interceptor, guard, login) | Built (Epic 1) | Low — mostly infrastructure, stays in `core/` |
+| **App shell** (sidebar, layout, routing) | Built (Epic 1) | Low — becomes a `page` wrapper |
+| **Shared components** (DataTable, MetadataGrid, StatusBadge, Toast, ConfirmDialog) | Built (Epic 1) | None — already presentational, ACTEE-compliant |
+| **BaseEntityService\<T\>** | Built (Epic 1) | **High — replaced by domain stores + API files** |
+| **Funding Programs** (full CRUD) | Built (Epic 2) | **High — service → domain store + facade refactor** |
+| **Action Themes** (CRUD + publish/disable/activate/duplicate) | Built (Epic 2) | **High — service → domain store + facade refactor** |
+| **Action Models, Folder Models, Indicator Models, Communities, Agents** | Stubs only | None — build natively in ACTEE patterns |
+
 ### Requirements Overview
 
 **Functional Requirements (32 FRs across 6 domains):**
 
-| Domain | FRs | Architectural Impact |
-|--------|-----|---------------------|
-| **Auth & Session** | FR1–FR4 | JWT interceptor, route guards, token storage, redirect-after-login |
-| **Navigation & Layout** | FR5–FR6 | App shell with sidebar + header, 7-section routing |
-| **Entity CRUD** | FR7–FR12 | Generic CRUD pattern × 7 entities, cursor pagination service, form generation |
-| **Status & Lifecycle** | FR13–FR16 | Status workflow engine (draft→published→disabled), duplication, transition validation |
-| **Relationships & Associations** | FR17–FR22 | FK selectors, bidirectional indicator-model links, association metadata CRUD |
-| **Indicator Parameters** | FR23–FR28 | 6-parameter config per indicator per model context, JSONLogic input, type constraints |
-| **Feedback & Errors** | FR29–FR31 | Toast system, error interception, constraint explanation |
-| **Dev Tooling** | FR32 | API inspector component on detail pages |
+| Domain | FRs | Architectural Impact (ACTEE lens) |
+|--------|-----|----------------------------------|
+| **Auth & Session** | FR1–FR4 | Stays in `core/auth/`. No ACTEE layer needed — infrastructure concern. |
+| **Navigation & Layout** | FR5–FR6 | App shell becomes `pages/` layer. Sidebar stays in `core/layout/`. |
+| **Entity CRUD** | FR7–FR12 | **Core migration target.** Each entity gets: `domains/{entity}/` (store + API + models) + `features/{entity}/` (derived store + facade + UI components). |
+| **Status & Lifecycle** | FR13–FR16 | Status transitions become domain store mutations via `withMutations` + `httpMutation`. |
+| **Relationships & Associations** | FR17–FR22 | Cross-domain reads handled by feature stores aggregating multiple domain stores. |
+| **Indicator Parameters** | FR23–FR28 | **Most complex surface.** Domain use-cases own parameter validation logic. Facade orchestrates the workspace. |
+| **Feedback & Errors** | FR29–FR31 | Toast service stays in `shared/`. Error interception stays in `core/`. |
+| **Dev Tooling** | FR32 | API Inspector stays in `shared/components/`. |
 
 **Non-Functional Requirements:**
 
-- **Performance:** API-bound, no heavy client computation. Pagination must feel responsive. No offline capability.
-- **Security:** HTTPS only, JWT stored securely, credentials in `.env.local`, no sensitive data cached client-side.
+- **Performance:** API-bound, no heavy client computation. Cursor pagination must feel responsive. No offline capability.
+- **Security:** HTTPS only, JWT in localStorage, interceptor for token injection, route guards. No change from current.
 - **Integration:** Single API consumer (Laureat REST API). OpenAPI spec is source of truth. Cursor-based pagination everywhere.
-- **Code Quality:** Angular 20 standalone components, TypeScript strict, signals (no NgRx), consistent patterns across all 7 modules, inline documentation.
+- **Code Quality:** Angular 20 standalone components, TypeScript strict, **NgRx Signal Stores** (replacing raw Angular signals in services), consistent ACTEE patterns across all 7 modules.
 
 ### UX Architectural Implications
 
-The UX specification is comprehensive (14 steps, fully designed). Key architectural drivers:
+The UX specification is comprehensive (14 steps, fully designed). Key architectural drivers under ACTEE:
 
-1. **Design system: Tailwind CSS + Angular CDK** — custom component library, no pre-built UI library (no Material/PrimeNG). 60+ design tokens mapped to Tailwind theme.
-2. **Component library (13 custom components):** AppLayout, DataTable, MetadataGrid, SectionAnchors, StatusBadge, SaveBar, Toast, ConfirmDialog, IndicatorCard, ToggleRow, RuleField, IndicatorPicker, ApiInspector.
-3. **Interaction model:** Explicit save (not auto-save), unsaved-state tracking per indicator card, navigation guards.
-4. **Model-as-workspace pattern:** ActionModel detail is a single-page workspace with expandable indicator cards, inline parameter configuration, drag-to-reorder — the most complex UI surface.
-5. **Infinite scroll** (not traditional pagination buttons) — cursor-based, loads at 80% scroll threshold.
-6. **CDK usage:** Overlay (dropdowns, dialogs), DragDrop (indicator reorder), A11y (focus trap), Clipboard, Scrolling (virtual scroll).
-7. **Icons:** Lucide via `lucide-angular`.
-8. **Pixel-level reference:** `ux-design-directions.html` serves as the implementation mockup with component→CSS class mappings.
-
-### OpenAPI Spec Insights
-
-From the live API analysis (80+ endpoints across 15+ entity groups, 7 in v1 scope):
-
-- **Cursor-based pagination** confirmed on all list endpoints (cursor + limit params, `PaginatedResponse<T>`)
-- **Status workflows** confirmed: ActionThemes have publish/disable/activate endpoints; Agents have soft-delete
-- **Communities** have parent-child hierarchy with recursive fetching — more complex than simple CRUD
-- **Indicator-model association metadata** confirmed: visibility_rule, required_rule, editable, default_value, duplicable, constrained_values
-- **History/versioning endpoints** exist but are explicitly deferred — architecture should be aware but not build for them
-- **Actions/Folders** (instances) exist in API but are out of scope
-- **`by-unique-id`** endpoint pattern exists on multiple entities (ActionThemes, Communities, Agents, Actions, Folders)
+1. **Design system (Tailwind CSS + Angular CDK)** — unchanged, stays in `shared/`
+2. **13 custom shared components** — already presentational, ACTEE-compliant
+3. **Explicit save pattern** — unsaved-state tracking moves from service signals to domain store state
+4. **Model-as-workspace** (ActionModel detail) — facade orchestrates multiple domain stores (action-models + indicator-models), derived feature store exposes composed view
+5. **Infinite scroll** (cursor-based) — pagination state managed by domain store via `withEntityResources`
+6. **CDK usage** (Overlay, DragDrop, A11y) — UI-only, no ACTEE layer impact
 
 ### Scale & Complexity Assessment
 
 | Indicator | Assessment |
 |-----------|-----------|
 | **Project type** | Angular 20 SPA — frontend-only, single API consumer |
-| **Complexity** | Medium — standard CRUD patterns over a non-trivial domain model |
+| **Complexity** | Medium — standard CRUD patterns + one complex workspace surface |
 | **Entity count** | 7 entities, varying complexity (simple CRUD → complex workspace) |
-| **Integration** | Single REST API, JWT auth, cursor pagination |
+| **Architecture paradigm** | ACTEE: Domain → Feature → UI with NgRx Signal Stores |
+| **Migration scope** | 2 entities to retrofit, 5 to build natively, infrastructure mostly stable |
 | **Real-time** | None |
 | **Multi-tenancy** | None |
 | **Regulatory** | None (internal tool, no citizen data) |
-| **User interaction complexity** | High for indicator configuration (6 params × N indicators × JSONLogic rules), low-medium for other entities |
-| **Data complexity** | Medium — entity relationships, bidirectional associations with metadata |
 | **Primary technical domain** | Frontend web application |
 
 ### Technical Constraints & Dependencies
 
 1. **Angular 20** — standalone components, signals, lazy loading (mandated by PRD + brief)
-2. **No backend** — frontend-only, all data operations via Laureat REST API
-3. **Tailwind CSS + Angular CDK** — mandated by UX spec for styling + behavioral primitives
-4. **TypeScript strict mode** — mandated by PRD
-5. **API base URL configurable** via `environment.ts` — staging default: `laureatv2-api-staging.osc-fr1.scalingo.io`
-6. **Live OpenAPI spec** is source of truth — API may change between sprints (primary risk)
-7. **Bundler: open question** — brief mentions Parcel (personal hosting), but Angular 20 default is esbuild/Vite. Needs resolution in Step 3.
+2. **NEW: @ngrx/signals** — required by ACTEE for domain and feature stores
+3. **NEW: ngrx-toolkit** — required by ACTEE for `withEntityResources`, `withMutations`, `httpMutation`
+4. **Tailwind CSS + Angular CDK** — mandated by UX spec (unchanged)
+5. **TypeScript strict mode** — mandated by PRD (unchanged)
+6. **Single API consumer** — Laureat REST API, cursor-based pagination, OpenAPI spec as source of truth
+7. **esbuild builder** — Angular default (unchanged)
 8. **Development model:** AI-assisted (BMAD-driven), reviewed by senior Angular developer
-9. **Hosting:** Personal domain initially, company GitHub + redeploy if v1 succeeds
+9. **Hosting:** Vercel with GitHub auto-deploy (unchanged)
 
 ### Cross-Cutting Concerns
 
-1. **Generic API service layer** — Typed services for CRUD + cursor pagination, reusable across all 7 entities
-2. **Error handling** — Centralized HTTP error interception → toast notification. Explanatory messages with cause and resolution. Never silent failures.
-3. **Authentication** — JWT interceptor on all requests, route guards for protected routes, redirect-after-login preservation
-4. **Status workflow** — Reusable status transition pattern across entities with different lifecycle states (draft→published→disabled)
-5. **Unsaved state management** — Signal-based dirty tracking for indicator cards, navigation guards on unsaved changes
-6. **Entity relationship rendering** — Linked reference fields (select + ↗ navigate icon) used across multiple entities
-7. **Loading states** — Skeleton patterns for tables and detail views, consistent across all entities
-8. **Consistent module structure** — Same folder/file/service/routing pattern across all 7 entity modules for predictability
+1. **Domain stores as single source of truth** — replaces `BaseEntityService<T>`. Every entity's state lives in a `signalStore` in `domains/{entity}/`.
+2. **Facades as UI entry point** — components never talk to stores or services directly. One facade per feature.
+3. **API centralization** — all HTTP operations defined in `{entity}.api.ts` files using resources and `HttpMutationRequest`. No scattered HTTP calls.
+4. **Error handling** — centralized HTTP interceptor (unchanged) + domain store error state (replaces service-level error signals).
+5. **Authentication** — JWT interceptor + guard (unchanged, stays in `core/auth/`).
+6. **Status workflows** — domain mutations via `withMutations` (replaces service methods).
+7. **Unsaved state management** — domain store state (replaces service-level signal tracking).
+8. **Consistent module structure** — ACTEE pattern replicated across all 7 entity modules.
 
 ## Starter Template Evaluation
 
 ### Primary Technology Domain
 
-Frontend web application (Angular 20 SPA) — single-page application consuming an existing REST API. No backend component.
+Frontend web application (Angular 21 SPA) — **existing project, migration context**. No new project scaffolding needed. Evaluation focuses on new ACTEE dependencies being added to the existing stack.
 
-### Starter Options Considered
+### Current Stack (Already In Place)
 
-| Option | Verdict |
-|--------|---------|
-| **Angular CLI `ng new`** | The only sensible choice. Angular's official scaffolding, standalone by default, esbuild builder, signals support. Everything else adds unnecessary divergence from framework conventions. |
-| **Nx workspace** | Overkill for a single-app internal tool with no monorepo needs. |
-| **Custom Vite + Angular** | Unnecessary — Angular CLI already uses esbuild/Vite under the hood since v17+. |
+| Dependency | Version | Status |
+|-----------|---------|--------|
+| Angular (core, CDK, forms, router) | 21.2.0 | Already installed |
+| Tailwind CSS + PostCSS | 4.2.1 | Already installed |
+| lucide-angular | 0.576.0 | Already installed |
+| TypeScript | 5.9.2 | Already installed |
+| Vitest | 4.0.8 | Already installed |
+| ESLint + Prettier | 9.x / 3.8.x | Already installed |
+| openapi-typescript | 7.13.0 | Already installed |
+| RxJS | 7.8.x | Already installed |
 
-### Selected Starter: Angular CLI (`ng new`)
+### New Dependencies Required by ACTEE
 
-**Rationale:** Angular CLI is the canonical scaffolding tool. For a single-app project reviewed by a senior Angular developer, staying on framework defaults maximizes predictability and reviewability. No reason to deviate.
+| Dependency | Latest Version | Angular 21 Compat | Purpose |
+|-----------|---------------|-------------------|---------|
+| **@ngrx/signals** | 21.0.1 | Aligned (v21 = Angular 21) | `signalStore`, `withState`, `withComputed`, `withMethods` — core ACTEE store primitive |
+| **@angular-architects/ngrx-toolkit** | 21.0.1 | Aligned (v21 = Angular 21) | `withEntityResources`, `withMutations`, `httpMutation` — ACTEE data layer |
 
-**Initialization Command:**
+### Installation Command
 
 ```bash
-ng new admin-playground --style=css --routing --ssr=false --skip-tests=false
+npm install @ngrx/signals @angular-architects/ngrx-toolkit
 ```
 
-Post-scaffold setup:
-```bash
-cd admin-playground
-npm install tailwindcss @tailwindcss/postcss postcss --save-dev
-npm install @angular/cdk
-npm install lucide-angular
-```
+### What These Dependencies Provide
 
-### Architectural Decisions Provided by Starter
+**@ngrx/signals (v21):**
+- `signalStore()` — factory for creating signal-based stores (replaces `BaseEntityService<T>`)
+- `withState()` — typed state definition
+- `withComputed()` — derived signals (replaces computed signals in services)
+- `withMethods()` — store methods
+- `patchState()` — immutable state updates
+- DevTools integration for debugging store state
 
-**Language & Runtime:**
-- TypeScript strict mode (Angular CLI default)
-- Angular 20.x with standalone components as default (no NgModule)
+**@angular-architects/ngrx-toolkit (v21):**
+- `withEntityResources()` — connects Angular Resources (HTTP GET) to entity state in the store, auto-manages loading/error/entity state
+- `withMutations()` — registers HTTP mutations (POST, PATCH, DELETE) on the store
+- `httpMutation()` — defines individual mutation requests with race condition strategies (`switchOp`, `mergeOp`, `concatOp`, `exhaustOp`)
+- `HttpMutationRequest` — typed mutation descriptor used in `{entity}.api.ts` files
 
-**Build Tooling:**
-- `@angular-devkit/build-angular:application` — esbuild-based builder
-- HMR enabled by default in `ng serve`
-- Production optimization (tree-shaking, minification, code splitting) out of the box
+### Compatibility Assessment
 
-**Styling Solution:**
-- Plain CSS selected at scaffold (Tailwind added post-scaffold via PostCSS)
-- Tailwind CSS v4.x configured via `.postcssrc.json` with `@tailwindcss/postcss` plugin
-- `@import "tailwindcss"` in `src/styles.css`
-- Custom theme extends Tailwind with 60+ project design tokens
+- **Angular 21 + @ngrx/signals 21 + ngrx-toolkit 21**: All on the same major version. Fully compatible.
+- **Vitest**: No conflict — stores are plain TypeScript, testable without Angular TestBed.
+- **Tailwind / CDK**: No conflict — UI layer is independent of state management.
+- **openapi-typescript**: No conflict — generated types feed into domain models as before.
 
-**Testing Framework:**
-- Karma + Jasmine (Angular CLI default) for unit tests
-- Consider migrating to Jest or Vitest in v2 if needed
+### Architectural Decisions Inherited From Existing Starter
 
-**Code Organization:**
-- Angular CLI default structure: `src/app/` with lazy-loaded feature modules
-- Routing module with lazy loading per entity
+All previous Angular CLI decisions remain in effect:
+- **Build tooling:** esbuild-based builder (Angular default)
+- **Styling:** Tailwind CSS v4 via PostCSS
+- **Testing:** Vitest (already migrated from Karma)
+- **Linting:** ESLint + Prettier with Angular-specific rules
+- **Code organization:** Standalone components, lazy-loaded routes
+- **Type generation:** openapi-typescript from live OpenAPI spec
 
-**Development Experience:**
-- `ng serve` with HMR for development
-- `ng build` for production builds
-- Angular DevTools browser extension for debugging signals and component trees
+### Risk Assessment for New Dependencies
 
-**Additional Dependencies (post-scaffold):**
-- `@angular/cdk` — behavioral primitives (Overlay, DragDrop, A11y, Clipboard, Scrolling)
-- `lucide-angular` (v0.575.x) — icon library
-- `tailwindcss` (v4.x) + `@tailwindcss/postcss` + `postcss` — utility-first CSS
-
-**Bundler Decision (resolving open question from brief):**
-Angular's default **esbuild** builder. Parcel (mentioned in original brief) is superseded — esbuild is faster, natively integrated, and maintained by the Angular team. No ejection needed.
-
-**Note:** Project initialization using this command should be the first implementation story.
-
-## Core Architectural Decisions
-
-### Decision Priority Analysis
-
-**Critical Decisions (Block Implementation):**
-- Generic API service architecture (base + entity extensions)
-- Error handling architecture (interceptor + component hybrid)
-- JWT authentication flow (localStorage, no refresh, 401 redirect)
-- Component architecture pattern (hybrid smart/presentational)
-- Signal usage pattern (services expose signals via toSignal bridge)
-- Form strategy (Reactive Forms)
-- API type management (auto-generated from OpenAPI + hand-written extensions)
-
-**Important Decisions (Shape Architecture):**
-- Lazy loading per entity (7 routes)
-- Linting & formatting (ESLint + Prettier)
-- Environment configuration (environment.ts files)
-- Hosting & deployment (Vercel + GitHub auto-deploy)
-
-**Deferred Decisions (v1 Polish / v2):**
-- Signal-based entity caching (deferred to last v1 epic "Polish" — add if API latency becomes noticeable)
-- Token refresh (deferred — backend needs to add `/auth/refresh` endpoint first)
-- CI/CD pipeline (deferred — manual push from terminal, Vercel auto-deploys)
-- Runtime environment config (deferred — only staging for now, `environment.prod.ts` added when production is ready)
-
-### Data Architecture
-
-**API Type Management — Hybrid (auto-generate + hand-written):**
-- Use `openapi-typescript` to auto-generate TypeScript interfaces from the live `/openapi.json` spec
-- Auto-generated types live in `src/app/core/api/generated/` — never hand-edited
-- Hand-written frontend-specific types (form models, UI state, component inputs) live in `src/app/core/models/`
-- Re-generate types periodically or when API changes are detected
-- Rationale: OpenAPI spec is the declared source of truth (PRD). Auto-generation keeps types honest; hand-written extensions cover UI-only concerns.
-
-**Client-Side Caching — None for v1 (signal cache deferred to polish epic):**
-- Every navigation triggers a fresh API call. Simple, always fresh data.
-- Service layer designed with signals from day one, so adding a signal-based entity cache is an internal change, not a refactor.
-- Deferred to last v1 epic: if API latency becomes noticeable for the 3 operators, add per-entity signal cache with invalidation on mutation.
-
-**Form Strategy — Angular Reactive Forms:**
-- All entity forms use `FormBuilder` + `FormGroup` + `FormControl`
-- Reactive forms provide programmatic control needed for the indicator parameter configuration (6 toggles + JSONLogic rule fields per card)
-- Validation: client-side on blur + on submit, server-side errors mapped to fields where possible
-- Rationale: Standard Angular pattern for non-trivial forms. Template-driven forms lack the dynamic control needed for the workspace pattern.
-
-### Authentication & Security
-
-**JWT Storage — `localStorage`:**
-- Token stored in `localStorage` under a namespaced key
-- Persists across browser sessions for convenience (3 trusted internal users)
-- Cleared on explicit logout
-- XSS risk is minimal: no public surface, no user-generated content, internal-only tool
-- Rationale: Convenience for daily-use internal tool outweighs theoretical XSS risk.
-
-**Token Refresh — None (deferred to backend):**
-- No refresh token endpoint exists in the API currently
-- On token expiry: first API call returns 401 → HTTP interceptor redirects to login page with preserved intended destination (FR4)
-- Backend team should add `/auth/refresh` endpoint — tracked in `api-observations.md`
-- Rationale: Clean separation. Frontend shouldn't work around a missing backend feature.
-
-**Route Guards — Functional guard checking token presence:**
-- Angular `canActivate` functional guard checks if JWT exists in localStorage
-- No client-side token expiry validation — if token is expired, the first API call will 401 and the interceptor handles redirect
-- Login page is the only unguarded route
-- Rationale: Simple, robust. Server is the authority on token validity.
-
-### API & Communication Patterns
-
-**Generic API Service Architecture — Base service + entity extensions:**
-- `BaseEntityService<T>` provides: `list(cursor?, limit?)`, `getById(id)`, `create(data)`, `update(id, data)`, `delete(id)`
-- All list methods return `PaginatedResponse<T>` with cursor-based pagination
-- Entity-specific services extend the base for custom endpoints:
-  - `ActionThemeService` adds `publish()`, `disable()`, `activate()`, `duplicate()`
-  - `CommunityService` adds `assignUser()`, `removeUser()`, `getParents()`, `getChildren()`
-  - `IndicatorModelService` adds association metadata management
-  - `AgentService` handles soft-delete semantics
-- Services use HttpClient internally (Observables), expose data via signals using `toSignal()`
-- Rationale: 7 entities share CRUD + pagination. Generic base eliminates duplication. Extensions handle domain-specific operations cleanly.
-
-**Error Handling — Hybrid (interceptor + component):**
-- **HTTP Interceptor** catches infrastructure errors globally:
-  - 401 → Redirect to login (with preserved destination)
-  - 500 → Generic "Server error" toast
-  - 0 / network errors → "Connection lost" toast
-- **Components** handle domain-specific errors locally:
-  - 409 Conflict → Contextual message ("Cannot delete theme — linked to 3 models")
-  - 422 Validation → Map to specific form fields with explanatory messages
-  - 400 Bad Request → Display API error message with context
-- Toast service is the centralized notification channel for both paths
-- Rationale: PRD requires "no silent failures" (FR29-FR31). UX spec requires explanatory messages ("what + why + what to do"). Infrastructure errors are generic; business errors need context.
-
-**API Response Typing — Strict:**
-- All HTTP calls return `Observable<TypedResponse<T>>` with proper generics
-- Auto-generated types from OpenAPI spec enforce API contract at compile time
-- No `any` types in the API layer
-- Rationale: TypeScript strict mode is mandated. Auto-generated types make this essentially free.
-
-### Frontend Architecture
-
-**Component Architecture — Hybrid (smart pages + presentational shared components):**
-- **Shared components** (DataTable, StatusBadge, Toast, ConfirmDialog, etc.) are purely presentational: inputs/outputs, no data fetching, no service injection
-- **Entity page components** (FundingProgramListComponent, ActionModelDetailComponent, etc.) are "smart": they inject services, fetch data, manage state, orchestrate child components
-- No separate container/wrapper components — the page IS the container
-- Rationale: Matches the UX spec's component strategy exactly. 13 shared components are UI primitives; entity pages are the data layer. Adding a container abstraction would be unnecessary overhead for 7 entity modules.
-
-**Signal Usage — Services bridge, components consume:**
-- HttpClient returns Observables internally within services
-- Services expose data to components via signals using `toSignal()` bridge
-- Components work exclusively with signals for template binding and reactive state
-- Unsaved-state tracking for indicator cards: signal-based dirty detection per card, aggregate dirty signal for SaveBar visibility
-- Rationale: Idiomatic Angular 20. HttpClient is inherently Observable-based; signals are the component-level reactive primitive.
-
-**Lazy Loading — One route per entity:**
-- 7 lazy-loaded feature routes, one per entity, matching sidebar navigation 1:1
-- Each feature route contains: list component, detail/workspace component, create/edit component (or combined)
-- Shared components loaded eagerly (part of core module — small, used everywhere)
-- Rationale: Clean, predictable, minimal bundle size per route. No reason to group entities.
-
-**Environment Configuration — `environment.ts` files:**
-- `environment.ts` — development/staging (default): API URL points to `laureatv2-api-staging.osc-fr1.scalingo.io`
-- `environment.prod.ts` — production: added when production environment is ready (~2 months)
-- Contains: `apiBaseUrl`, `production` flag
-- Rationale: Standard Angular pattern. Only staging for now. Production file is a trivial addition later.
-
-### Infrastructure & Deployment
-
-**Hosting — Vercel with GitHub auto-deploy:**
-- Angular SPA deployed as static files to Vercel
-- GitHub repository connected to Vercel for automatic deployment on push
-- `vercel.json` with SPA fallback rewrite (all routes → `index.html`)
-- Free tier sufficient for 3 internal users
-- Migration path: company GitHub + redeploy if v1 succeeds
-
-**CI/CD — Manual push, Vercel auto-deploys:**
-- Developer (AI-assisted) commits and pushes from terminal
-- Vercel handles build (`ng build`) and deployment automatically on push
-- No dedicated CI/CD pipeline for v1 — overhead not justified for solo development
-- Deferred: GitHub Actions for lint/test/build gates when project moves to company GitHub
-
-**Linting & Formatting — ESLint + Prettier:**
-- ESLint with Angular-specific rules (shipped with Angular CLI)
-- Prettier for consistent formatting across all files
-- Critical for AI-generated code under senior dev review — formatting consistency builds trust
-- Run on save (editor integration) and as pre-commit check
-
-### Decision Impact Analysis
-
-**Implementation Sequence:**
-1. Project scaffold (`ng new`) + Tailwind + CDK + Lucide setup
-2. Auto-generate API types from OpenAPI spec
-3. Core services: AuthService (JWT + interceptor), BaseEntityService, ToastService
-4. App shell: AppLayout, routing, route guards
-5. Shared components: DataTable, StatusBadge, ConfirmDialog, Toast, MetadataGrid, SectionAnchors, SaveBar
-6. Entity modules: simple entities first (FundingPrograms, ActionThemes), complex last (IndicatorModels)
-
-**Cross-Component Dependencies:**
-- BaseEntityService depends on: AuthService (JWT interceptor), auto-generated API types
-- All entity services depend on: BaseEntityService
-- All entity components depend on: shared components + entity services
-- SaveBar depends on: signal-based dirty tracking (implemented in IndicatorCard)
-- IndicatorPicker depends on: IndicatorModelService (search/filter)
-- ApiInspector depends on: last HTTP response captured by entity service
+| Risk | Level | Mitigation |
+|------|-------|-----------|
+| @ngrx/signals learning curve | Medium | Well-documented, active community, v21 is mature |
+| ngrx-toolkit stability | Medium | Maintained by Angular Architects (Manfred Steyer), aligned with NgRx releases |
+| Breaking changes in future versions | Low | Major versions align with Angular — predictable upgrade path |
+| Bundle size impact | Low | Tree-shakeable, only imported features are bundled |
 
 ## Implementation Patterns & Consistency Rules
 
 ### Critical Conflict Points Identified
 
-15 areas where AI agents could make different choices, organized into 5 categories. All patterns below are mandatory for any agent working on this codebase.
+18 areas where AI agents could make different choices when implementing ACTEE patterns, organized into 5 categories. All patterns below are mandatory.
 
 ### Naming Patterns
 
-**API ↔ TypeScript Naming — Keep `snake_case`:**
-- All API types use `snake_case` field names, matching the Laureat API exactly
-- No camelCase transformation layer — types are 1:1 with API JSON
-- Examples: `funding_program_id`, `technical_label`, `created_at`, `action_model_id`
-- Rationale: Eliminates transformation bugs, keeps types honest to the API contract, reviewer sees types that match API responses exactly
+**ACTEE Layer File Naming — Strict kebab-case with layer suffix:**
 
-**File Naming — Angular CLI `kebab-case` convention:**
-- Components: `funding-program-list.component.ts`
-- Services: `funding-program.service.ts`
-- Models/types: `funding-program.model.ts`
-- Routes: `funding-program.routes.ts`
-- Specs: `funding-program.service.spec.ts` (co-located)
+| Layer | File Pattern | Example |
+|-------|-------------|---------|
+| Domain store | `domains/{entity}/{entity}.store.ts` | `domains/funding-programs/funding-program.store.ts` |
+| Domain API | `domains/{entity}/{entity}.api.ts` | `domains/funding-programs/funding-program.api.ts` |
+| Domain models | `domains/{entity}/{entity}.models.ts` | `domains/funding-programs/funding-program.models.ts` |
+| Domain forms | `domains/{entity}/forms/{entity}.form.ts` | `domains/funding-programs/forms/funding-program.form.ts` |
+| Domain use-cases | `domains/{entity}/use-cases/{use-case-name}.use-case.ts` | `domains/indicator-models/use-cases/validate-parameter.use-case.ts` |
+| Feature store | `features/{entity}/{entity}.store.ts` | `features/funding-programs/funding-program.store.ts` |
+| Feature facade | `features/{entity}/{entity}.facade.ts` | `features/funding-programs/funding-program.facade.ts` |
+| Feature UI | `features/{entity}/ui/{component-name}.component.ts` | `features/funding-programs/ui/funding-program-list.component.ts` |
+| Page | `pages/{entity}/{entity}.page.ts` | `pages/funding-programs/funding-programs.page.ts` |
+| Routes | `pages/{entity}/{entity}.routes.ts` | `pages/funding-programs/funding-programs.routes.ts` |
 
-**Component Selectors — `app-` prefix:**
-- All component selectors use `app-` prefix: `app-data-table`, `app-status-badge`, `app-funding-program-list`
-- Standard Angular CLI default, no project-specific prefix needed (no third-party component conflict risk)
+**Entity folder naming — Plural kebab-case** (unchanged):
+`funding-programs`, `action-themes`, `action-models`, `folder-models`, `indicator-models`, `communities`, `agents`
 
-**CSS Classes — Match UX mockup conventions:**
-- Shared component classes match the `ux-design-directions.html` CSS class mapping (e.g., `.data-table`, `.indicator-card`, `.toggle-row`, `.save-bar`)
-- Tailwind utility classes for styling; custom classes only for component-specific structural CSS
-- Design tokens mapped to Tailwind theme config (e.g., `bg-brand-primary`, `text-error`, `surface-subtle`)
+**Store export naming — PascalCase with layer prefix:**
+- Domain store: `FundingProgramDomainStore`
+- Feature store: `FundingProgramFeatureStore`
+- Rationale: Avoids ambiguity when both stores are injected in the same file (e.g., facade injects both).
+
+**Facade export naming — PascalCase with `Facade` suffix:**
+- `FundingProgramFacade`, `ActionThemeFacade`, etc.
+- Injectable class (not a `signalStore` — a plain `@Injectable` that composes stores).
+
+**API export naming — Functions prefixed with entity:**
+- Resources: `fundingProgramListResource`, `fundingProgramDetailResource`
+- Mutations: `createFundingProgramMutation`, `updateFundingProgramMutation`, `deleteFundingProgramMutation`
+- Custom mutations: `publishActionThemeMutation`, `duplicateActionThemeMutation`
+
+**Component selectors — `app-` prefix (unchanged):**
+- `app-funding-program-list`, `app-funding-program-detail`, `app-funding-program-form`
+- Page selectors: `app-funding-programs-page`
+
+**API data conventions (unchanged):**
+- JSON field names: `snake_case` matching API exactly
+- No camelCase transformation layer
+- Dates: ISO 8601 strings as returned by API
+- IDs: string type
+- Nulls: preserved as `null`
 
 ### Structure Patterns
 
-**Feature Module Organization — Flat folder per entity:**
+**ACTEE Module Organization — Every entity follows this exact structure:**
 
-Every entity follows this exact structure:
 ```
-src/app/features/{entity-name}/
-  ├── {entity-name}-list.component.ts
-  ├── {entity-name}-detail.component.ts
-  ├── {entity-name}-form.component.ts       // handles both create and edit via mode input
-  ├── {entity-name}.service.ts              // extends BaseEntityService<T>
-  ├── {entity-name}.routes.ts               // lazy-loaded route config
-  └── {entity-name}.model.ts                // frontend-specific types (if needed)
+src/app/
+├── domains/{entity}/
+│   ├── {entity}.store.ts          # signalStore — source of truth
+│   ├── {entity}.api.ts            # resources + HttpMutationRequest
+│   ├── {entity}.models.ts         # domain types (extends generated API types)
+│   ├── forms/
+│   │   └── {entity}.form.ts       # FormGroup factory function
+│   └── use-cases/                 # optional — extract when complexity demands
+│       └── {use-case}.use-case.ts
+├── features/{entity}/
+│   ├── {entity}.store.ts          # signalStore — computed only, read-only
+│   ├── {entity}.facade.ts         # @Injectable — UI entry point
+│   ├── use-cases/                 # optional — extract when facade orchestration is complex
+│   │   └── {use-case}.use-case.ts
+│   └── ui/
+│       ├── {entity}-list.component.ts
+│       ├── {entity}-detail.component.ts
+│       └── {entity}-form.component.ts
+└── pages/{entity}/
+    ├── {entity}.page.ts           # route = layout only
+    └── {entity}.routes.ts         # lazy-loaded route config
 ```
 
-- All files in one flat folder — no nested subfolders within a feature
-- Same structure across all 7 entities without exception
-- Entity names use plural kebab-case: `funding-programs`, `action-themes`, `action-models`, `folder-models`, `indicator-models`, `communities`, `agents`
+Same structure across all 7 entities without exception.
 
-**Test Placement — Co-located (Angular convention):**
-- `funding-program.service.spec.ts` lives next to `funding-program.service.ts`
-- `funding-program-list.component.spec.ts` lives next to `funding-program-list.component.ts`
+**Store Composition Order — Consistent `with*` ordering:**
+
+```typescript
+export const FundingProgramDomainStore = signalStore(
+  { providedIn: 'root' },
+  withState({ /* ... */ }),           // 1. State first
+  withEntityResources({ /* ... */ }), // 2. Resources (GET)
+  withMutations({ /* ... */ }),       // 3. Mutations (POST/PATCH/DELETE)
+  withComputed(/* ... */),            // 4. Computed signals
+  withMethods(/* ... */),             // 5. Methods last
+);
+```
+
+Always follow this order. No exceptions.
+
+**Test Placement — Co-located (unchanged):**
+- `funding-program.store.spec.ts` next to `funding-program.store.ts`
+- `funding-program.facade.spec.ts` next to `funding-program.facade.ts`
+- Component specs next to components in `ui/`
 - No separate `__tests__/` folders
 
-**Shared Component Organization:**
+**Shared Domain Utilities:**
 ```
-src/app/shared/
-  ├── components/
-  │   ├── data-table/
-  │   │   ├── data-table.component.ts
-  │   │   ├── data-table.component.html
-  │   │   ├── data-table.component.css
-  │   │   └── data-table.component.spec.ts
-  │   ├── status-badge/
-  │   ├── confirm-dialog/
-  │   ├── toast/
-  │   ├── save-bar/
-  │   ├── metadata-grid/
-  │   ├── section-anchors/
-  │   └── api-inspector/
-  ├── services/
-  │   ├── toast.service.ts
-  │   └── confirm-dialog.service.ts
-  └── pipes/
-```
-
-Each shared component gets its own subfolder containing component + template + styles + spec.
-
-**Core Service Organization:**
-```
-src/app/core/
-  ├── api/
-  │   ├── generated/                        // auto-generated from OpenAPI (never hand-edit)
-  │   └── base-entity.service.ts            // generic CRUD + pagination base
-  ├── auth/
-  │   ├── auth.service.ts
-  │   ├── auth.guard.ts
-  │   └── auth.interceptor.ts
-  ├── models/                               // hand-written frontend-specific types
-  └── services/
-      └── ... (cross-cutting services)
+src/app/domains/shared/
+├── with-cursor-pagination.ts    # reusable store feature
+└── ... (future shared store features)
 ```
 
 ### Format Patterns
 
-**API Data Formats — Follow API conventions exactly:**
-- JSON field names: `snake_case` (matching API)
-- Dates: ISO 8601 strings as returned by API (e.g., `"2026-03-03T10:30:00Z"`)
-- Booleans: `true`/`false`
-- Nulls: preserved as `null` (not converted to `undefined` or empty string)
-- IDs: string type (as returned by API)
-
-**Paginated Response Structure:**
+**Paginated Response Structure (unchanged):**
 ```typescript
 interface PaginatedResponse<T> {
   items: T[];
@@ -454,118 +304,170 @@ interface PaginatedResponse<T> {
   limit: number;
 }
 ```
-All list endpoints return this shape. The generic `BaseEntityService.list()` always returns `PaginatedResponse<T>`.
 
-**Error Display Format:**
-- Toast message pattern: **"Bold action"** + context — e.g., **"Action Model saved"** · 2 indicators updated
-- Error messages follow: *what happened* + *why* + *what to do* — e.g., "Type cannot be changed — instances of this indicator already exist. Create a new indicator instead."
-- API error responses are surfaced with the API's own message when available, never swallowed
+**Domain Model Pattern — Extend generated types:**
+```typescript
+// domains/funding-programs/funding-program.models.ts
+import { components } from '@app/core/api/generated/api-types';
+
+export type FundingProgram = components['schemas']['FundingProgramResponse'];
+export type CreateFundingProgram = components['schemas']['CreateFundingProgramRequest'];
+export type UpdateFundingProgram = components['schemas']['UpdateFundingProgramRequest'];
+```
+
+Never hand-write types that the API already defines. Extend only for frontend-specific concerns.
+
+**Form Factory Pattern:**
+```typescript
+// domains/funding-programs/forms/funding-program.form.ts
+export function createFundingProgramForm(initial?: Partial<FundingProgram>): FormGroup {
+  return new FormGroup({
+    label: new FormControl(initial?.label ?? '', [Validators.required]),
+    // ...
+  });
+}
+```
+
+Factories are pure functions. No `inject()`, no side effects.
+
+**Error Display Format (unchanged):**
+- Toast: **"Bold action"** + context
+- Errors: *what happened* + *why* + *what to do*
+- API error messages surfaced when available
 
 ### Communication Patterns
 
-**Signal State Management:**
-- Entity services expose readonly signals: `items`, `selectedItem`, `isLoading`, `error`
-- Mutation methods (`create`, `update`, `delete`) are async and refresh the relevant signals after success
-- No global state store — each entity service manages its own signal state
-- Unsaved state tracking: signal-based dirty detection per IndicatorCard, aggregate `hasDirtyCards` signal drives SaveBar visibility
-- State updates are always immutable — create new signal values, never mutate existing
+**Facade-to-UI Contract:**
+```typescript
+// features/funding-programs/funding-program.facade.ts
+@Injectable({ providedIn: 'root' })
+export class FundingProgramFacade {
+  // Data signals — from feature store
+  readonly items = this.featureStore.rows;
+  readonly selectedItem = this.featureStore.selectedItem;
+  readonly isLoading = this.featureStore.isLoading;
 
-**Component Communication:**
-- Parent → Child: via `input()` (signal-based inputs)
-- Child → Parent: via `output()` (signal-based outputs)
-- Sibling: via shared service with signals (e.g., ToastService)
-- No `@ViewChild` for data passing — only for DOM access when strictly needed
-- No EventEmitter — use `output()` exclusively (Angular 20 convention)
+  // Intention methods — delegate to domain store
+  load() { /* ... */ }
+  loadMore() { /* ... */ }
+  select(id: string) { /* ... */ }
+  create(data: CreateFundingProgram) { /* ... */ }
+  update(id: string, data: UpdateFundingProgram) { /* ... */ }
+  delete(id: string) { /* ... */ }
+}
+```
+
+- Data signals are `readonly` properties
+- Intention methods are verbs (load, create, update, delete, publish, duplicate)
+- Facade never exposes the store directly — only curated signals and methods
+
+**Component → Facade Communication:**
+- Components inject facade only: `private facade = inject(FundingProgramFacade)`
+- Template binds to facade signals: `{{ facade.items() }}`
+- Events call facade methods: `(click)="facade.delete(item.id)"`
+- No `subscribe()`. No `async` pipe. No direct store access.
+
+**Component Input/Output (unchanged):**
+- `input()` / `input.required<T>()` for inputs
+- `output()` for outputs
+- No `@Input` / `@Output` decorators
+- No two-way binding sugar
+
+**Page Component Contract:**
+```typescript
+// pages/funding-programs/funding-programs.page.ts
+@Component({
+  selector: 'app-funding-programs-page',
+  template: `<app-funding-program-list />`,
+  imports: [FundingProgramListComponent],
+})
+export class FundingProgramsPage {}
+```
+
+Pages compose features. Zero logic. No service injection. No facade injection. Layout only.
 
 ### Process Patterns
 
-**Loading State Convention:**
-- Each entity service exposes an `isLoading` signal (writable, boolean)
-- Set `true` before API call, `false` on success or error (always reset in `finally`)
-- Components bind to `isLoading` for skeleton/spinner display
-- DataTable accepts `isLoading` input → shows skeleton rows (6 rows of shimmer)
-- Detail views show skeleton blocks matching MetadataGrid layout
-- Never show a full-page spinner — always structural skeletons
+**Loading State Convention — ngrx-toolkit resource status:**
+- `withEntityResources` auto-manages loading state per resource
+- Feature store exposes `isLoading` as `computed` from domain store resource status
+- Facade exposes `isLoading` to UI
+- DataTable accepts `isLoading` input → shows skeleton rows
+- Detail views show skeleton blocks
 
-**Error Handling Flow:**
-1. HTTP interceptor catches infrastructure errors (401, 500, network) → handles globally
-2. Service-level `catchError` catches domain errors (409, 422, 400) → stores in `error` signal
-3. Component reads `error` signal → displays contextual message (inline or toast)
-4. Error signals are cleared on next successful operation
-5. Never: `console.error` without also surfacing to user. Never: swallowed errors.
+**Mutation Status Convention:**
+- Each `httpMutation` exposes its own status (idle, pending, success, error)
+- Facade can expose per-mutation status for fine-grained UI feedback (e.g., "publishing..." spinner on publish button)
+- Global mutation status available via `withMutations` aggregate
 
-**Form Validation Flow:**
-- Client-side validation: on blur + on submit
-- Error text appears below field immediately on blur if invalid
-- On submit: all fields validated, first error field focused
-- Server-side errors (422): mapped to specific form fields where possible, otherwise error toast
-- Invalid field visual: red border replaces default border, error text below in `text-error` color
+**Form Validation Flow (unchanged):**
+- Client-side: on blur + on submit
+- Error text below field on blur if invalid
+- On submit: all validated, first error focused
+- Server 422: mapped to fields where possible, otherwise toast
 
-**Navigation Guard Flow:**
-- On navigate away with unsaved changes → ConfirmDialog: "You have unsaved changes. Discard or stay?"
-- On discard → reset form/card state to last-saved values, allow navigation
-- On stay → cancel navigation, return focus to current view
-- Guard registered on all workspace/detail routes
+**Navigation Guard Flow (unchanged):**
+- Unsaved changes → ConfirmDialog
+- Discard → reset, allow navigation
+- Stay → cancel navigation
 
-### Component Input/Output Convention
+**API Gap Documentation — Mandatory:**
+- When an AI agent encounters an API gap (missing endpoint, unclear contract, schema mismatch, unexpected behavior), it MUST append an entry to `_bmad-output/api-observations.md`
+- Entry format: **Observation** (what was found) → **Impact** (how it affects the frontend) → **Suggestion/Workaround** (what was done or what backend should change)
+- This applies during both migration of existing entities and development of new ones
+- Never silently work around an API limitation — document it first, then implement the workaround
+- Examples of gaps to document: missing pagination total_count, unclear status transition endpoints, missing association CRUD endpoints, unexpected response shapes
 
-All shared components follow this contract:
-- Inputs use Angular `input()` function (signal-based)
-- Required inputs use `input.required<T>()`
-- Outputs use Angular `output()` function (signal-based)
-- No two-way binding sugar — explicit input + output pairs
-- All inputs are typed — no `any`
-
-### Import Organization
-
-Within each TypeScript file, imports follow this order (separated by blank lines):
-
+**Import Organization — Updated for ACTEE layers:**
 ```typescript
 // 1. Angular core
-import { Component, input, output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 
 // 2. Angular CDK
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
-// 3. Third-party
-import { LucideAngularModule } from 'lucide-angular';
+// 3. Third-party (NgRx, Lucide, etc.)
+import { signalStore, withComputed } from '@ngrx/signals';
 
-// 4. App core
-import { BaseEntityService } from '@app/core/api/base-entity.service';
-import { AuthService } from '@app/core/auth/auth.service';
+// 4. App domains
+import { FundingProgramDomainStore } from '@app/domains/funding-programs/funding-program.store';
 
-// 5. App shared
+// 5. App features (facades, feature stores)
+import { FundingProgramFacade } from '@app/features/funding-programs/funding-program.facade';
+
+// 6. App shared
 import { DataTableComponent } from '@app/shared/components/data-table/data-table.component';
-import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 
-// 6. Feature-local (relative)
-import { FundingProgramService } from './funding-program.service';
+// 7. Feature-local (relative)
+import { FundingProgramListComponent } from './ui/funding-program-list.component';
 ```
-
-ESLint + Prettier enforce this ordering.
 
 ### Enforcement Guidelines
 
 **All AI agents MUST:**
-1. Follow the flat feature folder structure exactly — no deviations, no "improvements"
-2. Use `snake_case` for all API-related types — no camelCase transformation
-3. Extend `BaseEntityService<T>` for every entity service — no standalone HTTP calls
-4. Use `input()` / `output()` for component communication — no `@Input` / `@Output` decorators
-5. Expose service state via signals — no raw Observable subscriptions in components
-6. Follow the import ordering convention
-7. Co-locate tests next to source files
-8. Match the UX mockup CSS class names for shared components
+1. Follow the ACTEE module structure exactly — `domains/` → `features/` → `pages/`
+2. Never let UI components import stores or API files directly — facades only
+3. Never let feature stores mutate state — `withComputed` only
+4. Never let domain stores call HTTP directly — resources and mutations from API files only
+5. Use the store composition order: state → resources → mutations → computed → methods
+6. Export stores with layer-prefixed names (`DomainStore`, `FeatureStore`)
+7. Keep page components logic-free — compose features, layout only
+8. Use form factories from `domains/{entity}/forms/` — never define forms inline in components
+9. Use `snake_case` for all API-related types — no camelCase transformation
+10. Co-locate tests next to source files
+11. Follow the import ordering convention (7 tiers)
 
 **Anti-Patterns (explicitly forbidden):**
-- Creating a `utils/` grab-bag folder with unrelated helpers
-- Using `any` type anywhere in the API layer
-- Auto-saving on form field change (always explicit save)
-- Adding `console.log` for debugging without removing before commit
-- Using `@ViewChild` for data passing between components
-- Creating wrapper/container components around entity pages
-- Using NgModule anywhere (standalone components only)
-- Importing from `@angular/forms` without using Reactive Forms (no template-driven forms)
+- Component importing a domain store directly (must go through facade)
+- Feature store with `withMethods` or `withMutations` (read-only only)
+- Domain store with inline HTTP calls (must use API file resources/mutations)
+- Page component with `inject(Facade)` or any logic
+- Form definition inside a component file (must use domain form factory)
+- Creating a `utils/` grab-bag folder
+- Using `any` type in the API or store layers
+- Using `@ViewChild` for data passing
+- Using `subscribe()` in components
+- Using NgModule anywhere
 
 ## Project Structure & Boundaries
 
@@ -575,53 +477,204 @@ ESLint + Prettier enforce this ordering.
 admin-playground/
 ├── .eslintrc.json
 ├── .gitignore
-├── .postcssrc.json                          # Tailwind PostCSS config
+├── .postcssrc.json
 ├── .prettierrc
 ├── angular.json
 ├── package.json
 ├── tsconfig.json
 ├── tsconfig.app.json
 ├── tsconfig.spec.json
-├── vercel.json                              # SPA fallback rewrite
+├── vercel.json
 │
 ├── scripts/
-│   └── generate-api-types.sh                # runs openapi-typescript against live spec
+│   └── generate-api-types.sh
 │
 ├── src/
 │   ├── index.html
-│   ├── main.ts                              # bootstrapApplication()
-│   ├── styles.css                           # @import "tailwindcss" + custom theme tokens
+│   ├── main.ts
+│   ├── styles.css
 │   │
 │   ├── app/
-│   │   ├── app.component.ts                 # root component
-│   │   ├── app.routes.ts                    # top-level lazy routes
-│   │   ├── app.config.ts                    # provideRouter, provideHttpClient, interceptors
+│   │   ├── app.component.ts
+│   │   ├── app.routes.ts
+│   │   ├── app.config.ts
 │   │   │
-│   │   ├── core/
+│   │   ├── core/                                    # Infrastructure (NOT an ACTEE domain)
 │   │   │   ├── api/
-│   │   │   │   ├── generated/               # auto-generated from OpenAPI (never hand-edit)
-│   │   │   │   │   └── api-types.ts         # openapi-typescript output
-│   │   │   │   ├── base-entity.service.ts   # generic CRUD + cursor pagination
+│   │   │   │   ├── generated/
+│   │   │   │   │   └── api-types.ts                 # openapi-typescript output (never hand-edit)
 │   │   │   │   └── paginated-response.model.ts
 │   │   │   ├── auth/
-│   │   │   │   ├── auth.service.ts          # login, logout, token management
-│   │   │   │   ├── auth.guard.ts            # functional canActivate guard
-│   │   │   │   ├── auth.interceptor.ts      # JWT injection + 401 redirect
-│   │   │   │   └── login.component.ts       # login page
+│   │   │   │   ├── auth.service.ts
+│   │   │   │   ├── auth.guard.ts
+│   │   │   │   ├── auth.interceptor.ts
+│   │   │   │   └── login.component.ts
 │   │   │   ├── layout/
-│   │   │   │   ├── app-layout.component.ts  # sidebar + header + content shell
+│   │   │   │   ├── app-layout.component.ts
 │   │   │   │   ├── app-layout.component.html
 │   │   │   │   └── app-layout.component.css
-│   │   │   └── models/                      # hand-written frontend-specific types
-│   │   │       └── ui.model.ts              # e.g., toast types, form modes
+│   │   │   └── models/
+│   │   │       └── ui.model.ts
 │   │   │
-│   │   ├── shared/
+│   │   ├── domains/                                 # ACTEE: Source of truth layer
+│   │   │   ├── shared/
+│   │   │   │   └── with-cursor-pagination.ts        # Reusable store feature
+│   │   │   │
+│   │   │   ├── funding-programs/
+│   │   │   │   ├── funding-program.store.ts         # signalStore — domain source of truth
+│   │   │   │   ├── funding-program.api.ts           # resources + HttpMutationRequest
+│   │   │   │   ├── funding-program.models.ts        # types extending generated API types
+│   │   │   │   ├── funding-program.store.spec.ts
+│   │   │   │   └── forms/
+│   │   │   │       └── funding-program.form.ts      # FormGroup factory
+│   │   │   │
+│   │   │   ├── action-themes/
+│   │   │   │   ├── action-theme.store.ts
+│   │   │   │   ├── action-theme.api.ts              # + publish/disable/activate/duplicate mutations
+│   │   │   │   ├── action-theme.models.ts
+│   │   │   │   ├── action-theme.store.spec.ts
+│   │   │   │   └── forms/
+│   │   │   │       └── action-theme.form.ts
+│   │   │   │
+│   │   │   ├── action-models/
+│   │   │   │   ├── action-model.store.ts
+│   │   │   │   ├── action-model.api.ts              # + indicator association mutations
+│   │   │   │   ├── action-model.models.ts
+│   │   │   │   ├── action-model.store.spec.ts
+│   │   │   │   └── forms/
+│   │   │   │       └── action-model.form.ts
+│   │   │   │
+│   │   │   ├── folder-models/
+│   │   │   │   ├── folder-model.store.ts
+│   │   │   │   ├── folder-model.api.ts
+│   │   │   │   ├── folder-model.models.ts
+│   │   │   │   ├── folder-model.store.spec.ts
+│   │   │   │   └── forms/
+│   │   │   │       └── folder-model.form.ts
+│   │   │   │
+│   │   │   ├── indicator-models/
+│   │   │   │   ├── indicator-model.store.ts
+│   │   │   │   ├── indicator-model.api.ts           # + association metadata CRUD
+│   │   │   │   ├── indicator-model.models.ts
+│   │   │   │   ├── indicator-model.store.spec.ts
+│   │   │   │   ├── forms/
+│   │   │   │   │   └── indicator-model.form.ts
+│   │   │   │   └── use-cases/                       # extracted when complexity demands
+│   │   │   │       └── (future: validate-parameter.use-case.ts)
+│   │   │   │
+│   │   │   ├── communities/
+│   │   │   │   ├── community.store.ts
+│   │   │   │   ├── community.api.ts                 # + assignUser/removeUser mutations
+│   │   │   │   ├── community.models.ts
+│   │   │   │   ├── community.store.spec.ts
+│   │   │   │   └── forms/
+│   │   │   │       └── community.form.ts
+│   │   │   │
+│   │   │   └── agents/
+│   │   │       ├── agent.store.ts
+│   │   │       ├── agent.api.ts                     # + soft-delete semantics
+│   │   │       ├── agent.models.ts
+│   │   │       ├── agent.store.spec.ts
+│   │   │       └── forms/
+│   │   │           └── agent.form.ts
+│   │   │
+│   │   ├── features/                                # ACTEE: Functional blocks
+│   │   │   ├── funding-programs/
+│   │   │   │   ├── funding-program.store.ts         # signalStore — computed only, read-only
+│   │   │   │   ├── funding-program.facade.ts        # @Injectable — UI entry point
+│   │   │   │   ├── funding-program.facade.spec.ts
+│   │   │   │   ├── use-cases/                       # optional — extract when needed
+│   │   │   │   └── ui/
+│   │   │   │       ├── funding-program-list.component.ts
+│   │   │   │       ├── funding-program-list.component.spec.ts
+│   │   │   │       ├── funding-program-detail.component.ts
+│   │   │   │       ├── funding-program-detail.component.spec.ts
+│   │   │   │       ├── funding-program-form.component.ts
+│   │   │   │       └── funding-program-form.component.spec.ts
+│   │   │   │
+│   │   │   ├── action-themes/
+│   │   │   │   ├── action-theme.store.ts
+│   │   │   │   ├── action-theme.facade.ts           # + publish/disable/activate/duplicate intentions
+│   │   │   │   ├── action-theme.facade.spec.ts
+│   │   │   │   └── ui/
+│   │   │   │       ├── action-theme-list.component.ts
+│   │   │   │       ├── action-theme-list.component.spec.ts
+│   │   │   │       ├── action-theme-detail.component.ts
+│   │   │   │       ├── action-theme-detail.component.spec.ts
+│   │   │   │       ├── action-theme-form.component.ts
+│   │   │   │       └── action-theme-form.component.spec.ts
+│   │   │   │
+│   │   │   ├── action-models/
+│   │   │   │   ├── action-model.store.ts            # aggregates action-model + indicator-model domains
+│   │   │   │   ├── action-model.facade.ts           # orchestrates workspace interactions
+│   │   │   │   ├── action-model.facade.spec.ts
+│   │   │   │   └── ui/
+│   │   │   │       ├── action-model-list.component.ts
+│   │   │   │       ├── action-model-detail.component.ts  # workspace view
+│   │   │   │       └── action-model-form.component.ts
+│   │   │   │
+│   │   │   ├── folder-models/
+│   │   │   │   ├── folder-model.store.ts
+│   │   │   │   ├── folder-model.facade.ts
+│   │   │   │   ├── folder-model.facade.spec.ts
+│   │   │   │   └── ui/
+│   │   │   │       ├── folder-model-list.component.ts
+│   │   │   │       ├── folder-model-detail.component.ts
+│   │   │   │       └── folder-model-form.component.ts
+│   │   │   │
+│   │   │   ├── indicator-models/
+│   │   │   │   ├── indicator-model.store.ts
+│   │   │   │   ├── indicator-model.facade.ts
+│   │   │   │   ├── indicator-model.facade.spec.ts
+│   │   │   │   └── ui/
+│   │   │   │       ├── indicator-model-list.component.ts
+│   │   │   │       ├── indicator-model-detail.component.ts  # 3-col metadata, list values, usage
+│   │   │   │       └── indicator-model-form.component.ts
+│   │   │   │
+│   │   │   ├── communities/
+│   │   │   │   ├── community.store.ts
+│   │   │   │   ├── community.facade.ts
+│   │   │   │   ├── community.facade.spec.ts
+│   │   │   │   └── ui/
+│   │   │   │       ├── community-list.component.ts
+│   │   │   │       ├── community-detail.component.ts
+│   │   │   │       └── community-form.component.ts
+│   │   │   │
+│   │   │   └── agents/
+│   │   │       ├── agent.store.ts
+│   │   │       ├── agent.facade.ts
+│   │   │       ├── agent.facade.spec.ts
+│   │   │       └── ui/
+│   │   │           ├── agent-list.component.ts
+│   │   │           ├── agent-detail.component.ts
+│   │   │           └── agent-form.component.ts
+│   │   │
+│   │   ├── pages/                                   # ACTEE: Routes = layout only
+│   │   │   ├── funding-programs/
+│   │   │   │   ├── funding-programs.page.ts
+│   │   │   │   └── funding-programs.routes.ts
+│   │   │   ├── action-themes/
+│   │   │   │   ├── action-themes.page.ts
+│   │   │   │   └── action-themes.routes.ts
+│   │   │   ├── action-models/
+│   │   │   │   ├── action-models.page.ts
+│   │   │   │   └── action-models.routes.ts
+│   │   │   ├── folder-models/
+│   │   │   │   ├── folder-models.page.ts
+│   │   │   │   └── folder-models.routes.ts
+│   │   │   ├── indicator-models/
+│   │   │   │   ├── indicator-models.page.ts
+│   │   │   │   └── indicator-models.routes.ts
+│   │   │   ├── communities/
+│   │   │   │   ├── communities.page.ts
+│   │   │   │   └── communities.routes.ts
+│   │   │   └── agents/
+│   │   │       ├── agents.page.ts
+│   │   │       └── agents.routes.ts
+│   │   │
+│   │   ├── shared/                                  # Presentational (unchanged)
 │   │   │   ├── components/
 │   │   │   │   ├── data-table/
-│   │   │   │   │   ├── data-table.component.ts
-│   │   │   │   │   ├── data-table.component.html
-│   │   │   │   │   ├── data-table.component.css
-│   │   │   │   │   └── data-table.component.spec.ts
 │   │   │   │   ├── status-badge/
 │   │   │   │   ├── confirm-dialog/
 │   │   │   │   ├── toast/
@@ -629,7 +682,7 @@ admin-playground/
 │   │   │   │   ├── metadata-grid/
 │   │   │   │   ├── section-anchors/
 │   │   │   │   ├── api-inspector/
-│   │   │   │   ├── indicator-card/          # workspace-specific but shared across model types
+│   │   │   │   ├── indicator-card/
 │   │   │   │   ├── toggle-row/
 │   │   │   │   ├── rule-field/
 │   │   │   │   ├── indicator-picker/
@@ -639,152 +692,289 @@ admin-playground/
 │   │   │   │   └── confirm-dialog.service.ts
 │   │   │   └── pipes/
 │   │   │
-│   │   ├── features/
-│   │   │   ├── funding-programs/
-│   │   │   │   ├── funding-program-list.component.ts
-│   │   │   │   ├── funding-program-detail.component.ts
-│   │   │   │   ├── funding-program-form.component.ts
-│   │   │   │   ├── funding-program.service.ts
-│   │   │   │   ├── funding-program.routes.ts
-│   │   │   │   └── funding-program.model.ts
-│   │   │   ├── action-themes/
-│   │   │   │   ├── action-theme-list.component.ts
-│   │   │   │   ├── action-theme-detail.component.ts
-│   │   │   │   ├── action-theme-form.component.ts
-│   │   │   │   ├── action-theme.service.ts   # + publish/disable/activate/duplicate
-│   │   │   │   ├── action-theme.routes.ts
-│   │   │   │   └── action-theme.model.ts
-│   │   │   ├── action-models/
-│   │   │   │   ├── action-model-list.component.ts
-│   │   │   │   ├── action-model-detail.component.ts  # the workspace view
-│   │   │   │   ├── action-model-form.component.ts
-│   │   │   │   ├── action-model.service.ts   # + indicator association management
-│   │   │   │   ├── action-model.routes.ts
-│   │   │   │   └── action-model.model.ts
-│   │   │   ├── folder-models/
-│   │   │   │   ├── folder-model-list.component.ts
-│   │   │   │   ├── folder-model-detail.component.ts
-│   │   │   │   ├── folder-model-form.component.ts
-│   │   │   │   ├── folder-model.service.ts
-│   │   │   │   ├── folder-model.routes.ts
-│   │   │   │   └── folder-model.model.ts
-│   │   │   ├── indicator-models/
-│   │   │   │   ├── indicator-model-list.component.ts
-│   │   │   │   ├── indicator-model-detail.component.ts  # 3-col metadata, list values, usage
-│   │   │   │   ├── indicator-model-form.component.ts
-│   │   │   │   ├── indicator-model.service.ts  # + association metadata CRUD
-│   │   │   │   ├── indicator-model.routes.ts
-│   │   │   │   └── indicator-model.model.ts
-│   │   │   ├── communities/
-│   │   │   │   ├── community-list.component.ts
-│   │   │   │   ├── community-detail.component.ts
-│   │   │   │   ├── community-form.component.ts
-│   │   │   │   ├── community.service.ts      # + assignUser/removeUser
-│   │   │   │   ├── community.routes.ts
-│   │   │   │   └── community.model.ts
-│   │   │   └── agents/
-│   │   │       ├── agent-list.component.ts
-│   │   │       ├── agent-detail.component.ts
-│   │   │       ├── agent-form.component.ts
-│   │   │       ├── agent.service.ts          # + soft-delete semantics
-│   │   │       ├── agent.routes.ts
-│   │   │       └── agent.model.ts
-│   │   │
 │   │   └── environments/
-│   │       ├── environment.ts                # staging (default)
-│   │       └── environment.prod.ts           # production (added when ready)
+│   │       ├── environment.ts
+│   │       └── environment.prod.ts
 │   │
 │   └── assets/
-│       └── (static assets if needed)
 ```
 
 ### Architectural Boundaries
 
-**API Boundary:**
-- All HTTP calls go through `BaseEntityService` or entity-specific extensions — no direct `HttpClient` injection in components
-- `auth.interceptor.ts` is the single point for JWT injection and 401 handling
-- `core/api/generated/` is the type boundary — auto-generated from OpenAPI spec, never hand-edited
+**ACTEE Layer Data Flow:**
 
-**Component Boundary:**
-- `shared/components/` are purely presentational — no service injection, no HTTP calls
-- `features/*/` components are smart — they inject services, manage state, orchestrate shared components
-- `core/layout/` is the app shell — owns sidebar navigation and header
+```
+Page (route entry)
+  │ composes
+  ▼
+Feature UI (components)
+  │ injects
+  ▼
+Facade (@Injectable)
+  │ reads              │ delegates
+  ▼                    ▼
+Feature Store          Domain Store
+(computed only)        (source of truth)
+  │ reads              │ consumes
+  ▼                    ▼
+Domain Store           API file
+(source of truth)      (resources + mutations)
+                       │ uses
+                       ▼
+                    core/api/generated/api-types.ts
+```
 
-**Data Flow:**
-```
-Component → EntityService → BaseEntityService → HttpClient → auth.interceptor → Laureat API
-                ↓                                                    ↓
-         signals (items,                                    JWT token injected
-         isLoading, error)                                  401 → redirect to login
-                ↓
-         Template binding
-```
+**Boundary Rules:**
+- Pages → can only import feature UI components
+- Feature UI → can only import facade
+- Facade → can import feature store + domain store(s)
+- Feature store → can only import domain store(s) (read-only via `computed`)
+- Domain store → can only import API file definitions
+- API file → can only import generated types + `HttpClient`
+
+**Infrastructure Boundary (`core/`):**
+- `core/auth/` — auth service, interceptor, guard, login. Standalone. Not an ACTEE domain.
+- `core/layout/` — app shell (sidebar, header). Standalone.
+- `core/api/generated/` — auto-generated types. Read-only, never hand-edited.
+- `core/models/` — shared frontend-only types (toast types, UI enums).
+
+**Shared Boundary (`shared/`):**
+- Purely presentational components — `input()` / `output()` only
+- Shared services (toast, confirm-dialog) — UI infrastructure
+- No domain knowledge, no store access, no facade access
 
 ### Requirements → Structure Mapping
 
 | FR Domain | Primary Location |
 |-----------|-----------------|
-| **FR1-4 (Auth)** | `core/auth/` — AuthService, guard, interceptor, login component |
+| **FR1-4 (Auth)** | `core/auth/` — AuthService, guard, interceptor, login |
 | **FR5-6 (Navigation)** | `core/layout/` — AppLayout with sidebar + header |
-| **FR7-12 (Entity CRUD)** | `features/*/` — 7 entity feature folders, each following identical structure |
-| **FR13-16 (Status)** | Entity services (publish/disable/activate methods) + `shared/components/status-badge/` |
-| **FR17-22 (Relationships)** | Entity detail components + `shared/components/metadata-grid/` (linked fields) + `shared/components/indicator-picker/` |
-| **FR23-28 (Indicator Params)** | `shared/components/indicator-card/`, `toggle-row/`, `rule-field/` + `features/action-models/action-model-detail.component.ts` workspace |
+| **FR7-12 (Entity CRUD)** | `domains/*/` (stores + APIs) + `features/*/` (facades + UI) + `pages/*/` (routes) |
+| **FR13-16 (Status)** | `domains/*/` (status mutations in API files) + `features/*/` (facade exposes intentions) + `shared/components/status-badge/` |
+| **FR17-22 (Relationships)** | `features/action-models/action-model.store.ts` (aggregates action-model + indicator-model domains) + `shared/components/metadata-grid/` + `shared/components/indicator-picker/` |
+| **FR23-28 (Indicator Params)** | `domains/indicator-models/` (store + API + forms) + `features/action-models/` (workspace facade) + `shared/components/indicator-card/`, `toggle-row/`, `rule-field/` |
 | **FR29-31 (Feedback)** | `shared/components/toast/` + `shared/services/toast.service.ts` + `core/auth/auth.interceptor.ts` |
-| **FR32 (API Inspector)** | `shared/components/api-inspector/` — rendered on all detail pages |
+| **FR32 (API Inspector)** | `shared/components/api-inspector/` |
 
 ### Cross-Cutting Concerns Mapping
 
 | Concern | Location |
 |---------|----------|
 | JWT authentication | `core/auth/` (service + interceptor + guard) |
-| Error handling | `core/auth/auth.interceptor.ts` (global) + entity components (domain-specific) |
+| Error handling | `core/auth/auth.interceptor.ts` (infrastructure) + mutation status via facades (domain) |
 | Toast notifications | `shared/services/toast.service.ts` + `shared/components/toast/` |
-| Cursor pagination | `core/api/base-entity.service.ts` (generic) |
-| API types | `core/api/generated/api-types.ts` (auto-generated from OpenAPI) |
+| Cursor pagination | `domains/shared/with-cursor-pagination.ts` (reusable store feature) |
+| API types | `core/api/generated/api-types.ts` (auto-generated) |
 | Design tokens | `src/styles.css` (Tailwind theme) |
-| Unsaved state | Signal-based dirty tracking in `shared/components/indicator-card/` + `shared/components/save-bar/` |
+| Unsaved state | Domain store state + facade exposure + `shared/components/save-bar/` |
 | Confirmation dialogs | `shared/services/confirm-dialog.service.ts` + `shared/components/confirm-dialog/` |
+
+### TSConfig Path Aliases
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@app/*": ["src/app/*"],
+      "@domains/*": ["src/app/domains/*"],
+      "@features/*": ["src/app/features/*"],
+      "@pages/*": ["src/app/pages/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@core/*": ["src/app/core/*"]
+    }
+  }
+}
+```
 
 ### Development Workflow
 
-**Development:**
-- `ng serve` — runs dev server with HMR on `http://localhost:4200`
-- Proxies to staging API via Angular CLI proxy config (optional) or direct CORS
+**Development:** `ng serve` — HMR on `http://localhost:4200`
 
-**Type Generation:**
-- `scripts/generate-api-types.sh` — runs `openapi-typescript` against `https://laureatv2-api-staging.osc-fr1.scalingo.io/openapi.json`
-- Output: `src/app/core/api/generated/api-types.ts`
-- Run manually when API changes are suspected or on a regular cadence
+**Type Generation:** `scripts/generate-api-types.sh` — runs `openapi-typescript` → `core/api/generated/api-types.ts`
 
-**Build & Deploy:**
-- `ng build` → `dist/admin-playground/` (static files)
-- Push to GitHub → Vercel auto-deploys
-- `vercel.json` contains SPA rewrite: `{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`
+**Build & Deploy:** `ng build` → `dist/admin-playground/` → push to GitHub → Vercel auto-deploys
+
+## Core Architectural Decisions
+
+### Decision Priority Analysis
+
+**Critical Decisions (Block Implementation):**
+- Domain store architecture with `signalStore` + `withEntityResources` + `withMutations`
+- Reusable `withCursorPagination()` custom store feature (replaces `BaseEntityService<T>`)
+- Facade as single UI entry point
+- API file pattern (`{entity}.api.ts` with resources + `HttpMutationRequest`)
+- Form ownership in domain layer
+- Migration strategy for existing entities (big bang per entity)
+
+**Important Decisions (Shape Architecture):**
+- Feature store always present (structural consistency)
+- Error handling via mutation status (ngrx-toolkit native)
+- Page components as route = layout only
+
+**Deferred Decisions (v2):**
+- Signal-based entity caching (deferred — no caching for v1, fresh API calls)
+- Token refresh (deferred — backend needs `/auth/refresh` endpoint)
+- CI/CD pipeline (deferred — Vercel auto-deploys on push)
+- Domain use-cases (ACTEE says "extract when complexity demands" — deferred until indicator parameter logic proves complex enough)
+
+### Data Architecture
+
+**Domain Store Pattern — `signalStore` + composable features:**
+- Each entity gets a domain store in `domains/{entity}/{entity}.store.ts`
+- Store composed with: `withState`, `withComputed`, `withMethods`, `withEntityResources`, `withMutations`
+- Domain store is the **single source of truth** for entity state
+- No direct HTTP calls in stores — all I/O defined in `{entity}.api.ts`
+
+**Cursor Pagination — Reusable `withCursorPagination()` custom store feature:**
+- A shared custom store feature `withCursorPagination<T>()` encapsulates: cursor state, hasMore flag, loadMore method, append-on-load behavior
+- Wraps `withEntityResources` with cursor/limit parameters
+- Reused across all 7 entity domain stores — preserves the generic reusability of the current `BaseEntityService<T>` in ACTEE's paradigm
+- Located in `src/app/domains/shared/with-cursor-pagination.ts`
+
+**API File Pattern — `{entity}.api.ts`:**
+- Each entity gets `domains/{entity}/{entity}.api.ts`
+- Exports: resource definitions (for `withEntityResources`) + `HttpMutationRequest` definitions (for `withMutations`)
+- All HTTP endpoints for an entity live in this single file
+- Uses auto-generated types from `core/api/generated/api-types.ts`
+
+**Form Ownership — Domain owns form definitions:**
+- Form factory functions live in `domains/{entity}/forms/{entity}.form.ts`
+- Each factory returns a typed `FormGroup` with validators
+- UI components call the factory but don't define the form structure
+- Aligns with ACTEE: domain owns business rules, forms are business rules
+
+**Client-Side Caching — None for v1:**
+- Every navigation triggers a fresh API call (unchanged from current)
+- Domain store state is the runtime cache; no persistence layer
+- Deferred: signal-based entity cache if API latency becomes noticeable
+
+### Authentication & Security
+
+**Unchanged from current implementation:**
+- JWT stored in `localStorage` (3 trusted internal users, no public surface)
+- HTTP interceptor injects JWT on all requests
+- 401 → redirect to login with preserved destination
+- Functional `canActivate` guard checks token presence
+- No token refresh (deferred to backend)
+- Auth stays in `core/auth/` — not an ACTEE domain (infrastructure concern)
+
+### API & Communication Patterns
+
+**Resource-based data fetching (`withEntityResources`):**
+- GET operations defined as resources in `{entity}.api.ts`
+- Resources auto-manage: loading state, error state, entity state
+- Domain store consumes resources — never calls HttpClient directly
+- `withCursorPagination()` wraps resources for paginated list endpoints
+
+**Mutation-based writes (`withMutations` + `httpMutation`):**
+- POST, PATCH, DELETE operations defined as `HttpMutationRequest` in `{entity}.api.ts`
+- Domain store registers mutations via `withMutations`
+- Mutation status (loading, success, error) tracked per mutation by ngrx-toolkit
+- Race condition strategy: `concatOp` (default) for most mutations; `exhaustOp` for publish/status transitions
+
+**Error Handling — Mutation status (ngrx-toolkit native):**
+- Infrastructure errors (401, 500, network): HTTP interceptor → toast (unchanged)
+- Domain errors (409, 422, 400): mutation status exposes error per operation → facade exposes to UI → component displays contextual message
+- No separate `error` signal in domain store — mutation status is the error channel
+- Toast service remains the centralized notification channel
+
+**API Response Typing — Strict (unchanged):**
+- Auto-generated types from OpenAPI spec (`core/api/generated/api-types.ts`)
+- `snake_case` field names matching API exactly — no camelCase transformation
+- No `any` types in the API layer
+
+### Frontend Architecture
+
+**Component Architecture — ACTEE layered:**
+- **Pages** (`pages/{entity}/`): route = layout only. Compose features, no logic.
+- **Feature UI** (`features/{entity}/ui/`): components talk only to facade. Can contain form logic, validation UI, conditional display. Never import store, use-case, or service directly.
+- **Shared components** (`shared/components/`): purely presentational (unchanged, already ACTEE-compliant)
+
+**Feature Store — Always present:**
+- Every feature gets a `signalStore` in `features/{entity}/{entity}.store.ts`
+- Read-only: `withComputed` only — no mutations, no API calls, no methods that modify state
+- Exposes view-model signals derived from one or more domain stores
+- Even for simple CRUD entities where it's a passthrough — structural consistency across all 7 entities
+
+**Facade — Single UI entry point:**
+- Every feature gets a facade in `features/{entity}/{entity}.facade.ts`
+- Exposes: data signals from feature store + intention methods that delegate to domain store
+- Components inject only the facade — never stores, services, or use-cases directly
+- Testable without Angular (mock the stores)
+
+**Signal Usage — Store-native:**
+- Domain stores expose signals via `signalStore` (replaces `toSignal()` bridge in services)
+- Feature stores expose `computed` signals
+- Facades expose both data signals and action methods
+- Components consume facade signals for template binding
+- No `subscribe()` in components. No `async` pipe. Signals only.
+
+**Lazy Loading — One route per entity (unchanged):**
+- 7 lazy-loaded feature routes, one per entity
+- Each route loads via `pages/{entity}/` page component
+- Shared components loaded eagerly (small, used everywhere)
+
+### Infrastructure & Deployment
+
+**Unchanged from current:**
+- Vercel with GitHub auto-deploy
+- `vercel.json` with SPA fallback rewrite + API proxy
+- `ng build` → static files
+- ESLint + Prettier for consistency
+- Environment configuration via `environment.ts` files
+- No CI/CD pipeline for v1
+
+### Decision Impact Analysis
+
+**Implementation Sequence:**
+1. Install `@ngrx/signals` + `@angular-architects/ngrx-toolkit`
+2. Create `domains/shared/with-cursor-pagination.ts` (reusable store feature)
+3. Create folder structure (`domains/`, `features/` restructure, `pages/`)
+4. **Pilot migration**: Funding Programs (simplest entity) — domain store + API + feature store + facade + update components
+5. **Second migration**: Action Themes (adds status mutations: publish/disable/activate/duplicate)
+6. Build remaining 5 entities natively in ACTEE patterns
+7. Remove `BaseEntityService<T>` and old service files
+
+**Cross-Component Dependencies:**
+- `withCursorPagination()` must exist before any domain store
+- Domain stores depend on: `{entity}.api.ts` + auto-generated types
+- Feature stores depend on: domain stores
+- Facades depend on: feature stores + domain stores
+- UI components depend on: facades only
+- Pages depend on: feature UI components
 
 ## Architecture Validation Results
 
 ### Coherence Validation
 
 **Decision Compatibility: PASS**
-- Angular 20 + Tailwind CSS v4 + Angular CDK: fully compatible, well-documented integration path
-- esbuild builder + Tailwind PostCSS: standard setup, no conflicts
-- Standalone components + signals + Reactive Forms: all native Angular 20, no library conflicts
-- lucide-angular 0.575.x: supports standalone components
-- `openapi-typescript` for type generation: framework-agnostic, works with any TypeScript project
+- Angular 21 + @ngrx/signals 21 + ngrx-toolkit 21: all aligned, fully compatible
+- ACTEE layer pattern fully implemented: `domains/` → `features/` → `pages/`
+- signalStore composition: `withState` → `withEntityResources` → `withMutations` → `withComputed` → `withMethods`
+- All ACTEE golden rules enforced
 
 **Pattern Consistency: PASS**
-- `snake_case` API types + auto-generation = types always match API contract
-- Signal-based services + `toSignal()` bridge = consistent reactive pattern throughout
-- `BaseEntityService<T>` + entity extensions = same pattern across all 7 entities
-- Flat feature folders + co-located tests = Angular CLI convention throughout
-- Import ordering + ESLint + Prettier = enforced consistency
+- 18 conflict points addressed with enforceable rules
+- Naming conventions align across all ACTEE layers
+- Import ordering (7 tiers) accounts for domain/feature/page layers
+- Store composition order is deterministic
 
 **Structure Alignment: PASS**
-- Directory structure directly maps to the patterns defined in Implementation Patterns
-- Every shared component from the UX spec has a home in `shared/components/`
-- Every entity has an identical folder structure
-- Core services (auth, API base) are properly isolated from features
+- Directory structure matches ACTEE folder convention exactly
+- Feature structure includes optional `use-cases/` folder per ACTEE spec
+- Every entity follows identical module structure
+- Boundary rules prevent cross-layer imports
+
+### ACTEE Compliance Matrix
+
+| ACTEE Golden Rule | Implementation | Enforced By |
+|------------------|---------------|-------------|
+| Pages = aucune logique métier | Zero-logic page components | Anti-pattern: page with inject() |
+| UI ne parle qu'à une facade | Components inject facade only | Anti-pattern: component imports store |
+| Toute mutation passe par domain store | Facade delegates to domain store | Anti-pattern: feature store with withMutations |
+| Domain = seule source de vérité | signalStore in domains/ | Structure: domains/{entity}/{entity}.store.ts |
+| Stores dérivés en lecture seule | Feature stores: withComputed only | Anti-pattern: feature store with withMethods |
+| Use-cases optionnels | Deferred, folder structure ready | domains/{entity}/use-cases/ + features/{entity}/use-cases/ |
 
 ### Requirements Coverage Validation
 
@@ -792,104 +982,90 @@ Component → EntityService → BaseEntityService → HttpClient → auth.interc
 
 | FR Range | Domain | Architectural Support |
 |----------|--------|----------------------|
-| FR1-4 | Auth & Session | `core/auth/` — AuthService, guard, interceptor, login component |
-| FR5-6 | Navigation & Layout | `core/layout/` — AppLayout with sidebar + header |
-| FR7-12 | Entity CRUD | `features/*/` — 7 entity modules + BaseEntityService + DataTable + MetadataGrid |
-| FR13-16 | Status & Lifecycle | Entity services (publish/disable/activate/duplicate) + StatusBadge + ConfirmDialog |
-| FR17-22 | Relationships | MetadataGrid linked fields + IndicatorPicker + entity detail components |
-| FR23-28 | Indicator Parameters | IndicatorCard + ToggleRow + RuleField + action-model workspace |
-| FR29-31 | Feedback & Errors | Toast service + HTTP interceptor (global) + component-level error handling (domain) |
-| FR32 | Dev Tooling | ApiInspector component on all detail pages |
+| FR1-4 | Auth & Session | `core/auth/` — unchanged |
+| FR5-6 | Navigation & Layout | `core/layout/` + `pages/` |
+| FR7-12 | Entity CRUD | `domains/*/` + `features/*/` + `pages/*/` |
+| FR13-16 | Status & Lifecycle | Domain mutations + facade intentions + StatusBadge |
+| FR17-22 | Relationships | Feature stores aggregating domains + MetadataGrid + IndicatorPicker |
+| FR23-28 | Indicator Parameters | Domain store + forms + (future) use-cases + workspace facade |
+| FR29-31 | Feedback & Errors | Toast + interceptor + mutation status |
+| FR32 | Dev Tooling | ApiInspector shared component |
 
 **Non-Functional Requirements: ALL COVERED**
-- Performance: lazy loading per entity, cursor pagination, no heavy client computation, skeleton loading states
-- Security: JWT in localStorage, HTTPS only, interceptor for token injection, route guards, `.env.local` for credentials
-- Integration: single API consumer, centralized service layer, auto-generated types from OpenAPI spec
-- Code quality: TypeScript strict, standalone components, signals, ESLint + Prettier, consistent patterns across 7 modules
+- Performance: lazy loading, cursor pagination via `withCursorPagination`, skeleton loading from resource status
+- Security: JWT in localStorage, interceptor, route guards (unchanged)
+- Integration: single API consumer, centralized API files, auto-generated types
+- Code quality: TypeScript strict, ACTEE patterns enforced, ESLint + Prettier
 
 ### Implementation Readiness Validation
 
 **Decision Completeness: HIGH**
-- All critical decisions documented with versions and rationale
-- Technology versions verified via web search (Angular 20, Tailwind v4, CDK, lucide-angular 0.575.x)
-- Deferred decisions explicitly listed with rationale (signal caching → polish epic, token refresh → backend, CI/CD → later)
+- All critical decisions documented with rationale
+- Technology versions verified (Angular 21, @ngrx/signals 21, ngrx-toolkit 21)
+- Deferred decisions explicitly listed
 
 **Structure Completeness: HIGH**
-- Every file and directory specified in the project tree
-- Every FR mapped to a specific location
-- Cross-cutting concerns mapped to their homes
+- Every file and directory specified
+- Every FR mapped to specific locations
+- Cross-cutting concerns mapped
 - Data flow diagram provided
 
 **Pattern Completeness: HIGH**
-- 15 conflict points identified and addressed
-- 8 mandatory enforcement rules + 8 explicit anti-patterns
-- Import ordering, component API conventions, error handling flow, loading state patterns all specified
-- Concrete code examples provided
+- 18 conflict points addressed
+- 11 mandatory enforcement rules + 10 explicit anti-patterns
+- Code examples for all major patterns
 
 ### Gap Analysis Results
 
-**No critical gaps found.**
+**Critical gaps: None.**
 
 **Important gaps identified and resolved:**
 
-1. **TSConfig path aliases** — Import examples use `@app/core/...` and `@app/shared/...`. Resolution: configure `paths` in `tsconfig.json` during project scaffold:
-   ```json
-   {
-     "compilerOptions": {
-       "paths": {
-         "@app/*": ["src/app/*"]
-       }
-     }
-   }
-   ```
+1. **Feature use-cases folder** — ACTEE shows `features/{entity}/use-cases/` as optional. Was missing from structure. **Resolution:** Added to structure pattern.
 
-2. **CORS / Proxy configuration** — Development against the staging API from `localhost` may require a proxy. Resolution: include `proxy.conf.json` in scaffold if staging API doesn't set CORS headers for localhost:
-   ```json
-   {
-     "/api": {
-       "target": "https://laureatv2-api-staging.osc-fr1.scalingo.io",
-       "secure": true,
-       "changeOrigin": true
-     }
-   }
-   ```
-   Run with: `ng serve --proxy-config proxy.conf.json`
+2. **API Observations process** — API is behind PRD requirements. **Resolution:** Added mandatory process pattern: agents update `_bmad-output/api-observations.md` when encountering API gaps.
 
-3. **API Inspector data capture pattern** — ApiInspector needs the raw HTTP response. Resolution: entity services store the last `HttpResponse` (including headers, status, body) in a `lastResponse` signal. ApiInspector reads this signal on detail pages. Pattern addition to BaseEntityService:
-   ```typescript
-   protected lastResponse = signal<HttpResponse<unknown> | null>(null);
-   ```
+3. **API Inspector data capture** — Resources/mutations don't expose raw HTTP responses. **Resolution:** `HttpResponseCapture` interceptor in `core/api/`.
+
+4. **TSConfig path aliases** — New aliases needed for ACTEE layers. **Resolution:** Update during setup phase.
+
+5. **Route updates** — `app.routes.ts` must point to `pages/`. **Resolution:** Part of each entity migration.
+
+6. **Existing test migration** — Tests reference old service pattern. **Resolution:** Included in big-bang migration per entity.
 
 **Nice-to-have gaps (deferred):**
-- No e2e testing strategy (acceptable for v1 — 3 manual testers)
-- No error boundary component (interceptor + toast covers this adequately)
-- No performance monitoring (not needed for 3 internal users on staging)
+- No e2e testing strategy (acceptable for v1)
+- No error boundary component (interceptor + mutation status covers adequately)
+- No performance monitoring (not needed for 3 internal users)
 
 ### Architecture Completeness Checklist
 
 **Requirements Analysis**
-- [x] Project context thoroughly analyzed (PRD, product brief, UX spec, OpenAPI spec, original brief)
-- [x] Scale and complexity assessed (medium complexity, frontend-only SPA)
-- [x] Technical constraints identified (Angular 20, no backend, single API, TypeScript strict)
-- [x] Cross-cutting concerns mapped (auth, error handling, pagination, loading states, dirty tracking)
+- [x] Project context thoroughly analyzed
+- [x] Migration context documented (EPICs 1 & 2 built)
+- [x] Scale and complexity assessed
+- [x] Technical constraints identified
+- [x] Cross-cutting concerns mapped
 
 **Architectural Decisions**
-- [x] Critical decisions documented with versions (Angular 20, Tailwind v4, CDK, esbuild)
-- [x] Technology stack fully specified (all dependencies listed with versions)
-- [x] Integration patterns defined (BaseEntityService, interceptor chain, signal-based state)
-- [x] Performance considerations addressed (lazy loading, cursor pagination, deferred caching)
+- [x] Critical decisions documented with versions
+- [x] Technology stack fully specified
+- [x] ACTEE compliance verified against all golden rules
+- [x] Migration strategy decided (big bang per entity)
+- [x] Deferred decisions explicitly listed
 
 **Implementation Patterns**
-- [x] Naming conventions established (snake_case API, kebab-case files, app- selectors)
-- [x] Structure patterns defined (flat feature folders, co-located tests, shared component subfolders)
-- [x] Communication patterns specified (input/output signals, service signals, toast service)
-- [x] Process patterns documented (error handling flow, loading states, form validation, navigation guards)
+- [x] Naming conventions established (18 conflict points)
+- [x] Structure patterns defined (ACTEE module structure)
+- [x] Communication patterns specified
+- [x] Process patterns documented
+- [x] API observations process mandated
 
 **Project Structure**
-- [x] Complete directory structure defined (every file and folder)
-- [x] Component boundaries established (presentational vs smart, core vs shared vs features)
-- [x] Integration points mapped (data flow diagram)
-- [x] Requirements to structure mapping complete (all 32 FRs mapped)
+- [x] Complete directory structure defined
+- [x] ACTEE layer boundaries established
+- [x] Requirements to structure mapping complete
+- [x] Feature use-cases folder included per ACTEE spec
 
 ### Architecture Readiness Assessment
 
@@ -898,37 +1074,30 @@ Component → EntityService → BaseEntityService → HttpClient → auth.interc
 **Confidence Level: HIGH**
 
 **Key Strengths:**
-- Unusually complete input documents (PRD, UX spec with 13 components, pixel-level HTML mockup, live OpenAPI spec) reduce ambiguity to near-zero
-- Single API consumer architecture is inherently simple — no backend complexity, no database decisions
-- Consistent entity pattern (BaseEntityService + flat feature folders) makes the 7-entity scope manageable and predictable
-- Technology stack is 100% Angular ecosystem defaults — no exotic libraries or unconventional patterns for the senior reviewer
+- Full ACTEE compliance — all 6 golden rules enforced with anti-patterns
+- Reusable `withCursorPagination()` preserves generic CRUD pattern
+- Clear migration path for 2 existing + 5 new entities
+- All dependency versions aligned (Angular 21 + NgRx 21 + ngrx-toolkit 21)
+- API observations process ensures gaps are tracked, not silently worked around
 
 **Areas for Future Enhancement:**
-- Signal-based entity caching (deferred to v1 polish epic)
-- Token refresh flow (pending backend `/auth/refresh` endpoint)
-- CI/CD pipeline (when project moves to company GitHub)
-- E2e testing strategy (when user base grows beyond 3)
-- Runtime environment configuration (when production environment is ready)
+- Domain use-cases: extract when indicator parameter logic demands
+- Feature use-cases: extract when facade orchestration becomes complex
+- Signal-based entity caching: deferred to polish phase
+- E2E testing: add when project moves to company GitHub
 
 ### Implementation Handoff
 
 **AI Agent Guidelines:**
-- Follow all architectural decisions exactly as documented in this file
+- Follow all ACTEE layer boundaries exactly as documented
 - Use implementation patterns consistently across all 7 entity modules
-- Respect project structure and boundaries — no deviations, no "improvements"
+- Respect the store composition order (state → resources → mutations → computed → methods)
+- **When encountering API gaps or discrepancies:** update `_bmad-output/api-observations.md` with the observation, impact, and any workaround decision taken. Never silently work around an API limitation.
 - Refer to this document for all architectural questions
-- Refer to `ux-design-specification.md` for component behavior and visual design
-- Refer to `ux-design-directions.html` for pixel-level implementation reference
-- Refer to `api-observations.md` for known API gaps and backend feedback
 
 **First Implementation Priority:**
-1. `ng new admin-playground --style=css --routing --ssr=false` + configure TSConfig paths
-2. Install dependencies: `tailwindcss @tailwindcss/postcss postcss @angular/cdk lucide-angular`
-3. Configure Tailwind (PostCSS + `styles.css` + theme tokens from color palette)
-4. Configure ESLint + Prettier
-5. Run `openapi-typescript` to generate initial API types
-6. Build `core/auth/` (AuthService, interceptor, guard, login page)
-7. Build `core/layout/` (AppLayout with sidebar + header)
-8. Build first shared components (DataTable, StatusBadge, Toast, ConfirmDialog)
-9. Build first entity: Funding Programs (simplest CRUD, validates full pattern)
-10. Build remaining entities in order of increasing complexity
+1. `npm install @ngrx/signals @angular-architects/ngrx-toolkit`
+2. Update `tsconfig.json` with ACTEE path aliases
+3. Create `domains/shared/with-cursor-pagination.ts`
+4. Create folder structure (`domains/`, `pages/`)
+5. Pilot migration: Funding Programs

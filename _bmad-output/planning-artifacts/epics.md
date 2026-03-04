@@ -1,7 +1,7 @@
 ---
 stepsCompleted: [step-01-validate-prerequisites, step-02-design-epics, step-03-create-stories, step-04-final-validation]
 status: 'complete'
-completedAt: '2026-03-03'
+completedAt: '2026-03-04'
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -12,7 +12,7 @@ inputDocuments:
 
 ## Overview
 
-This document provides the complete epic and story breakdown for admin-playground (Laureat Admin Interface), decomposing the requirements from the PRD, UX Design, and Architecture into implementable stories.
+This document provides the complete epic and story breakdown for admin-playground (Laureat Admin Interface), decomposing the requirements from the PRD, UX Design, and Architecture into implementable stories. This version is aligned with the ACTEE corporate architecture guidelines (Domain → Feature → UI layered architecture with NgRx Signal Stores, facades, and strict separation of concerns).
 
 ## Requirements Inventory
 
@@ -53,942 +53,1028 @@ FR32: User can view the last API request URL and full response payload for any e
 
 ### NonFunctional Requirements
 
-NFR1: No heavy client-side computation; all performance is API-bound. Paginated list views must feel responsive on a standard office network connection.
-NFR2: All communication with the Laureat API occurs over HTTPS
-NFR3: JWT stored securely client-side; never exposed in URLs or logs
-NFR4: Credentials (email/password, API base URL) managed via `.env.local` — must not be committed to the repository
-NFR5: No sensitive citizen or personal data stored or cached client-side
-NFR6: Session expires on logout; no persistent session across browser restarts required for v1
-NFR7: Admin consumes the Laureat REST API exclusively — no other backends or third-party services
-NFR8: API base URL configurable via `environment.ts` to support staging/production switching
-NFR9: Live OpenAPI specification (`/openapi.json`) is the authoritative source of truth for all endpoint contracts
-NFR10: All API errors propagated to the user — no silent failures or swallowed exceptions
-NFR11: Cursor-based pagination contract (`cursor` + `limit` + `PaginatedResponse<T>`) honored consistently across all entity list views
-NFR12: Admin builds strictly against current API support; features not yet exposed by the API are deferred
-NFR13: Angular 20 standalone components exclusively — no NgModule
-NFR14: TypeScript strict mode throughout
-NFR15: Angular signals for all reactive state — no NgRx or third-party state libraries
-NFR16: Consistent architectural patterns across all 7 entity modules (folder structure, service pattern, routing approach)
-NFR17: Inline code documentation for all non-obvious logic, architectural decisions, and domain-specific behavior
-NFR18: Lazy-loaded routing per entity module from day one
+NFR1: (Performance) No heavy client-side computation; all performance is API-bound
+NFR2: (Performance) Paginated list views must feel responsive on a standard office network connection to the staging API
+NFR3: (Performance) No offline capability required
+NFR4: (Security) All communication with the Laureat API occurs over HTTPS
+NFR5: (Security) JWT stored securely client-side; never exposed in URLs or logs
+NFR6: (Security) Credentials managed via `.env.local` — must not be committed to the repository
+NFR7: (Security) No sensitive citizen or personal data stored or cached client-side
+NFR8: (Integration) Admin consumes the Laureat REST API exclusively — no other backends or third-party services
+NFR9: (Integration) API base URL configurable via `environment.ts` to support staging/production switching
+NFR10: (Integration) Live OpenAPI specification (`/openapi.json`) is the authoritative source of truth
+NFR11: (Integration) All API errors propagated to the user — no silent failures
+NFR12: (Integration) Cursor-based pagination contract honored consistently across all entity list views
+NFR13: (Code Quality) Angular 20 standalone components exclusively — no NgModule
+NFR14: (Code Quality) TypeScript strict mode throughout
+NFR15: (Code Quality) NgRx Signal Stores for all reactive state (per ACTEE architecture)
+NFR16: (Code Quality) Consistent ACTEE architectural patterns across all 7 entity modules
+NFR17: (Code Quality) Inline code documentation for all non-obvious logic
+NFR18: (Code Quality) Lazy-loaded routing per entity module
+
+> **Note:** The PRD lists 21 NFRs (NFR1–NFR21) under a slightly different numbering scheme. This epics document consolidates to 18 NFRs reflecting the architecture evolution from raw Angular signals (PRD) to NgRx Signal Stores (ACTEE). Specifically: PRD's NFR3 ("no response time targets") and NFR4 ("no offline") are implicit in the epics context; PRD's NFR18 ("Angular signals") became NFR15 ("NgRx Signal Stores"); and the session-expiry NFR was dropped as implicit in the auth system. All substantive NFR requirements are preserved.
 
 ### Additional Requirements
 
-**From Architecture:**
+**From Architecture (ACTEE migration context):**
+- Install `@ngrx/signals` + `@angular-architects/ngrx-toolkit` as new dependencies
+- Create ACTEE folder structure: `domains/` → `features/` → `pages/`
+- Create reusable `withCursorPagination()` store feature in `domains/shared/`
+- Update TSConfig with ACTEE path aliases (`@domains/*`, `@features/*`, `@pages/*`)
+- Migrate existing entities (Funding Programs, Action Themes) from `BaseEntityService<T>` service pattern to ACTEE domain stores + facades
+- Remove old service-based patterns (`BaseEntityService<T>`) after migration is complete
+- All entities follow identical ACTEE module structure: domain store + API file + models + forms → feature store + facade + UI components → page
+- API Gap Documentation: mandatory `_bmad-output/api-observations.md` updates when encountering API discrepancies
+- Starter template: existing project — no new scaffolding needed
+- ACTEE layer boundaries enforced: pages → feature UI → facade → feature store / domain store → API file
+- 18 naming/structure conflict points addressed with mandatory patterns
+- 11 enforcement rules + 10 explicit anti-patterns documented
 
-- Starter template: Angular CLI `ng new admin-playground --style=css --routing --ssr=false --skip-tests=false` — this must be the first implementation action
-- Post-scaffold dependencies: `tailwindcss @tailwindcss/postcss postcss` (dev), `@angular/cdk`, `lucide-angular`
-- Tailwind CSS v4 configured via `.postcssrc.json` with `@tailwindcss/postcss` plugin
-- Auto-generate API types from live OpenAPI spec using `openapi-typescript` — output to `src/app/core/api/generated/api-types.ts`
-- `BaseEntityService<T>` generic base for all entity services with CRUD + cursor pagination
-- Entity-specific services extend base: ActionThemeService (publish/disable/activate/duplicate), CommunityService (assignUser/removeUser/parents/children), IndicatorModelService (association metadata), AgentService (soft-delete)
-- JWT authentication: localStorage storage, HTTP interceptor for token injection, functional canActivate route guard, 401 redirect with preserved destination
-- Error handling: hybrid interceptor (401/500/network) + component-level (409/422/400) with toast notification channel
-- Signal-based services: HttpClient internally, `toSignal()` bridge, components consume signals exclusively
-- Reactive Forms for all entity forms (`FormBuilder` + `FormGroup` + `FormControl`)
-- ESLint + Prettier configured from scaffold
-- TSConfig path aliases: `@app/*` → `src/app/*`
-- Vercel deployment with `vercel.json` SPA fallback rewrite
-- Proxy configuration for local development against staging API (if CORS required)
-- API Inspector: entity services store `lastResponse` signal for ApiInspector component
-- Flat feature folder structure per entity (list, detail, form, service, routes, model files)
-- Shared components in `src/app/shared/components/` with individual subfolders
-- Core services in `src/app/core/` (api, auth, layout, models)
-- `snake_case` for all API types — no camelCase transformation
-- Component selectors use `app-` prefix
-- `input()` / `output()` signal-based component API — no `@Input` / `@Output` decorators
-
-**From UX Design:**
-
-- 13 custom shared components to build: AppLayout, DataTable, MetadataGrid, SectionAnchors, StatusBadge, SaveBar, Toast, ConfirmDialog, IndicatorCard, ToggleRow, RuleField, IndicatorPicker, ApiInspector
-- Infinite scroll pattern (not traditional pagination buttons) — cursor-based, loads at 80% scroll threshold
-- Model-as-workspace pattern for ActionModel detail: single-page with expandable indicator cards, inline parameter configuration
-- Expandable card pattern for indicator parameter configuration: collapsed summary showing key states, expand to reveal 6 parameter toggle rows
-- Explicit save model (not auto-save) with unsaved-state tracking per indicator card and navigation guards
-- 60+ design tokens mapped to Tailwind custom theme (brand, surface, status, text, icon, stroke categories)
-- Typography: system sans-serif primary, JetBrains Mono/Fira Code for monospace (technical labels, JSONLogic, API data)
-- Minimum 1280px viewport, desktop-first, no responsive/mobile layout
-- Skeleton loading patterns (not full-page spinners) for tables and detail views
-- Status badges with semantic color: Draft (neutral), Published (green #2e8b7a), Disabled (gray #c8c8c8), Error (red #b32020)
-- Toast notifications: non-blocking, auto-dismiss, pattern "Bold action" + context
-- Error messages follow: what happened + why + what to do
-- Confirmation dialogs only for destructive/irreversible operations (delete, type changes on published indicators)
-- Keyboard efficiency: tab-through for repetitive configuration tasks
-- CDK usage: Overlay (dropdowns, dialogs), DragDrop (indicator reorder), A11y (focus trap), Clipboard, Scrolling (virtual scroll)
-- Parameter labels in French: Obligatoire, Non éditable, Non visible, Valeur par défaut, Duplicable, Valeurs contraintes
-- "+ Ajouter une règle" action reveals JSONLogic text field per parameter toggle
+**From UX:**
+- Tailwind CSS + Angular CDK design system
+- 13 custom shared components (DataTable, MetadataGrid, StatusBadge, Toast, ConfirmDialog, SaveBar, SectionAnchors, ApiInspector, IndicatorCard, ToggleRow, RuleField, IndicatorPicker, ParamHintIcons)
+- Explicit save pattern with unsaved-state tracking
+- Model-as-workspace pattern for ActionModel detail view
+- Infinite scroll (cursor-based) pagination UX
+- Progressive disclosure for complex indicator configuration
 
 ### FR Coverage Map
 
 | FR | Epic | Description |
 |----|------|-------------|
-| FR1 | Epic 1 | Email/password authentication |
-| FR2 | Epic 1 | Logout and session termination |
-| FR3 | Epic 1 | Auto-attach credentials to API requests |
-| FR4 | Epic 1 | Redirect unauthenticated users with preserved destination |
-| FR5 | Epic 1 | Sidebar navigation to 7 entity sections |
-| FR6 | Epic 1 | Authentication context in header |
-| FR7 | Epic 2 | Paginated entity list views |
-| FR8 | Epic 2 | Filter entity lists |
-| FR9 | Epic 2 | View entity details |
-| FR10 | Epic 2 | Create entity via form |
-| FR11 | Epic 2 | Edit entity |
-| FR12 | Epic 2 | Delete entity with confirmation |
-| FR13 | Epic 2 | Status workflow transitions |
-| FR14 | Epic 2 | Duplicate Action Theme |
-| FR15 | Epic 2 | Prevent invalid status transitions |
-| FR16 | Epic 2 | Status visible in list and detail views |
-| FR17 | Epic 3 | Associate Action Model with Funding Program / Action Theme |
-| FR18 | Epic 3 | Associate Folder Model with Funding Programs |
-| FR19 | Epic 4 | Assign/remove users from Community |
-| FR20 | Epic 5 | Attach Indicator Models to Action Model |
-| FR21 | Epic 5 | See which models use an Indicator Model |
-| FR22 | Epic 6 | Manage association metadata (visibility_rule, required_rule, etc.) |
-| FR23 | Epic 6 | Configure 6 behavior parameters per indicator per model context |
-| FR24 | Epic 6 | JSONLogic rule input for rule-capable parameters |
-| FR25 | Epic 5 | Configure Indicator Model type and subtype |
-| FR26 | Epic 5 | Manage list values for list-type indicators |
-| FR27 | Epic 5 | Prevent type changes on indicators with instances |
-| FR28 | Epic 6 | View all parameters/rules for an indicator in model context |
-| FR29 | Epic 2 | Human-readable error messages |
-| FR30 | Epic 2 | Success notifications |
-| FR31 | Epic 2 | Constraint violation explanations |
-| FR32 | Epic 7 | API request/response inspector |
+| FR1 | Epic 0 | Email/password authentication (preserved) |
+| FR2 | Epic 0 | Logout (preserved) |
+| FR3 | Epic 0 | Auto-attach credentials (preserved) |
+| FR4 | Epic 0 | Redirect unauthenticated users (preserved) |
+| FR5 | Epic 0 | 7-entity sidebar navigation (preserved) |
+| FR6 | Epic 0 | Auth context in header (preserved) |
+| FR7 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) | Paginated entity lists |
+| FR8 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) / Epic 4 (remaining) | Entity list filtering |
+| FR9 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) | Entity detail views |
+| FR10 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) | Create entity |
+| FR11 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) | Edit entity |
+| FR12 | Epic 0 (FP, AT) / Epic 1 (AM, FM) / Epic 2 (Comm, Agents) / Epic 3 (IM) | Delete with confirmation |
+| FR13 | Epic 0 (AT) / Epic 1 (AM) / Epic 2 (Agents) / Epic 3 (IM) | Status transitions |
+| FR14 | Epic 0 | Duplicate Action Theme (preserved) |
+| FR15 | Epic 0 | Invalid transition blocking (preserved) |
+| FR16 | Epic 0 (AT) / Epic 1 (AM) / Epic 2 (Agents) / Epic 3 (IM) | Status visibility |
+| FR17 | Epic 1 | Action Model ↔ FP/AT association |
+| FR18 | Epic 1 | Folder Model ↔ FP association |
+| FR19 | Epic 2 | Community user assignment/removal |
+| FR20 | Epic 3 | Attach Indicator Models to Action Model |
+| FR21 | Epic 3 | Indicator "used in N models" visibility |
+| FR22 | Epic 3 | Association metadata management |
+| FR23 | Epic 3 | 6-parameter configuration |
+| FR24 | Epic 3 (basic) / Epic 5 (enhanced) | JSONLogic rule input |
+| FR25 | Epic 3 | Indicator type/subtype management |
+| FR26 | Epic 3 | List values management |
+| FR27 | Epic 3 | Type-change constraint with explanation |
+| FR28 | Epic 3 (basic) / Epic 5 (enhanced) | Parameter/rule visibility |
+| FR29 | Epic 0 | Human-readable API errors (preserved) |
+| FR30 | Epic 0 | Success notifications (preserved) |
+| FR31 | Epic 0 | Constraint violation explanations (preserved) |
+| FR32 | Epic 4 | API request/response inspector |
 
 ## Epic List
 
-### Epic 1: Users Can Log In & Navigate the Admin Interface
-Users can log in to the admin interface, see the application layout with sidebar navigation, and navigate between entity sections. This epic establishes the "door" — the foundational infrastructure and authentication that all subsequent epics build upon.
-**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6
-**Implementation notes:** Includes Angular CLI scaffold (`ng new`), Tailwind/CDK/Lucide setup, OpenAPI type generation, design token theme configuration, AppLayout (sidebar + header), AuthService, JWT interceptor, route guards, login page. Also builds the shared component library foundation (DataTable, StatusBadge, Toast, ConfirmDialog, MetadataGrid, SectionAnchors) since they are needed by all subsequent epics.
+### Epic 0: ACTEE Architecture Migration — Preserving FP & AT Operator Workflows
+Restructure existing codebase from flat service-based architecture to ACTEE layered architecture (Domain → Feature → UI with NgRx Signal Stores), establishing the patterns all future entity development will follow. After this epic, operators can still create/manage Funding Programs and Action Themes exactly as before — same functionality, new architecture.
+**FRs preserved:** FR1–FR6, FR7–FR12 (FP + AT), FR13–FR16, FR29–FR31
 
-### Epic 2: Funding Program & Action Theme Management (MVP)
-Users can create, view, edit, and delete Funding Programs and Action Themes — including full status workflow transitions (draft → published → disabled) and Action Theme duplication. This epic validates the complete CRUD + pagination + status + error handling patterns and serves as the MVP gate.
-**FRs covered:** FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR29, FR30, FR31
-**Implementation notes:** First two entities validate all CRUD, infinite scroll pagination, status lifecycle, and feedback/error patterns. FR29-31 (feedback and error handling) are implemented here as cross-cutting concerns reused by all subsequent epics. MVP gate: Alex logs in, creates a Funding Program and Action Theme, walks the status lifecycle — no Postman.
+### Epic 1: Action Models & Folder Models
+Operators can create, edit, and manage Action Models (with Funding Program / Action Theme selectors) and Folder Models (with Funding Program association). Built natively in ACTEE patterns established in Epic 0. Completes the model-level configuration layer.
+**Depends on:** Epic 0 (ACTEE patterns, domain store conventions, `withCursorPagination()`)
+**FRs covered:** FR7–FR12 (AM + FM), FR13, FR16, FR17, FR18
 
-### Epic 3: Action Model & Folder Model Management
-Users can create and manage Action Models (selecting associated Funding Program and Action Theme) and Folder Models (associating with one or more Funding Programs). Entity relationship management patterns are established.
-**FRs covered:** FR17, FR18
-**Implementation notes:** Introduces FK selector patterns and linked reference fields. Action Model detail view sets up the workspace foundation that will later host indicator cards in Epic 6. Folder Model adds multi-select Funding Program association.
+### Epic 2: Communities & Agents
+Operators can create and manage Communities (with user assignment/removal) and Agents (with status management). Built natively in ACTEE patterns. Completes the people/organization entities.
+**FRs covered:** FR7–FR12 (Communities + Agents), FR13, FR16, FR19
 
-### Epic 4: Community & Agent Management
-Users can manage Communities (including assigning and removing users) and Agents (including soft-delete status management). After this epic, 6 of 7 entity types are fully operational.
-**FRs covered:** FR19
-**Implementation notes:** Communities have parent-child hierarchy with recursive fetching — more complex than simple CRUD. Agents have soft-delete semantics. Completes the simple-to-medium entity coverage.
+### Epic 3: Indicator Models & Parameter Configuration
+Operators can manage the full indicator lifecycle: create Indicator Models, configure type/subtype, manage list values, attach indicators to Action Models, configure the 6 behavior parameters per association, and input JSONLogic rules. The most complex surface — built last after patterns are proven across 6 simpler entities.
+**FRs covered:** FR7–FR12 (IM), FR13, FR16, FR20–FR28
 
-### Epic 5: Indicator Model Management
-Users can create and manage Indicator Models — configuring type and subtype, managing list values for list-type indicators, and seeing which models use each indicator. The reusable building blocks for the configuration chain are established.
-**FRs covered:** FR20, FR21, FR25, FR26, FR27
-**Implementation notes:** Indicator Models are the most complex entity type. This epic covers the entity itself: CRUD, type/subtype configuration, list value management, "used in N models" visibility, type-change constraints on published indicators, and attaching indicators to models.
+### Epic 4: Developer Tooling & Cross-Entity Polish
+Alex can inspect API request/response data on any entity detail page. Cross-entity filtering (FR8) is completed for any entities not yet covered. Final integration testing across the full configuration chain.
+**FRs covered:** FR8 (remaining), FR32
 
-### Epic 6: Indicator-Model Configuration Workspace
-Users can configure all 6 behavior parameters for each indicator within a model context, input JSONLogic rules for conditional behavior, and manage association metadata. This is the "full chain" moment — the north star of the product.
-**FRs covered:** FR22, FR23, FR24, FR28
-**Implementation notes:** Builds the expandable card pattern (IndicatorCard, ToggleRow, RuleField, IndicatorPicker, SaveBar components). Model-as-workspace pattern on the ActionModel detail page. Explicit save with per-card dirty tracking and navigation guards. v1 gate: Sophie completes a full program configuration end-to-end without opening Postman.
+### Epic 5: v2 — Ergonomics & UX Refinement
+Polish phase: proper JSONLogic editor (Monaco/CodeMirror) with syntax highlighting and validation, rule-to-prose translation, deep-link URLs, and daily-use ergonomics improvements.
+**FRs covered:** v2 scope (enhances FR24, FR28)
 
-### Epic 7: Developer Tooling & Polish
-Users can inspect the last API request URL and full response payload on any entity detail page, enabling rapid development validation and issue diagnosis without leaving the admin interface.
-**FRs covered:** FR32
-**Implementation notes:** ApiInspector component rendered on all detail pages. Alex validates platform state by reading raw API responses directly. Optional: signal-based entity caching if API latency becomes noticeable for the 3 operators.
+---
 
-### Epic 8: UX Polish — Drag-to-Reorder & Inline Editable Properties (Bonus)
-Users can reorder indicator associations on the Action Model workspace via drag-and-drop, and edit entity properties inline on detail pages without navigating to a separate edit form. This epic elevates the UX from functional to polished.
-**FRs covered:** None (UX enhancement beyond PRD scope)
-**Implementation notes:** CDK DragDrop for indicator card reordering on the ActionModel workspace. Inline-editable property fields on detail views replace the read-only MetadataGrid + separate edit form pattern for simple fields. Both features were identified in the UX Design Specification as chosen directions. This is a bonus epic — all core v1 functionality is complete after Epic 7.
+## Epic 0: ACTEE Architecture Migration — Preserving FP & AT Operator Workflows
 
-## Epic 1: Users Can Log In & Navigate the Admin Interface
+Restructure existing codebase from flat service-based architecture to ACTEE layered architecture (Domain → Feature → UI with NgRx Signal Stores), establishing the patterns all future entity development will follow. After this epic, operators can still create/manage Funding Programs and Action Themes exactly as before — same functionality, new architecture.
 
-Users can log in to the admin interface, see the application layout with sidebar navigation, and navigate between entity sections.
+### Story 0.1: Install ACTEE Dependencies & Create Folder Structure
 
-### Story 1.1: Project Scaffold & Design System Foundation
-
-As a developer,
-I want the Angular project scaffolded with all dependencies, Tailwind design tokens, and tooling configured,
-So that all subsequent development starts from a consistent, correctly-configured foundation.
+As a development team,
+I want the ACTEE dependencies installed and folder structure created,
+So that all future entity development follows the ACTEE layered architecture from day one.
 
 **Acceptance Criteria:**
 
-**Given** no project exists yet
-**When** the scaffold is created using `ng new admin-playground --style=css --routing --ssr=false --skip-tests=false`
-**Then** the project compiles and serves on `localhost:4200`
-**And** Tailwind CSS v4 is configured via `.postcssrc.json` with `@tailwindcss/postcss` plugin
-**And** `@angular/cdk`, `lucide-angular` are installed
-**And** `styles.css` imports Tailwind and defines all 60+ design tokens from the color palette (brand, surface, status, text, icon, stroke)
-**And** TypeScript strict mode is enabled
-**And** TSConfig path aliases map `@app/*` to `src/app/*`
-**And** ESLint and Prettier are configured and pass on the scaffold
-**And** `vercel.json` is created with SPA fallback rewrite
-**And** `.gitignore` excludes `.env.local` and standard Angular ignores
-**And** `environment.ts` contains `apiBaseUrl` pointing to `laureatv2-api-staging.osc-fr1.scalingo.io` and a `production` flag
+**Given** the existing Angular project with no NgRx dependencies
+**When** the developer runs the installation
+**Then** `@ngrx/signals` and `@angular-architects/ngrx-toolkit` are added to `package.json` and installed successfully
+**And** `npm install` completes without peer dependency conflicts
 
-### Story 1.2: API Type Generation & Base Service Layer
+**Given** the existing flat `src/app/` structure
+**When** the ACTEE folder structure is created
+**Then** the following directories exist: `src/app/domains/`, `src/app/domains/shared/`, `src/app/features/`, `src/app/pages/`
+**And** placeholder directories exist for all 7 entities under `domains/`, `features/`, and `pages/`
 
-As a developer,
-I want auto-generated TypeScript types from the live OpenAPI spec and a generic base service for CRUD + cursor pagination,
-So that all entity services share a consistent, type-safe API layer.
+**Given** the existing `tsconfig.json`
+**When** ACTEE path aliases are added
+**Then** the following aliases are configured: `@domains/*`, `@features/*`, `@pages/*`, `@shared/*`, `@core/*`
+**And** existing `@app/*` alias is preserved
 
-**Acceptance Criteria:**
+**Given** all changes are in place
+**When** `ng build` is executed
+**Then** the application compiles without errors
+**And** `ng serve` starts successfully with no runtime errors
+**And** all existing functionality (auth, navigation, FP, AT) continues to work unchanged
 
-**Given** the project scaffold exists with dependencies installed
-**When** `openapi-typescript` is run against the live OpenAPI spec
-**Then** TypeScript interfaces are generated in `src/app/core/api/generated/api-types.ts`
-**And** a `scripts/generate-api-types.sh` script exists to re-run generation
-**And** generated types use `snake_case` field names matching the API exactly
-**And** `PaginatedResponse<T>` model is defined with `items: T[]`, `cursor: string | null`, `limit: number`
-**And** `BaseEntityService<T>` is implemented in `src/app/core/api/base-entity.service.ts`
-**And** `BaseEntityService<T>` provides `list(cursor?, limit?)`, `getById(id)`, `create(data)`, `update(id, data)`, `delete(id)` methods
-**And** all list methods return `PaginatedResponse<T>`
-**And** the service uses `HttpClient` internally and exposes data via signals using `toSignal()` bridge
-**And** the service exposes readonly signals: `items`, `selectedItem`, `isLoading`, `error`
-**And** the service stores a `lastResponse` signal for API Inspector use
-**And** no `any` types exist in the API layer
+### Story 0.2: Create Reusable Cursor Pagination Store Feature
 
-### Story 1.3: Authentication System
-
-As an operator (Sophie/Alex),
-I want to log in with my email and password and have my session managed automatically,
-So that I can securely access the admin interface without manually managing tokens.
+As a development team,
+I want a reusable `withCursorPagination<T>()` store feature,
+So that all 7 entity domain stores share a single, tested pagination implementation instead of duplicating cursor logic.
 
 **Acceptance Criteria:**
 
-**Given** the user is not authenticated
-**When** the user navigates to any protected route
-**Then** they are redirected to the login page
-**And** the intended destination URL is preserved
+**Given** the `domains/shared/` directory exists
+**When** the `withCursorPagination<T>()` custom store feature is implemented
+**Then** it is located at `src/app/domains/shared/with-cursor-pagination.ts`
+**And** it encapsulates: items array, cursor state, hasMore flag, isLoading state, error state
 
-**Given** the user is on the login page
-**When** they enter valid email and password and submit
-**Then** the JWT token is stored in localStorage under a namespaced key
-**And** the user is redirected to their intended destination (or the default landing page)
+**Given** a domain store composing `withCursorPagination()`
+**When** the initial load is triggered
+**Then** it calls the configured API endpoint with `cursor: null` and `limit: N`
+**And** it populates the items array with the response data
+**And** it sets `hasMore` based on whether a next cursor is returned
 
-**Given** the user enters invalid credentials
-**When** they submit the login form
-**Then** a clear error message is displayed (not a generic "error occurred")
-**And** the password field is cleared but email is preserved
+**Given** a domain store with items already loaded and `hasMore === true`
+**When** `loadMore()` is called
+**Then** it calls the API with the current cursor value
+**And** it appends new items to the existing array (does not replace)
+**And** it updates the cursor for the next page
 
-**Given** the user is authenticated
-**When** any HTTP request is made to the API
-**Then** the JWT token is automatically attached via the HTTP interceptor
-**And** all requests go over HTTPS
+**Given** a domain store with items loaded and `hasMore === false`
+**When** `loadMore()` is called
+**Then** no API call is made
 
-**Given** the user is authenticated and the token has expired
-**When** an API call returns 401
-**Then** the user is redirected to the login page with the current URL preserved as intended destination
+**Given** the store feature is implemented
+**When** unit tests are executed
+**Then** all tests pass covering: initial load, load more, end of list, error handling, loading state transitions
 
-**Given** the user clicks logout
-**When** the logout action completes
-**Then** the JWT is removed from localStorage
-**And** the user is redirected to the login page
+### Story 0.3: Migrate Funding Programs to ACTEE Pattern (Pilot)
 
-### Story 1.4: Application Shell & Navigation
-
-As an operator (Sophie/Alex),
-I want a persistent sidebar with all 7 entity sections and a header showing my login state,
-So that I can navigate between entity sections efficiently and always know I'm authenticated.
+As an operator (Alex/Sophie),
+I want Funding Programs to work exactly as before under the new ACTEE architecture,
+So that the migration proves the pattern works without disrupting my daily configuration workflow.
 
 **Acceptance Criteria:**
 
-**Given** the user is authenticated
-**When** they access the admin interface
-**Then** the AppLayout component renders with a sidebar on the left and a header at the top
-**And** the sidebar displays navigation links for all 7 entity sections: Funding Programs, Action Themes, Action Models, Folder Models, Communities, Agents, Indicator Models
-**And** the header displays the user's authentication context (logged-in state)
-**And** the header contains a logout button
+**Given** the existing Funding Programs service-based implementation
+**When** the ACTEE migration is complete
+**Then** the following files exist and follow ACTEE conventions:
+- `domains/funding-programs/funding-program.store.ts` (domain store with `signalStore`)
+- `domains/funding-programs/funding-program.api.ts` (resources + `HttpMutationRequest`)
+- `domains/funding-programs/funding-program.models.ts` (types extending generated API types)
+- `domains/funding-programs/forms/funding-program.form.ts` (FormGroup factory)
+- `features/funding-programs/funding-program.store.ts` (feature store, `withComputed` only)
+- `features/funding-programs/funding-program.facade.ts` (`@Injectable`, single UI entry point)
+- `features/funding-programs/ui/funding-program-list.component.ts`
+- `features/funding-programs/ui/funding-program-detail.component.ts`
+- `features/funding-programs/ui/funding-program-form.component.ts`
+- `pages/funding-programs/funding-programs.page.ts` (layout only, zero logic)
+- `pages/funding-programs/funding-programs.routes.ts`
 
-**Given** the user clicks a sidebar navigation link
-**When** the route changes
-**Then** the corresponding entity section loads via lazy-loaded routing
-**And** the current section is visually highlighted in the sidebar
+**Given** the domain store is implemented
+**When** inspecting the store composition
+**Then** it follows the mandatory order: `withState` → `withCursorPagination` → `withMutations` → `withComputed` → `withMethods`
+**Note**: `withCursorPagination` replaces `withEntityResources` for this project because the API uses cursor-based pagination not natively supported by `withEntityResources`. Detail loading uses API functions called from `withMethods`.
 
-**Given** the user is on any page in the application
-**When** they look at the sidebar
-**Then** it is always visible and accessible (persistent)
-**And** they are never more than one click from any entity list
+**Given** the feature store is implemented
+**When** inspecting its composition
+**Then** it contains only `withComputed` — no mutations, no methods, no API calls
 
-**Given** 7 entity feature modules exist
-**When** the application loads
-**Then** only the active route's module is loaded (lazy loading)
-**And** each entity has a placeholder route component showing the entity name (ready for Epic 2+)
+**Given** the facade is implemented
+**When** inspecting its public API
+**Then** it exposes readonly data signals (items, selectedItem, isLoading) and intention methods (load, loadMore, select, create, update, delete)
+**And** UI components inject only the facade — never stores or services directly
 
-### Story 1.5: Shared Component Library — Core
+**Given** `app.routes.ts` is updated
+**When** navigating to `/funding-programs`
+**Then** the route lazy-loads through `pages/funding-programs/funding-programs.routes.ts`
 
-As a developer,
-I want the foundational shared components built and ready for use,
-So that all entity modules in subsequent epics use consistent, tested UI components.
+**Given** the migration is complete
+**When** an operator lists Funding Programs
+**Then** the paginated list displays correctly with cursor-based infinite scroll
+**When** an operator creates a new Funding Program
+**Then** the form displays, validates, and saves successfully with a success toast
+**When** an operator edits an existing Funding Program
+**Then** the edit form pre-populates, validates, and saves successfully
+**When** an operator deletes a Funding Program
+**Then** a confirmation dialog appears, and upon confirmation the item is deleted with a success toast
+**And** API errors display human-readable error messages via toast
 
-**Acceptance Criteria:**
+### Story 0.4: Migrate Action Themes to ACTEE Pattern
 
-**Given** the design system tokens are configured in Tailwind
-**When** the DataTable component is implemented
-**Then** it accepts column definitions and row data via `input()` signals
-**And** it supports infinite scroll cursor-based pagination (loads at 80% scroll threshold)
-**And** it displays skeleton loading rows (6 rows of shimmer) when `isLoading` is true
-**And** it emits row click events via `output()` for navigation to detail views
-**And** it renders in the data-table CSS class convention from the UX spec
-
-**Given** the shared components folder structure exists
-**When** StatusBadge is implemented
-**Then** it accepts a status string input and renders the appropriate semantic color badge (Draft: neutral, Published: green #2e8b7a, Disabled: gray #c8c8c8)
-**And** it uses the `text-xs` type scale
-
-**Given** the shared components folder structure exists
-**When** Toast + ToastService are implemented
-**Then** ToastService is injectable and provides `success()`, `error()`, `info()` methods
-**And** toasts appear as non-blocking overlays using CDK Overlay
-**And** toasts auto-dismiss after a configurable duration
-**And** toast messages follow the pattern: **"Bold action"** + context
-
-**Given** the shared components folder structure exists
-**When** ConfirmDialog + ConfirmDialogService are implemented
-**Then** ConfirmDialogService provides a `confirm(title, message)` method returning an Observable/Promise
-**And** the dialog uses CDK Overlay with focus trapping (CDK A11y)
-**And** the dialog renders with Cancel and Confirm action buttons
-
-**Given** the shared components folder structure exists
-**When** MetadataGrid is implemented
-**Then** it accepts key-value pairs via input and renders them in a structured grid layout
-**And** it supports linked reference fields (with navigation icon) for entity relationships
-
-**Given** the shared components folder structure exists
-**When** SectionAnchors is implemented
-**Then** it renders a list of anchor links for navigating between sections on a detail page
-
-**Given** all shared components are built
-**When** they are inspected
-**Then** all use standalone component architecture (no NgModule)
-**And** all use `input()` / `output()` signal-based API (no `@Input` / `@Output` decorators)
-**And** all are purely presentational (no service injection, no HTTP calls)
-**And** each has its own subfolder with component + template + styles + spec files
-
-## Epic 2: Funding Program & Action Theme Management (MVP)
-
-Users can create, view, edit, and delete Funding Programs and Action Themes — including full status workflow transitions and Action Theme duplication.
-
-### Story 2.1: Funding Program List & Detail Views
-
-As an operator (Sophie/Alex),
-I want to view a paginated list of Funding Programs and see the full details of any program,
-So that I can browse and inspect funding program configuration without using Postman.
+As an operator (Alex/Sophie),
+I want Action Themes to work exactly as before under the new ACTEE architecture — including status transitions and duplication,
+So that the ACTEE pattern is validated for lifecycle-managed entities.
 
 **Acceptance Criteria:**
 
-**Given** the user navigates to the Funding Programs section
-**When** the list loads
-**Then** a paginated list of Funding Programs is displayed in the DataTable component
-**And** infinite scroll loads more results at 80% scroll threshold using cursor-based pagination
-**And** each row shows the program's label, technical label, and creation date
-**And** skeleton loading is displayed while data loads
+**Given** the existing Action Themes service-based implementation
+**When** the ACTEE migration is complete
+**Then** the following files exist and follow ACTEE conventions:
+- `domains/action-themes/action-theme.store.ts` (domain store)
+- `domains/action-themes/action-theme.api.ts` (CRUD resources + publish/disable/activate/duplicate mutations)
+- `domains/action-themes/action-theme.models.ts`
+- `domains/action-themes/forms/action-theme.form.ts`
+- `features/action-themes/action-theme.store.ts` (feature store, read-only)
+- `features/action-themes/action-theme.facade.ts` (facade with lifecycle intentions)
+- `features/action-themes/ui/action-theme-list.component.ts`
+- `features/action-themes/ui/action-theme-detail.component.ts`
+- `features/action-themes/ui/action-theme-form.component.ts`
+- `pages/action-themes/action-themes.page.ts`
+- `pages/action-themes/action-themes.routes.ts`
 
-**Given** the user clicks on a Funding Program row in the list
-**When** the detail view loads
-**Then** all fields of the Funding Program are displayed in a MetadataGrid
-**And** the detail view uses the SectionAnchors component for navigation between sections
+**Given** the API file is implemented
+**When** inspecting mutation definitions
+**Then** status transitions (publish, disable, activate) use `exhaustOp` race condition strategy
+**And** CRUD mutations (create, update, delete) use `concatOp`
+**And** duplicate mutation is defined as an `HttpMutationRequest`
 
-**Given** the Funding Program list is empty
-**When** the user views the list
-**Then** an empty state message is displayed with a prompt to create a new Funding Program
+**Given** the facade is implemented
+**When** inspecting its public API
+**Then** it exposes lifecycle intention methods: `publish()`, `disable()`, `activate()`, `duplicate()`
+**And** it exposes per-mutation status signals for fine-grained UI feedback (e.g., "publishing..." spinner)
 
-**Given** the feature module structure
-**When** inspected
-**Then** it follows the flat folder structure: `funding-program-list.component.ts`, `funding-program-detail.component.ts`, `funding-program-form.component.ts`, `funding-program.service.ts`, `funding-program.routes.ts`, `funding-program.model.ts`
-**And** `FundingProgramService` extends `BaseEntityService<FundingProgram>`
+**Given** the migration is complete
+**When** an operator views the Action Theme list
+**Then** each row shows the current status via StatusBadge (draft, published, disabled)
+**When** an operator transitions an Action Theme from draft → published
+**Then** the status updates immediately in the UI with a success toast
+**When** an operator attempts an invalid status transition
+**Then** the system blocks the action and displays an informative error message (FR15)
+**When** an operator duplicates an Action Theme
+**Then** a new Action Theme is created with the duplicated data and appears in the list
 
-### Story 2.2: Funding Program Create, Edit & Delete
+**Given** all ACTEE boundary rules
+**When** inspecting component imports
+**Then** no UI component imports a store or API file directly — facades only
+**And** no feature store contains `withMutations` or `withMethods`
+**And** no page component contains `inject()` or any logic
 
-As an operator (Sophie/Alex),
-I want to create new Funding Programs, edit existing ones, and delete them with confirmation,
-So that I can manage the full lifecycle of funding program configuration.
+### Story 0.5: Remove Legacy Service Pattern & Final Cleanup
+
+As a development team,
+I want all legacy service-based patterns removed from the codebase,
+So that there is a single, consistent architecture (ACTEE) with no dead code or pattern ambiguity.
 
 **Acceptance Criteria:**
 
-**Given** the user clicks "Create" on the Funding Programs list
-**When** the create form is displayed
-**Then** a structured form is rendered using Angular Reactive Forms
+**Given** Funding Programs and Action Themes are fully migrated to ACTEE
+**When** the cleanup is complete
+**Then** `BaseEntityService<T>` is deleted from the codebase
+**And** the old Funding Programs service file is deleted
+**And** the old Action Themes service file is deleted
+**And** any old component files that were replaced by `features/*/ui/` components are deleted
+**And** any old routing files replaced by `pages/*/` routes are deleted
+
+**Given** all legacy files are removed
+**When** searching the codebase for imports of deleted files
+**Then** zero references to `BaseEntityService`, old service paths, or old component paths exist
+
+**Given** the cleanup is complete
+**When** `ng build` is executed
+**Then** the application compiles without errors and without unused import warnings
+
+**Given** the full cleanup is complete
+**When** the operator performs a full regression test
+**Then** authentication works (login, logout, redirect) — FR1–FR4
+**And** sidebar navigation works with all 7 sections visible — FR5
+**And** auth context displays in the header — FR6
+**And** Funding Programs: list, create, edit, delete all work — FR7–FR12
+**And** Action Themes: list, create, edit, delete, status transitions, duplication all work — FR7–FR16
+**And** error messages display correctly for failed operations — FR29–FR31
+**And** success toasts confirm successful operations — FR30
+
+---
+
+## Epic 1: Action Models & Folder Models
+
+Operators can create, edit, and manage Action Models (with Funding Program / Action Theme selectors) and Folder Models (with Funding Program association). Built natively in ACTEE patterns. Completes the model-level configuration layer.
+
+### Story 1.1: Action Models CRUD with ACTEE Pattern
+
+As an operator (Alex/Sophie),
+I want to create, view, edit, and delete Action Models through the admin interface,
+So that I can manage the model-level configuration layer without using Postman.
+
+**Acceptance Criteria:**
+
+**Given** Epic 0 is complete and ACTEE patterns are established
+**When** the Action Models ACTEE implementation is complete
+**Then** the following files exist following the ACTEE pattern established in Epic 0:
+- `domains/action-models/action-model.store.ts` (domain store using `withCursorPagination`)
+- `domains/action-models/action-model.api.ts` (resources + CRUD mutations)
+- `domains/action-models/action-model.models.ts` (types from generated API types)
+- `domains/action-models/forms/action-model.form.ts` (FormGroup factory)
+- `features/action-models/action-model.store.ts` (feature store, read-only)
+- `features/action-models/action-model.facade.ts` (facade)
+- `features/action-models/ui/action-model-list.component.ts`
+- `features/action-models/ui/action-model-detail.component.ts`
+- `features/action-models/ui/action-model-form.component.ts`
+- `pages/action-models/action-models.page.ts`
+- `pages/action-models/action-models.routes.ts`
+
+**Given** the Action Models route is configured
+**When** an operator navigates to `/action-models`
+**Then** a paginated list of Action Models displays with cursor-based infinite scroll
+
+**Given** an operator is on the Action Models list
+**When** they click "Create"
+**Then** a form displays with fields matching the API schema (label, technical_label, description, etc.)
 **And** required fields are validated on blur and on submit
-**And** the first invalid field is focused on submit if validation fails
 
-**Given** the user fills in valid data and submits the create form
-**When** the API call succeeds
-**Then** a success toast is displayed ("Funding Program created")
-**And** the user is navigated to the new program's detail view
+**Given** an operator fills in a valid Action Model form
+**When** they submit the form
+**Then** the Action Model is created via the API
+**And** a success toast confirms the creation
+**And** the operator is navigated to the detail view or list
 
-**Given** the user fills in valid data and submits the create form
-**When** the API call fails
+**Given** an operator is viewing an Action Model detail
+**When** they click "Edit"
+**Then** the form pre-populates with current values
+**And** they can modify and save with a success toast
+
+**Given** an operator clicks "Delete" on an Action Model
+**When** they confirm the deletion in the confirmation dialog
+**Then** the Action Model is deleted via the API with a success toast
+**And** API errors display human-readable error messages
+
+### Story 1.2: Action Model — Funding Program & Action Theme Association
+
+As an operator (Sophie),
+I want to select a Funding Program and Action Theme when creating or editing an Action Model,
+So that each Action Model is correctly linked to its parent program and theme.
+
+**Acceptance Criteria:**
+
+**Given** the Action Model create/edit form
+**When** the form renders
+**Then** a Funding Program selector dropdown is populated with available Funding Programs from the FP domain store
+**And** an Action Theme selector dropdown is populated with available Action Themes from the AT domain store
+
+**Given** an operator selects a Funding Program and Action Theme
+**When** they save the Action Model
+**Then** the association is persisted via the API
+**And** the detail view displays the associated Funding Program and Action Theme
+
+**Given** an operator is editing an existing Action Model
+**When** the form loads
+**Then** the currently associated Funding Program and Action Theme are pre-selected in the dropdowns
+
+**Given** the feature store for Action Models
+**When** inspecting its implementation
+**Then** it aggregates data from both the action-model domain store and the funding-program / action-theme domain stores to compose the selector options
+**And** the facade exposes the composed view-model to UI components
+
+### Story 1.3: Action Model Status Workflow
+
+As an operator (Alex/Sophie),
+I want to transition Action Models through their status lifecycle,
+So that I can control which models are active and ready for use.
+
+**Acceptance Criteria:**
+
+**Given** an Action Model with status "draft"
+**When** the operator clicks the "Publish" action
+**Then** the status transitions to "published" via the API
+**And** the StatusBadge updates immediately in both list and detail views
+**And** a success toast confirms the transition
+
+**Given** an Action Model with status "published"
+**When** the operator clicks "Disable"
+**Then** the status transitions to "disabled" with a success toast
+
+**Given** an Action Model in any status
+**When** an invalid transition is attempted
+**Then** the system blocks the action and displays an informative error message explaining why (FR15)
+
+**Given** the API file for Action Models
+**When** inspecting status mutation definitions
+**Then** status transitions use `exhaustOp` race condition strategy to prevent duplicate submissions
+
+**Given** the Action Models list view
+**When** rendered
+**Then** each row displays the current status via StatusBadge component (FR16)
+
+### Story 1.4: Folder Models CRUD with ACTEE Pattern
+
+As an operator (Alex/Sophie),
+I want to create, view, edit, and delete Folder Models through the admin interface,
+So that I can manage folder-level configuration for funding programs.
+
+**Acceptance Criteria:**
+
+**Given** ACTEE patterns are established
+**When** the Folder Models ACTEE implementation is complete
+**Then** the following files exist following the identical ACTEE module structure:
+- `domains/folder-models/folder-model.store.ts`
+- `domains/folder-models/folder-model.api.ts`
+- `domains/folder-models/folder-model.models.ts`
+- `domains/folder-models/forms/folder-model.form.ts`
+- `features/folder-models/folder-model.store.ts`
+- `features/folder-models/folder-model.facade.ts`
+- `features/folder-models/ui/folder-model-list.component.ts`
+- `features/folder-models/ui/folder-model-detail.component.ts`
+- `features/folder-models/ui/folder-model-form.component.ts`
+- `pages/folder-models/folder-models.page.ts`
+- `pages/folder-models/folder-models.routes.ts`
+
+**Given** the Folder Models route is configured
+**When** an operator navigates to `/folder-models`
+**Then** a paginated list of Folder Models displays with cursor-based infinite scroll
+
+**Given** an operator creates a Folder Model
+**When** they fill in the form with valid data and submit
+**Then** the Folder Model is created via the API with a success toast
+
+**Given** an operator edits an existing Folder Model
+**When** they modify fields and save
+**Then** the changes are persisted with a success toast
+
+**Given** an operator deletes a Folder Model
+**When** they confirm the deletion
+**Then** the Folder Model is deleted with a success toast
+**And** API errors display human-readable messages
+
+### Story 1.5: Folder Model — Funding Program Association
+
+As an operator (Sophie),
+I want to associate a Folder Model with one or more Funding Programs,
+So that folder structures are correctly linked to their parent programs.
+
+**Acceptance Criteria:**
+
+**Given** the Folder Model create/edit form
+**When** the form renders
+**Then** a Funding Program multi-selector is populated with available Funding Programs from the FP domain store
+
+**Given** an operator selects one or more Funding Programs
+**When** they save the Folder Model
+**Then** the associations are persisted via the API
+**And** the detail view displays the associated Funding Programs
+
+**Given** an operator is editing an existing Folder Model
+**When** the form loads
+**Then** the currently associated Funding Programs are pre-selected
+
+**Given** an operator removes a Funding Program association
+**When** they save the Folder Model
+**Then** the association is removed via the API
+**And** the detail view reflects the updated associations
+
+---
+
+## Epic 2: Communities & Agents
+
+Operators can create and manage Communities (with user assignment/removal) and Agents (with status management). Built natively in ACTEE patterns. Completes the people/organization entities.
+
+### Story 2.1: Communities CRUD with ACTEE Pattern
+
+As an operator (Alex/Sophie),
+I want to create, view, edit, and delete Communities through the admin interface,
+So that I can manage organizational groupings without using Postman.
+
+**Acceptance Criteria:**
+
+**Given** ACTEE patterns are established
+**When** the Communities ACTEE implementation is complete
+**Then** the following files exist following the ACTEE module structure:
+- `domains/communities/community.store.ts`
+- `domains/communities/community.api.ts`
+- `domains/communities/community.models.ts`
+- `domains/communities/forms/community.form.ts`
+- `features/communities/community.store.ts`
+- `features/communities/community.facade.ts`
+- `features/communities/ui/community-list.component.ts`
+- `features/communities/ui/community-detail.component.ts`
+- `features/communities/ui/community-form.component.ts`
+- `pages/communities/communities.page.ts`
+- `pages/communities/communities.routes.ts`
+
+**Given** the Communities route is configured
+**When** an operator navigates to `/communities`
+**Then** a paginated list of Communities displays with cursor-based infinite scroll
+
+**Given** an operator creates a Community
+**When** they fill in the form with valid data and submit
+**Then** the Community is created via the API with a success toast
+
+**Given** an operator edits an existing Community
+**When** they modify fields and save
+**Then** the changes are persisted with a success toast
+
+**Given** an operator deletes a Community
+**When** they confirm the deletion
+**Then** the Community is deleted with a success toast
+**And** API errors display human-readable messages
+
+### Story 2.2: Community User Assignment & Removal
+
+As an operator (Alex/Sophie),
+I want to assign users to and remove users from a Community,
+So that I can manage which users belong to each organizational group.
+
+**Acceptance Criteria:**
+
+**Given** an operator is viewing a Community detail page
+**When** they look at the user section
+**Then** a list of currently assigned users is displayed
+
+**Given** an operator wants to add a user to a Community
+**When** they use the user assignment interface
+**Then** available users are displayed for selection
+**And** selecting a user and confirming assigns them to the Community via the API
+**And** a success toast confirms the assignment
+**And** the user list updates immediately
+
+**Given** an operator wants to remove a user from a Community
+**When** they click "Remove" next to an assigned user
+**Then** a confirmation dialog appears
+**And** upon confirmation, the user is removed from the Community via the API
+**And** a success toast confirms the removal
+**And** the user list updates immediately
+
+**Given** the API returns an error during assignment or removal
+**When** the error is received
 **Then** a human-readable error message is displayed via toast
-**And** 422 validation errors are mapped to specific form fields where possible
-**And** the error explains what failed and why (FR29, FR31)
 
-**Given** the user opens an existing Funding Program for editing
-**When** the edit form is displayed
-**Then** all fields are pre-populated with current values
-**And** the form component handles both create and edit via a `mode` input
+### Story 2.3: Agents CRUD with ACTEE Pattern
 
-**Given** the user saves edits to a Funding Program
-**When** the API call succeeds
-**Then** a success toast confirms the update ("Funding Program updated")
-
-**Given** the user clicks delete on a Funding Program
-**When** the confirmation dialog appears
-**Then** the dialog clearly states what will be deleted
-**And** the user must explicitly confirm before the delete proceeds
-**And** on successful deletion, a toast confirms and the user returns to the list
-**And** on failure (e.g., 409 conflict), the error message explains why deletion failed and what to do
-
-### Story 2.3: Action Theme List, Detail, Create, Edit & Delete
-
-As an operator (Sophie/Alex),
-I want full CRUD operations on Action Themes with the same patterns as Funding Programs,
-So that I can manage action theme configuration consistently.
+As an operator (Alex/Sophie),
+I want to create, view, edit, and delete Agents through the admin interface,
+So that I can manage agent configurations without using Postman.
 
 **Acceptance Criteria:**
 
-**Given** the user navigates to the Action Themes section
-**When** the list loads
-**Then** Action Themes are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, technical label, status badge, and creation date
-**And** the StatusBadge component shows the current status (draft, published, disabled)
+**Given** ACTEE patterns are established
+**When** the Agents ACTEE implementation is complete
+**Then** the following files exist following the ACTEE module structure:
+- `domains/agents/agent.store.ts`
+- `domains/agents/agent.api.ts` (including soft-delete semantics)
+- `domains/agents/agent.models.ts`
+- `domains/agents/forms/agent.form.ts`
+- `features/agents/agent.store.ts`
+- `features/agents/agent.facade.ts`
+- `features/agents/ui/agent-list.component.ts`
+- `features/agents/ui/agent-detail.component.ts`
+- `features/agents/ui/agent-form.component.ts`
+- `pages/agents/agents.page.ts`
+- `pages/agents/agents.routes.ts`
 
-**Given** the user views an Action Theme detail
-**When** the detail page loads
-**Then** all fields are displayed in a MetadataGrid
-**And** the current status is prominently displayed via StatusBadge
+**Given** the Agents route is configured
+**When** an operator navigates to `/agents`
+**Then** a paginated list of Agents displays with cursor-based infinite scroll
 
-**Given** the user creates a new Action Theme
-**When** the create form is displayed
-**Then** the form includes fields for: label, technical_label, description, and any ActionTheme-specific fields returned by the API
-**And** the status field is not editable on create (defaults to draft)
-**And** required fields are validated on blur and on submit
+**Given** an operator creates an Agent
+**When** they fill in the form with valid data and submit
+**Then** the Agent is created via the API with a success toast
 
-**Given** the user edits an existing Action Theme
-**When** the edit form is displayed
-**Then** all fields are pre-populated with current values
-**And** the status field is read-only (managed via status workflow in Story 2.4)
+**Given** an operator edits an existing Agent
+**When** they modify fields and save
+**Then** the changes are persisted with a success toast
 
-**Given** the user creates, edits, or deletes an Action Theme
-**When** the operation completes
-**Then** the same validation, error handling, and toast patterns from Funding Programs are followed
-**And** `ActionThemeService` extends `BaseEntityService<ActionTheme>` with additional methods: `publish()`, `disable()`, `activate()`, `duplicate()`
-**And** the feature module follows the identical flat folder structure
+**Given** an operator deletes an Agent
+**When** they confirm the deletion
+**Then** the Agent is soft-deleted via the API with a success toast
+**And** API errors display human-readable messages
 
-### Story 2.4: Action Theme Status Workflow & Duplication
+### Story 2.4: Agent Status Management
 
-As an operator (Sophie/Alex),
-I want to transition Action Themes through their status lifecycle (draft → published → disabled) and duplicate them,
-So that I can manage theme publication and quickly create variations.
+As an operator (Alex/Sophie),
+I want to manage Agent status through the admin interface,
+So that I can control which agents are active and visible in the system.
 
 **Acceptance Criteria:**
 
-**Given** the user views an Action Theme in draft status
-**When** they click the "Publish" action
-**Then** the status transitions to published
+**Given** an Agent with a current status
+**When** the operator views the Agent in the list
+**Then** the current status is displayed via StatusBadge (FR16)
+
+**Given** an Agent in the detail view
+**When** the operator clicks a status transition action
+**Then** the status transitions via the API
 **And** the StatusBadge updates immediately
-**And** a success toast confirms ("Action Theme published")
+**And** a success toast confirms the transition
 
-**Given** the user views a published Action Theme
-**When** they click the "Disable" action
-**Then** the status transitions to disabled
-**And** the StatusBadge updates to the disabled state (gray)
+**Given** an invalid status transition is attempted
+**When** the API rejects the transition
+**Then** the system displays an informative error message explaining the constraint (FR15)
 
-**Given** the user attempts an invalid status transition
-**When** the API returns an error
-**Then** the system displays a clear message explaining why the transition is not allowed (FR15)
-**And** the current status remains unchanged
+**Given** the API file for Agents
+**When** inspecting status mutation definitions
+**Then** status transitions use `exhaustOp` race condition strategy
 
-**Given** the user views an Action Theme
-**When** they click the "Duplicate" action
-**Then** a new Action Theme is created as a copy with draft status
-**And** a success toast confirms ("Action Theme duplicated")
-**And** the user is navigated to the new duplicate's detail view
+---
 
-**Given** the user views Action Theme list or detail
-**When** they look at the status
-**Then** the current status is visible at a glance via StatusBadge (FR16)
+## Epic 3: Indicator Models & Parameter Configuration
 
-### Story 2.5: List Filtering
+Operators can manage the full indicator lifecycle: create Indicator Models, configure type/subtype, manage list values, attach indicators to Action Models, configure the 6 behavior parameters per association, and input JSONLogic rules. The most complex surface — built last after patterns are proven across 6 simpler entities.
 
-As an operator (Sophie/Alex),
-I want to filter entity lists by available criteria (status, associated program, etc.),
-So that I can quickly find specific entities without scrolling through the full list.
+### Story 3.1: Indicator Models CRUD with ACTEE Pattern
+
+As an operator (Sophie),
+I want to create, view, edit, and delete Indicator Models through the admin interface,
+So that I can manage the indicator definitions that drive the entire configuration system.
 
 **Acceptance Criteria:**
 
-**Given** the user is on the Action Themes list
-**When** filter controls are available
-**Then** the user can filter by status (draft, published, disabled) where the API supports it
+**Given** ACTEE patterns are established and 6 simpler entities already follow the pattern
+**When** the Indicator Models ACTEE implementation is complete
+**Then** the following files exist following the ACTEE module structure:
+- `domains/indicator-models/indicator-model.store.ts`
+- `domains/indicator-models/indicator-model.api.ts` (including association metadata CRUD)
+- `domains/indicator-models/indicator-model.models.ts`
+- `domains/indicator-models/forms/indicator-model.form.ts`
+- `features/indicator-models/indicator-model.store.ts`
+- `features/indicator-models/indicator-model.facade.ts`
+- `features/indicator-models/ui/indicator-model-list.component.ts`
+- `features/indicator-models/ui/indicator-model-detail.component.ts`
+- `features/indicator-models/ui/indicator-model-form.component.ts`
+- `pages/indicator-models/indicator-models.page.ts`
+- `pages/indicator-models/indicator-models.routes.ts`
 
-**Given** the user applies a filter
-**When** the list reloads
-**Then** only matching entities are displayed
-**And** the pagination resets to the beginning
+**Given** the Indicator Models route is configured
+**When** an operator navigates to `/indicator-models`
+**Then** a paginated list of Indicator Models displays with cursor-based infinite scroll
+
+**Given** an operator creates an Indicator Model
+**When** they fill in the form (label, technical label, description, etc.) and submit
+**Then** the Indicator Model is created via the API with a success toast
+
+**Given** an operator edits an existing Indicator Model
+**When** they modify label fields and save
+**Then** the changes are persisted with a success toast
+**And** the interface makes clear that label changes propagate to all associated models
+
+**Given** an operator deletes an Indicator Model
+**When** they confirm the deletion
+**Then** the Indicator Model is deleted with a success toast
+**And** API errors display human-readable messages
+
+### Story 3.2: Indicator Model Type, Subtype & List Values Management
+
+As an operator (Sophie),
+I want to configure the type and subtype of an Indicator Model and manage list values for list-type indicators,
+So that each indicator's data structure is correctly defined before it is used in models.
+
+**Acceptance Criteria:**
+
+**Given** an operator is creating or editing an Indicator Model
+**When** the form renders
+**Then** a type selector displays the available indicator types (FR25)
+**And** a subtype selector is available where applicable
+
+**Given** an operator selects a list-type indicator
+**When** the type is set to a list variant
+**Then** a list values management interface appears (FR26)
+**And** the operator can add, edit, reorder, and remove valid values
+**And** changes are saved with the Indicator Model
+
+**Given** a published Indicator Model with existing instances
+**When** an operator attempts to change the type
+**Then** the system blocks the change with a clear explanation: "Type cannot be changed once instances exist" (FR27)
+
+**Given** an operator changes the subtype on a draft Indicator Model
+**When** they save
+**Then** the subtype is updated via the API with a success toast
+
+### Story 3.3: Indicator Model Status Workflow & Usage Visibility
+
+As an operator (Sophie),
+I want to transition Indicator Models through their status lifecycle and see which models use each indicator,
+So that I can manage indicator publication and understand cross-entity impact before making changes.
+
+**Acceptance Criteria:**
+
+**Given** an Indicator Model with status "draft"
+**When** the operator clicks "Publish"
+**Then** the status transitions to "published" via the API with a success toast
+**And** the StatusBadge updates immediately in list and detail views (FR16)
+
+**Given** an Indicator Model in any status
+**When** an invalid transition is attempted
+**Then** the system blocks the action with an informative error message (FR15)
+
+**Given** an operator views an Indicator Model detail page
+**When** the page renders
+**Then** a "Used in N models" section displays which Action Models this indicator is currently associated with (FR21)
+**And** the count and model names/links are visible
+
+**Given** the status transition mutations
+**When** inspecting their definition
+**Then** they use `exhaustOp` race condition strategy
+
+### Story 3.4: Attach Indicator Models to Action Models
+
+As an operator (Sophie),
+I want to attach Indicator Models to an Action Model from the Action Model workspace,
+So that I can define which indicators are part of each model's configuration.
+
+**Acceptance Criteria:**
+
+**Given** an operator is viewing an Action Model detail page (workspace view)
+**When** they open the indicator association panel
+**Then** currently attached Indicator Models are listed (FR20)
+
+**Given** an operator wants to attach a new Indicator Model
+**When** they use the IndicatorPicker component
+**Then** available Indicator Models are displayed for selection
+**And** selecting and confirming attaches the indicator to the Action Model via the API
+**And** a success toast confirms the attachment
+**And** the indicator list updates immediately
+
+**Given** an operator wants to remove an indicator association
+**When** they click "Remove" on an attached indicator
+**Then** a confirmation dialog appears
+**And** upon confirmation, the association is removed via the API
+
+**Given** an operator has multiple indicators attached to an Action Model
+**When** they drag an indicator card to a new position using the drag handle
+**Then** the indicator order is updated in the UI immediately via Angular CDK DragDrop
+**And** the new order is persisted via the API
+**And** the reordered list is preserved on page reload
+
+**Given** the Action Model feature store
+**When** inspecting its implementation
+**Then** it aggregates data from both the action-model and indicator-model domain stores to compose the workspace view
+**And** the facade orchestrates the cross-domain interactions
+
+### Story 3.5: Indicator Parameter Configuration (6 Parameters)
+
+As an operator (Sophie),
+I want to configure the 6 behavior parameters for each indicator within a specific model context,
+So that indicator behavior (required, visible, editable, default value, constraint, duplicable) is correctly defined per model.
+
+**Acceptance Criteria:**
+
+**Given** an operator has attached an Indicator Model to an Action Model
+**When** they expand the indicator's parameter panel in the Action Model workspace
+**Then** 6 parameter configuration fields are displayed: required, visible, editable, default value, constraint, duplicable (FR23)
+
+**Given** an operator configures a boolean parameter (required, visible, editable, duplicable)
+**When** they toggle the value using the ToggleRow component
+**Then** the parameter value is updated
+**And** changes are tracked as unsaved until explicitly saved
+
+**Given** an operator configures a value parameter (default value, constraint)
+**When** they enter a value in the appropriate field
+**Then** the value is validated and tracked as unsaved
+
+**Given** an operator has made parameter changes
+**When** they save via the SaveBar
+**Then** all parameter values are persisted via the API as association metadata (FR22)
+**And** a success toast confirms the save
+
+**Given** an operator views parameters for an indicator within a model context
+**When** the panel renders
+**Then** all currently configured parameters and their values are displayed accurately (FR28)
+**And** ParamHintIcons indicate which parameters have non-default values
+
+### Story 3.6: JSONLogic Rule Input for Indicator Parameters
+
+As an operator (Sophie),
+I want to input JSONLogic rule expressions for rule-capable indicator parameters,
+So that I can define conditional behavior (e.g., "show this field only when mode_chauffe = autre").
+
+**Acceptance Criteria:**
+
+**Given** an operator is configuring an indicator parameter that supports rules
+**When** the parameter panel renders
+**Then** a multi-line text field (RuleField component) is available for JSONLogic input (FR24)
+
+**Given** an operator types a JSONLogic rule into the text field
+**When** the input is valid JSON
+**Then** the field accepts the input without error
+
+**Given** an operator types invalid JSON into the rule field
+**When** they attempt to save
+**Then** the system indicates the JSON is malformed before sending to the API
+
+**Given** an operator has entered a JSONLogic rule (e.g., `{"==": [{"var": "mode_chauffe"}, "autre"]}`)
+**When** they save via the SaveBar
+**Then** the rule is persisted as part of the association metadata (visibility_rule, required_rule, etc.) via the API
+**And** a success toast confirms the save
+
+**Given** an operator reopens the parameter panel for an indicator with existing rules
+**When** the panel renders
+**Then** the stored JSONLogic rule is displayed faithfully in the text field — no abstraction loss (FR28)
+**And** the rule is readable and copyable
+
+**Given** the RuleField component renders in v1
+**When** a JSONLogic rule references variables (e.g., `{"var": "mode_chauffe"}`)
+**Then** the prose translation area above the textarea shows a static placeholder: "Rule references: mode_chauffe" (extracted variable names only)
+**And** full human-readable prose translation is deferred to v2 (Story 5.2)
+
+---
+
+## Epic 4: Developer Tooling & Cross-Entity Polish
+
+Alex can inspect API request/response data on any entity detail page. Cross-entity filtering (FR8) is completed for any entities not yet covered. Final integration testing across the full configuration chain.
+
+### Story 4.1: API Request/Response Inspector
+
+As a developer (Alex),
+I want to view the last API request URL and full response payload on any entity detail page,
+So that I can validate API behavior and diagnose issues without opening Postman or browser DevTools.
+
+**Acceptance Criteria:**
+
+**Given** an operator is viewing any entity detail page (FP, AT, AM, FM, IM, Community, Agent)
+**When** they open the API Inspector panel
+**Then** the last API request URL is displayed (FR32)
+**And** the full response payload is displayed in a readable format
+
+**Given** the ApiInspector shared component
+**When** inspecting its implementation
+**Then** it is a purely presentational component in `shared/components/api-inspector/`
+**And** it receives request/response data via `input()` signals
+**And** it has no domain knowledge or facade access
+
+**Given** an API call is made on a detail page (e.g., loading entity data, saving changes)
+**When** the response is received
+**Then** the API Inspector updates with the latest request URL and response body
+
+**Given** the inspector displays a response
+**When** an operator views it
+**Then** the JSON is formatted and readable
+**And** the operator can copy the response payload
+
+### Story 4.2: Cross-Entity List Filtering
+
+As an operator (Alex/Sophie),
+I want to filter entity lists by available criteria (status, associated program, etc.),
+So that I can quickly find the configuration objects I need in large lists.
+
+**Acceptance Criteria:**
+
+**Given** any entity list view that supports filtering
+**When** the API provides filter parameters (e.g., status, funding_program_id)
+**Then** filter controls are displayed above the list (FR8)
+
+**Given** an operator selects a filter value (e.g., status = "published")
+**When** the filter is applied
+**Then** the list reloads from the API with the filter parameter
+**And** the pagination resets to the first page (cursor = null)
 **And** the active filter is visually indicated
 
-**Given** the user clears all filters
-**When** the list reloads
-**Then** the full unfiltered list is displayed
+**Given** an operator clears a filter
+**When** the filter is removed
+**Then** the list reloads showing all items
+**And** the pagination resets
 
-**Filtering Scope Per Entity (FR8):**
-Filtering is implemented only where the API exposes filter query parameters. The following is the expected scope based on the live OpenAPI spec:
+**Given** filtering is implemented
+**When** inspecting the implementation
+**Then** filter state is managed in the domain store
+**And** the facade exposes filter methods and active filter signals
+**And** the DataTable component receives filter controls via its existing API
 
-| Entity | Filter Support | Available Filters |
-|---|---|---|
-| Action Themes | Yes | status |
-| Funding Programs | Verify API | Check OpenAPI spec during implementation |
-| Action Models | Verify API | Check OpenAPI spec during implementation |
-| Folder Models | Verify API | Check OpenAPI spec during implementation |
-| Communities | Verify API | Check OpenAPI spec during implementation |
-| Agents | Verify API | Check OpenAPI spec during implementation |
-| Indicator Models | Verify API | Check OpenAPI spec during implementation |
-
-**Note:** During implementation, the developer should consult the live OpenAPI spec (`/openapi.json`) to determine the exact filter parameters available per entity. Any entity with API-supported filters should have filter controls added. Entities without API filter support should not have filter UI.
-
-## Epic 3: Action Model & Folder Model Management
-
-Users can create and manage Action Models and Folder Models with entity relationship associations.
-
-### Story 3.1: Action Model CRUD with Relationship Selectors
-
-As an operator (Sophie/Alex),
-I want to create and manage Action Models, selecting their associated Funding Program and Action Theme,
-So that I can build model configurations linked to the correct program and theme.
-
-**Acceptance Criteria:**
-
-**Given** the user navigates to the Action Models section
-**When** the list loads
-**Then** Action Models are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, technical label, associated Funding Program name, associated Action Theme name, and status badge
-**And** `ActionModelService` extends `BaseEntityService<ActionModel>`
-**And** the feature module follows the flat folder structure
-
-**Given** the user creates or edits an Action Model
-**When** the form is displayed
-**Then** a Funding Program selector (dropdown) is available, populated from the FundingProgramService
-**And** an Action Theme selector (dropdown) is available, populated from the ActionThemeService
-**And** both selectors show the entity label and allow selection (FR17)
-**And** selected relationships display as linked reference fields with a navigation icon (click to open the linked entity)
-
-**Given** the user views an Action Model detail
-**When** the detail page loads
-**Then** the associated Funding Program and Action Theme are displayed as linked references in the MetadataGrid
-**And** clicking the link navigates to the associated entity's detail view
-
-**Given** the user performs any CRUD operation on Action Models
-**When** the operation completes
-**Then** the same validation, error handling, and toast patterns established in Epic 2 are followed
-
-### Story 3.2: Folder Model CRUD with Multi-Program Association
-
-As an operator (Sophie/Alex),
-I want to create and manage Folder Models, associating them with one or more Funding Programs,
-So that I can organize folder structures linked to the appropriate programs.
-
-**Acceptance Criteria:**
-
-**Given** the user navigates to the Folder Models section
-**When** the list loads
-**Then** Folder Models are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, technical label, associated Funding Program count, and status
-**And** `FolderModelService` extends `BaseEntityService<FolderModel>`
-**And** the feature module follows the flat folder structure
-
-**Given** the user creates or edits a Folder Model
-**When** the form is displayed
-**Then** a multi-select Funding Program picker is available (FR18)
-**And** the user can select one or more Funding Programs to associate
-**And** selected programs are displayed as a list with remove capability
-
-**Given** the user views a Folder Model detail
-**When** the detail page loads
-**Then** all associated Funding Programs are displayed as linked references
-**And** clicking any link navigates to that Funding Program's detail view
-
-## Epic 4: Community & Agent Management
-
-Users can manage Communities (with user assignment) and Agents (with soft-delete). After this epic, 6 of 7 entity types are fully operational.
-
-### Story 4.1: Community CRUD & User Assignment
-
-As an operator (Sophie/Alex),
-I want to create and manage Communities, including assigning and removing users,
-So that I can organize user groups for the platform.
-
-**Acceptance Criteria:**
-
-**Given** the user navigates to the Communities section
-**When** the list loads
-**Then** Communities are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, technical label, member count, and parent community (if applicable)
-**And** `CommunityService` extends `BaseEntityService<Community>` with additional methods: `assignUser()`, `removeUser()`, `getParents()`, `getChildren()`
-**And** the feature module follows the flat folder structure
-
-**Given** the user views a Community detail
-**When** the detail page loads
-**Then** community metadata is displayed in a MetadataGrid
-**And** a list of assigned users is displayed
-**And** parent and child communities are shown as linked references (if applicable)
-
-**Given** the user clicks "Assign User" on a Community
-**When** the assignment interface is presented
-**Then** the user can search/select a user to add (FR19)
-**And** on successful assignment, the user list updates and a success toast is shown
-
-**Given** the user clicks "Remove" on an assigned user
-**When** the confirmation dialog appears and is confirmed
-**Then** the user is removed from the community
-**And** a success toast confirms the removal
-
-**Given** the user performs CRUD operations on Communities
-**When** any operation completes
-**Then** the same validation, error handling, and toast patterns established in Epic 2 are followed
-
-### Story 4.2: Agent CRUD & Soft-Delete Management
-
-As an operator (Sophie/Alex),
-I want to create and manage Agents with soft-delete status management,
-So that I can manage agent records without permanently losing data.
-
-**Acceptance Criteria:**
-
-**Given** the user navigates to the Agents section
-**When** the list loads
-**Then** Agents are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, status badge, and relevant metadata
-**And** `AgentService` extends `BaseEntityService<Agent>` with soft-delete semantics
-**And** the feature module follows the flat folder structure
-
-**Given** the user creates or edits an Agent
-**When** the form is displayed
-**Then** a structured form with appropriate fields is rendered using Reactive Forms
-**And** the same validation and error handling patterns are followed
-
-**Given** the user deletes an Agent
-**When** the delete action is triggered
-**Then** the agent is soft-deleted (not permanently removed)
-**And** the agent's status reflects the soft-deleted state
-**And** a success toast confirms the operation
-
-**Given** the user views the Agent list
-**When** soft-deleted agents are present
-**Then** their status is clearly indicated via StatusBadge
-
-## Epic 5: Indicator Model Management
-
-Users can create and manage Indicator Models — type/subtype configuration, list value management, and model association visibility.
-
-### Story 5.1: Indicator Model CRUD with Type & Subtype Configuration
+### Story 4.3: End-to-End Configuration Workflow — Full Chain Validation
 
 As an operator (Sophie),
-I want to create and manage Indicator Models with type and subtype configuration,
-So that I can define the building blocks for program configuration.
+I want to complete a full funding program configuration — from program creation through model publication — entirely within the admin interface,
+So that I can confidently configure real program structures without any Postman fallback.
 
 **Acceptance Criteria:**
 
-**Given** the user navigates to the Indicator Models section
-**When** the list loads
-**Then** Indicator Models are displayed in a paginated DataTable with infinite scroll
-**And** each row shows label, technical label, type badge, subtype, and status
-**And** `IndicatorModelService` extends `BaseEntityService<IndicatorModel>` with additional methods for association metadata management
-**And** the feature module follows the flat folder structure
+**Given** all 7 entities are fully implemented
+**When** Sophie performs the complete configuration workflow:
+1. Create a Funding Program
+2. Create an Action Theme
+3. Create Indicator Models (with type/subtype, list values)
+4. Publish the Indicator Models
+5. Create an Action Model, associate it with the FP and AT
+6. Attach Indicator Models to the Action Model
+7. Configure parameters for each indicator (required, visible, editable, default, constraint, duplicable)
+8. Enter JSONLogic rules for conditional parameters
+9. Save all parameter configuration
+10. Publish the Action Model
+**Then** every step completes without errors through the admin interface alone
+**And** the final published Action Model reflects all associations, parameters, and rules correctly
+**And** Sophie has not opened Postman or browser DevTools at any point
 
-**Given** the user creates a new Indicator Model
-**When** the form is displayed
-**Then** the user can select the indicator type from available types (FR25)
-**And** the user can select or configure the subtype
-**And** labels (user label, technical label) and descriptions are configurable
-**And** the form follows Reactive Forms patterns
+**Given** a published Action Model exists with full indicator configuration
+**When** Alex opens its detail page to validate the configuration
+**Then** the indicator list is visible with all associations
+**And** each indicator's parameters and rules are displayed correctly
+**And** the API Inspector shows the correct response data matching what the API stores
+**And** Alex trusts the admin as the authoritative view of platform configuration
 
-**Given** the user saves a new Indicator Model
-**When** the API call succeeds
-**Then** a success toast confirms creation
-**And** the user is navigated to the new indicator's detail view
+---
 
-**Given** the user views an Indicator Model detail
-**When** the detail page loads
-**Then** all fields are displayed including type, subtype, labels, and description
-**And** type and subtype are displayed with appropriate formatting (monospace for technical values)
+## Epic 5: v2 — Ergonomics & UX Refinement
 
-### Story 5.2: Indicator Model List Values & Type Constraints
+Polish phase: proper JSONLogic editor (Monaco/CodeMirror) with syntax highlighting and validation, rule-to-prose translation, deep-link URLs, and daily-use ergonomics improvements.
+
+### Story 5.1: JSONLogic Editor with Syntax Highlighting
 
 As an operator (Sophie),
-I want to manage list values for list-type indicators and be prevented from changing types on indicators with existing instances,
-So that I can configure indicator options safely without breaking existing data.
+I want a proper code editor for JSONLogic rules with syntax highlighting and inline validation,
+So that writing and editing complex rules is faster and less error-prone.
 
 **Acceptance Criteria:**
 
-**Given** the user edits a list-type Indicator Model
-**When** the form is displayed
-**Then** a list value management section is available (FR26)
-**And** the user can add new values to the list
-**And** the user can remove values from the list
-**And** the user can reorder values in the list
+**Given** an operator opens a JSONLogic rule field
+**When** the editor renders
+**Then** it uses Monaco or CodeMirror with JSON syntax highlighting
+**And** it replaces the plain multi-line text field from v1
 
-**Given** the user tries to change the type of a published Indicator Model with existing instances
-**When** the save is attempted
-**Then** the system blocks the change (FR27)
-**And** a clear explanatory message is displayed: "Type cannot be changed — instances of this indicator already exist. Create a new indicator instead."
+**Given** an operator types a JSONLogic rule
+**When** the JSON is syntactically invalid
+**Then** inline validation highlights the error with a clear message (line number, expected token)
+**And** the error is caught before save — no need to submit to discover the issue
 
-**Given** the user edits a draft Indicator Model with no instances
-**When** they change the type
-**Then** the change is allowed and saves successfully
+**Given** an operator types valid JSON
+**When** the editor validates it
+**Then** no error indicators are shown
+**And** the editor provides bracket matching and auto-indentation
 
-### Story 5.3: Indicator Model Association Visibility & Attachment
-
-As an operator (Sophie/Alex),
-I want to see which models use each Indicator Model and attach indicators to Action Models,
-So that I can understand indicator usage across the system and build model configurations.
-
-**Acceptance Criteria:**
-
-**Given** the user views an Indicator Model detail
-**When** the detail page loads
-**Then** a "Used in Models" section displays the count and list of models this indicator is associated with (FR21)
-**And** each model in the list is a linked reference that navigates to the model's detail view
-**And** the count is visible at a glance (e.g., "Used in 3 models")
-
-**Given** the user is on an Action Model detail page
-**When** they want to attach an indicator
-**Then** they can access an indicator attachment interface (FR20)
-**And** they can search/browse available Indicator Models
-**And** they can select and attach an indicator to the model
-**And** on successful attachment, the indicator appears in the model's indicator list
-**And** a success toast confirms the attachment
-
-**Given** the user wants to remove an indicator from an Action Model
-**When** they trigger the removal action
-**Then** a confirmation dialog appears (if the indicator has configured parameters)
-**And** on confirmation, the association is removed
-**And** a success toast confirms the removal
-
-## Epic 6: Indicator-Model Configuration Workspace
-
-Users can configure all 6 behavior parameters for each indicator within a model context, input JSONLogic rules, and manage association metadata. The "full chain" moment.
-
-### Story 6.1: Expandable Indicator Card System
+### Story 5.2: JSONLogic Rule-to-Prose Translation
 
 As an operator (Sophie),
-I want to see attached indicators as expandable cards on the Action Model detail page, with collapsed summaries and expandable parameter configuration,
-So that I can scan indicator states at a glance and configure them in context.
+I want JSONLogic rules rendered as human-readable text alongside the raw JSON,
+So that I can quickly understand what a rule does without mentally parsing JSON syntax.
 
 **Acceptance Criteria:**
 
-**Given** the user views an Action Model detail page with attached indicators
-**When** the indicator list renders
-**Then** each attached indicator appears as a collapsed IndicatorCard component
-**And** the collapsed card shows: indicator label, technical label, type badge, and parameter summary icons (which of the 6 parameters are active)
+**Given** a stored JSONLogic rule (e.g., `{"==": [{"var": "mode_chauffe"}, "autre"]}`)
+**When** the parameter panel displays the rule
+**Then** a human-readable translation is shown alongside: e.g., "When mode_chauffe equals 'autre'"
 
-**Given** the user clicks on a collapsed IndicatorCard
-**When** the card expands
-**Then** all 6 parameter rows are revealed as ToggleRow components
-**And** parameter labels are in French: Obligatoire, Non éditable, Non visible, Valeur par défaut, Duplicable, Valeurs contraintes
-**And** each parameter shows its current ON/OFF toggle state
-**And** the expanded card sits on `surface-background-slight` background
+**Given** a complex nested JSONLogic rule
+**When** the translation renders
+**Then** it produces a best-effort readable description
+**And** if the rule is too complex for translation, the raw JSON is shown without error
 
-**Given** the user clicks on an expanded IndicatorCard header
-**When** the card collapses
-**Then** the card returns to collapsed state showing the parameter summary
+**Given** an operator edits the rule in the code editor
+**When** the JSON changes and is valid
+**Then** the prose translation updates in real-time
 
-**Given** all shared components for this story are built
-**When** inspected
-**Then** IndicatorCard, ToggleRow are standalone components using `input()` / `output()` signal API
-**And** they are located in `src/app/shared/components/`
-**And** each has its own subfolder with component + template + styles + spec
+### Story 5.3: Deep-Link URLs for Detail Pages
 
-### Story 6.2: Parameter Toggle Configuration & Dirty Tracking
-
-As an operator (Sophie),
-I want to toggle the 6 behavior parameters for each indicator and see which cards have unsaved changes,
-So that I can experiment with configuration before committing and never lose track of what I've changed.
+As an operator (Alex/Sophie),
+I want shareable URLs that link directly to specific entity detail pages,
+So that I can share links with teammates and bookmark frequently accessed configurations.
 
 **Acceptance Criteria:**
 
-**Given** the user expands an indicator card
-**When** they toggle a parameter (e.g., Obligatoire ON → OFF)
-**Then** the toggle updates immediately in the UI (optimistic local state)
-**And** the card is marked as having unsaved changes (visual cue — subtle dot or border change)
+**Given** an operator is viewing an entity detail page
+**When** they copy the browser URL
+**Then** the URL contains the entity type and ID (e.g., `/action-models/abc123`)
 
-**Given** the user has modified parameters on one or more indicator cards
-**When** they look at the workspace
-**Then** each modified card shows an unsaved indicator
-**And** a global unsaved count is visible ("2 unsaved changes")
-**And** the SaveBar component becomes visible/active at the bottom of the workspace
+**Given** an operator pastes a deep-link URL into the browser
+**When** the page loads
+**Then** the application navigates directly to the entity detail page
+**And** the correct data is loaded from the API
 
-**Given** the user has unsaved changes
-**When** the SaveBar is displayed
-**Then** it shows a "Save" button (enabled) and a "Discard changes" option
-**And** the Save button is disabled when no changes exist
+**Given** an unauthenticated user accesses a deep-link URL
+**When** the page loads
+**Then** they are redirected to login with the deep-link preserved as the intended destination (FR4)
+**And** after login, they are redirected to the deep-linked page
 
-**Given** the user clicks "Discard changes"
-**When** the discard action completes
-**Then** all modified cards reset to their last-saved parameter states
-**And** all unsaved indicators are cleared
-**And** the SaveBar hides
+### Story 5.4: Daily-Use Ergonomics & UX Polish
 
-**Given** the user has unsaved changes and navigates away
-**When** the navigation guard triggers
-**Then** a ConfirmDialog appears: "You have unsaved changes on N indicators. Save or discard?"
-**And** choosing "Save" saves all changes then navigates
-**And** choosing "Discard" resets all cards and navigates
-
-### Story 6.3: JSONLogic Rule Input & Association Metadata
-
-As an operator (Sophie),
-I want to add JSONLogic rules to any rule-capable parameter and manage the full association metadata between indicators and models,
-So that I can configure conditional behavior and fine-tune how each indicator behaves in a specific model context.
+As an operator (Alex/Sophie),
+I want improved ergonomics for daily configuration tasks,
+So that the admin becomes my go-to tool that I reach for first, every time.
 
 **Acceptance Criteria:**
 
-**Given** the user views an expanded indicator card with a parameter toggle
-**When** they click "+ Ajouter une règle" on a rule-capable parameter
-**Then** a multi-line text field (RuleField component) is revealed below the toggle (FR24)
-**And** the field accepts raw JSONLogic JSON input
-**And** reference format guidance is available nearby (e.g., `section.technical_label`)
+**Given** an operator uses the admin daily
+**When** performing common tasks
+**Then** keyboard shortcuts are available for frequent actions (save, cancel, navigate)
 
-**Given** the user types a JSONLogic rule into the text field
-**When** the content is entered
-**Then** the text renders in monospace font (JetBrains Mono / Fira Code)
-**And** the card is marked as having unsaved changes
+**Given** an operator is working with long entity lists
+**When** scrolling and paginating
+**Then** scroll position is preserved when returning from detail views
+**And** the list loads smoothly with no jank
 
-**Given** the user has configured parameters and rules across multiple indicator cards
-**When** they click "Save"
-**Then** all modified association metadata (visibility_rule, required_rule, editable, default_value, duplicable, constrained_values) is persisted via the API (FR22)
-**And** a success toast confirms: "N indicator parameters updated"
-**And** all unsaved indicators are cleared
-**And** cards reflect the saved state
+**Given** an operator is editing a form
+**When** they have unsaved changes and attempt to navigate away
+**Then** the unsaved changes guard provides a clear, non-disruptive dialog
+**And** the save bar is always visible with unsaved change count
 
-**Given** the user views an indicator card with existing rules
-**When** the card is expanded
-**Then** all configured parameters and rules are displayed faithfully (FR28)
-**And** JSONLogic rules are readable in the text field — no abstraction loss between stored data and UI
-
-**Given** the user saves association metadata
-**When** the API returns an error on a specific parameter
-**Then** an inline error is shown on the specific parameter that failed
-**And** the error message explains what went wrong and why
-
-### Story 6.4: Indicator Picker for Model Association
-
-As an operator (Sophie),
-I want to search and pick indicators to attach to a model from within the workspace view,
-So that I can assemble model configurations without navigating away.
-
-**Acceptance Criteria:**
-
-**Given** the user is on the Action Model workspace view
-**When** they click "Add indicator" (or equivalent action)
-**Then** the IndicatorPicker component is displayed (overlay or inline panel)
-**And** available Indicator Models are listed with search/filter capability
-**And** already-attached indicators are visually distinguished or excluded
-
-**Given** the user selects an indicator from the picker
-**When** the selection is confirmed
-**Then** the indicator is attached to the model via the API
-**And** a new IndicatorCard appears in the workspace
-**And** a success toast confirms the attachment
-
-**Given** the user wants to remove an indicator from the workspace
-**When** they click the remove action on an indicator card
-**Then** a confirmation dialog appears if the indicator has configured parameters
-**And** on confirmation, the association is removed and the card disappears
-
-## Epic 7: Developer Tooling & Polish
-
-Users can inspect API requests and responses on any entity detail page for development validation.
-
-### Story 7.1: API Inspector on Detail Pages
-
-As a developer/operator (Alex),
-I want to view the last API request URL and full response payload on any entity detail page,
-So that I can validate API behavior and diagnose issues without opening Postman.
-
-**Acceptance Criteria:**
-
-**Given** the user is on any entity detail page
-**When** the page has loaded data from the API
-**Then** an ApiInspector panel/section is available on the page (FR32)
-**And** the inspector shows the last request URL (method + full URL)
-**And** the inspector shows the full response payload (formatted JSON)
-**And** the response data renders in monospace font
-
-**Given** the user views the ApiInspector
-**When** the response payload is displayed
-**Then** it shows the raw data exactly as returned by the API — no transformation or filtering
-**And** the user can copy the response payload (using CDK Clipboard)
-
-**Given** the user navigates to a different entity detail page
-**When** the new page loads
-**Then** the ApiInspector updates to show the latest request/response for the current entity
-
-**Given** the ApiInspector component is built
-**When** inspected
-**Then** it is a standalone shared component in `src/app/shared/components/api-inspector/`
-**And** it reads the `lastResponse` signal from the entity service
-**And** it uses `input()` / `output()` signal-based API
-**And** it is integrated on all 7 entity detail pages
-
-## Epic 8: UX Polish — Drag-to-Reorder & Inline Editable Properties (Bonus)
-
-Users can reorder indicator associations via drag-and-drop and edit entity properties inline on detail pages. This bonus epic elevates the user experience from functional to polished.
-
-### Story 8.1: Drag-to-Reorder Indicator Cards on Action Model Workspace
-
-As an operator (Sophie),
-I want to reorder indicator cards on the Action Model workspace by dragging them,
-So that I can organize indicators in a logical order that reflects my configuration workflow.
-
-**Acceptance Criteria:**
-
-**Given** the user is on the Action Model workspace with multiple attached indicators
-**When** they grab an indicator card's drag handle
-**Then** the card becomes draggable with a visual drag preview
-**And** drop zones are indicated between other cards
-
-**Given** the user drops an indicator card in a new position
-**When** the drop completes
-**Then** the indicator order updates immediately in the UI
-**And** the new order is persisted via the API
-**And** a success toast confirms ("Indicator order updated")
-
-**Given** the user drags a card but drops it back in its original position
-**When** the drop completes
-**Then** no API call is made and no toast is shown
-
-**Given** the drag-to-reorder feature is implemented
-**When** inspected
-**Then** it uses CDK DragDrop (`cdkDropList`, `cdkDrag`)
-**And** keyboard accessibility is supported (CDK A11y)
-**And** it integrates with the existing IndicatorCard component without modifying its core behavior
-
-### Story 8.2: Inline Editable Properties on Detail Views
-
-As an operator (Sophie/Alex),
-I want to edit simple entity properties directly on the detail page without navigating to a separate edit form,
-So that quick edits are faster and I maintain context on the detail view.
-
-**Acceptance Criteria:**
-
-**Given** the user is on any entity detail page
-**When** they click on an editable field value in the MetadataGrid
-**Then** the field transforms into an inline edit input (text field, dropdown, or appropriate control)
-**And** the field shows Save (checkmark) and Cancel (X) action icons
-
-**Given** the user edits a field inline and clicks Save
-**When** the API call succeeds
-**Then** the field reverts to display mode with the updated value
-**And** a success toast confirms the update
-
-**Given** the user edits a field inline and clicks Cancel
-**When** the cancel action completes
-**Then** the field reverts to display mode with the original value
-**And** no API call is made
-
-**Given** the user edits a field inline and the API call fails
-**When** the error is returned
-**Then** the field remains in edit mode
-**And** an inline error message is displayed below the field
-
-**Given** the inline editing feature is implemented
-**When** inspected
-**Then** it extends the existing MetadataGrid component with an optional `editable` flag per field
-**And** non-editable fields (IDs, timestamps, computed values) remain read-only
-**And** the edit form route still exists as a fallback for complex multi-field edits
+**Given** an operator is working across multiple entities
+**When** navigating between sections
+**Then** transitions are smooth and fast
+**And** previously loaded data is available immediately (no unnecessary re-fetches where appropriate)

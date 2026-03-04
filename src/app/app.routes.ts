@@ -15,15 +15,15 @@ export const routes: Routes = [
       {
         path: 'funding-programs',
         loadChildren: () =>
-          import('./features/funding-programs/funding-program.routes').then(
-            (m) => m.fundingProgramRoutes,
+          import('./pages/funding-programs/funding-programs.routes').then(
+            (m) => m.fundingProgramsRoutes,
           ),
       },
       {
         path: 'action-themes',
         loadChildren: () =>
-          import('./features/action-themes/action-theme.routes').then(
-            (m) => m.actionThemeRoutes,
+          import('./pages/action-themes/action-themes.routes').then(
+            (m) => m.actionThemesRoutes,
           ),
       },
       {
