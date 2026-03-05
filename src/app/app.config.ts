@@ -3,6 +3,7 @@ import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@ang
 import { provideRouter } from '@angular/router';
 
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { apiInspectorInterceptor } from './core/api/api-inspector.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -10,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(
-      withInterceptors([authInterceptor]),
+      withInterceptors([authInterceptor, apiInspectorInterceptor]),
       withXsrfConfiguration({ cookieName: 'csrftoken', headerName: 'X-CSRFToken' }),
     ),
   ],

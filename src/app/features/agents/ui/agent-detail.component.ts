@@ -3,13 +3,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
+import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import { AgentFacade } from '../agent.facade';
 import { AgentStatus } from '@domains/agents/agent.models';
 
 @Component({
   selector: 'app-agent-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -76,6 +78,8 @@ import { AgentStatus } from '@domains/agents/agent.models';
         </div>
 
         <app-metadata-grid [fields]="fields()" (navigateToLinked)="router.navigate([$event])" />
+
+        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
   `,
@@ -84,6 +88,7 @@ export class AgentDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(AgentFacade);
+  readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
   readonly agent = this.facade.selectedItem;

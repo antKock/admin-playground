@@ -3,7 +3,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import {
   IndicatorPickerComponent,
   IndicatorOption,
@@ -24,6 +26,7 @@ import { ActionModelFacade } from '../action-model.facade';
     IndicatorPickerComponent,
     IndicatorCardComponent,
     SaveBarComponent,
+    ApiInspectorComponent,
     CdkDropList,
     CdkDrag,
   ],
@@ -108,6 +111,8 @@ import { ActionModelFacade } from '../action-model.facade';
             (attach)="onAttach($event)"
           />
         </div>
+
+        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
 
@@ -123,6 +128,7 @@ export class ActionModelDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionModelFacade);
+  readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;

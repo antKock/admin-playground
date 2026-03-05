@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -19,15 +19,47 @@ import { AgentFacade } from '../agent.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          <p class="text-text-secondary mb-4">No agents found.</p>
+      <div class="flex items-center gap-3 mb-4">
+        <select
+          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          [class.bg-brand-light]="statusFilter()"
+          [value]="statusFilter() || ''"
+          (change)="onStatusFilterChange($event)"
+        >
+          <option value="">All Statuses</option>
+          <option value="draft">Draft</option>
+          <option value="completed">Completed</option>
+          <option value="deleted">Deleted</option>
+        </select>
+        @if (statusFilter()) {
           <button
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-            (click)="router.navigate(['/agents/new'])"
+            class="text-sm text-text-link hover:text-text-link-hover"
+            (click)="clearFilters()"
           >
-            Create Agent
+            Clear filters
           </button>
+        }
+      </div>
+
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
+        <div class="text-center py-16">
+          @if (statusFilter()) {
+            <p class="text-text-secondary mb-4">No agents match your filters.</p>
+            <button
+              class="text-sm text-text-link hover:text-text-link-hover"
+              (click)="clearFilters()"
+            >
+              Clear filters
+            </button>
+          } @else {
+            <p class="text-text-secondary mb-4">No agents found.</p>
+            <button
+              class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+              (click)="router.navigate(['/agents/new'])"
+            >
+              Create Agent
+            </button>
+          }
         </div>
       } @else {
         <app-data-table
@@ -45,6 +77,16 @@ import { AgentFacade } from '../agent.facade';
 export class AgentListComponent implements OnInit {
   readonly facade = inject(AgentFacade);
   readonly router = inject(Router);
+  readonly statusFilter = signal<string>('');
+  readonly hasLoaded = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
 
   readonly columns: ColumnDef[] = [
     { key: 'displayName', label: 'Name' },
@@ -70,7 +112,7 @@ export class AgentListComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.facade.load();
+    this.facade.load(this.buildFilters());
   }
 
   onRowClick(row: Record<string, unknown>): void {
@@ -79,5 +121,25 @@ export class AgentListComponent implements OnInit {
 
   onLoadMore(): void {
     this.facade.loadMore();
+  }
+
+  onStatusFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.statusFilter.set(value);
+    this.facade.load(this.buildFilters());
+  }
+
+  clearFilters(): void {
+    this.statusFilter.set('');
+    this.facade.load(this.buildFilters());
+  }
+
+  private buildFilters(): Record<string, string> {
+    const filters: Record<string, string> = {};
+    const status = this.statusFilter();
+    if (status) {
+      filters['status'] = status;
+    }
+    return filters;
   }
 }

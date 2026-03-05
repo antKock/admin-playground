@@ -19,15 +19,47 @@ import { FolderModelFacade } from '../folder-model.facade';
         </button>
       </div>
 
+      <div class="flex items-center gap-3 mb-4">
+        <select
+          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          [class.bg-brand-light]="fpFilter()"
+          [value]="fpFilter() || ''"
+          (change)="onFpFilterChange($event)"
+        >
+          <option value="">All Funding Programs</option>
+          @for (fp of facade.fpOptions(); track fp.id) {
+            <option [value]="fp.id">{{ fp.label }}</option>
+          }
+        </select>
+        @if (fpFilter()) {
+          <button
+            class="text-sm text-text-link hover:text-text-link-hover"
+            (click)="clearFilters()"
+          >
+            Clear filters
+          </button>
+        }
+      </div>
+
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
-          <p class="text-text-secondary mb-4">No folder models found.</p>
-          <button
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-            (click)="router.navigate(['/folder-models/new'])"
-          >
-            Create Folder Model
-          </button>
+          @if (fpFilter()) {
+            <p class="text-text-secondary mb-4">No folder models match your filters.</p>
+            <button
+              class="text-sm text-text-link hover:text-text-link-hover"
+              (click)="clearFilters()"
+            >
+              Clear filters
+            </button>
+          } @else {
+            <p class="text-text-secondary mb-4">No folder models found.</p>
+            <button
+              class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+              (click)="router.navigate(['/folder-models/new'])"
+            >
+              Create Folder Model
+            </button>
+          }
         </div>
       } @else {
         <app-data-table
@@ -45,6 +77,7 @@ import { FolderModelFacade } from '../folder-model.facade';
 export class FolderModelListComponent implements OnInit {
   readonly facade = inject(FolderModelFacade);
   readonly router = inject(Router);
+  readonly fpFilter = signal<string>('');
   readonly hasLoaded = signal(false);
 
   constructor() {
@@ -71,7 +104,8 @@ export class FolderModelListComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.facade.load();
+    this.facade.loadAssociationData();
+    this.facade.load(this.buildFilters());
   }
 
   onRowClick(row: Record<string, unknown>): void {
@@ -80,5 +114,25 @@ export class FolderModelListComponent implements OnInit {
 
   onLoadMore(): void {
     this.facade.loadMore();
+  }
+
+  onFpFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.fpFilter.set(value);
+    this.facade.load(this.buildFilters());
+  }
+
+  clearFilters(): void {
+    this.fpFilter.set('');
+    this.facade.load(this.buildFilters());
+  }
+
+  private buildFilters(): Record<string, string> {
+    const filters: Record<string, string> = {};
+    const fp = this.fpFilter();
+    if (fp) {
+      filters['funding_program_id'] = fp;
+    }
+    return filters;
   }
 }

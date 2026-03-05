@@ -3,12 +3,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
+import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -93,6 +95,8 @@ import { ActionThemeFacade } from '../action-theme.facade';
         </div>
 
         <app-metadata-grid [fields]="fields()" />
+
+        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
   `,
@@ -101,6 +105,7 @@ export class ActionThemeDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionThemeFacade);
+  readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
   // Lifecycle buttons are status-gated in the template: draft→Publish, published→Disable, disabled→Activate.

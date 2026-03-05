@@ -2,12 +2,14 @@ import { Component, inject, OnInit, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-detail',
-  imports: [MetadataGridComponent],
+  imports: [MetadataGridComponent, ApiInspectorComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -51,6 +53,8 @@ import { FolderModelFacade } from '../folder-model.facade';
         </div>
 
         <app-metadata-grid [fields]="fields()" />
+
+        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
   `,
@@ -59,6 +63,7 @@ export class FolderModelDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(FolderModelFacade);
+  readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;

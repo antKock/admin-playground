@@ -122,6 +122,20 @@ _Living document tracking API gaps, limitations, and suggestions discovered duri
 - **Suggestion:** Add a `GET /indicator-models/{id}/action-models` endpoint that returns all Action Models referencing a given Indicator Model, or add an `indicator_model_id` filter to `GET /action-models/` that the backend evaluates against the associations.
 - **Priority:** MEDIUM — usage count accuracy degrades at scale.
 
+## UX Gap Analysis Observations (2026-03-04)
+
+### Missing `updated_by` Field on All Entities
+- **Observation:** No entity read schema (`ActionModelRead`, `IndicatorModelRead`, `ActionThemeRead`, `FolderModelRead`, `CommunityRead`, `AgentRead`) includes an `updated_by` field. The API returns `updated_at` timestamps but provides no attribution of who performed the last update.
+- **Impact:** UX design spec calls for "Updated by [user name]" in both list view columns (GAP-EL6) and detail page meta lines (GAP-MW3, GAP-ID7). Frontend cannot display this information.
+- **Suggestion:** Add `updated_by: { id: string, name: string }` (or `updated_by_id: string` + resolve via user endpoint) to all entity read schemas.
+- **Priority:** MEDIUM — audit trail visibility gap, not a blocker for core functionality.
+
+### No Full-Text Search Endpoint
+- **Observation:** No entity list endpoint supports a `search` or `q` query parameter for full-text search across entity fields. Filtering is limited to specific field filters (e.g., `status`, `funding_program_id`).
+- **Impact:** UX design spec includes a SearchBar component (GAP-SC2, GAP-EL9) for free-text search across entity lists. Client-side filtering on cursor-paginated data would only search the current page, which is misleading.
+- **Suggestion:** Add a `q` or `search` query parameter to list endpoints that performs server-side full-text search across entity name/description fields.
+- **Priority:** LOW — filter dropdowns (Story 4-2) cover the primary filtering use case. Full-text search is a nice-to-have.
+
 ---
 
 _Add new observations below as they arise during development._

@@ -19,15 +19,46 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
         </button>
       </div>
 
+      <div class="flex items-center gap-3 mb-4">
+        <select
+          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          [class.bg-brand-light]="typeFilter()"
+          [value]="typeFilter() || ''"
+          (change)="onTypeFilterChange($event)"
+        >
+          <option value="">All Types</option>
+          <option value="text">Text</option>
+          <option value="number">Number</option>
+        </select>
+        @if (typeFilter()) {
+          <button
+            class="text-sm text-text-link hover:text-text-link-hover"
+            (click)="clearFilters()"
+          >
+            Clear filters
+          </button>
+        }
+      </div>
+
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
-          <p class="text-text-secondary mb-4">No indicator models found.</p>
-          <button
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-            (click)="router.navigate(['/indicator-models/new'])"
-          >
-            Create Indicator Model
-          </button>
+          @if (typeFilter()) {
+            <p class="text-text-secondary mb-4">No indicator models match your filters.</p>
+            <button
+              class="text-sm text-text-link hover:text-text-link-hover"
+              (click)="clearFilters()"
+            >
+              Clear filters
+            </button>
+          } @else {
+            <p class="text-text-secondary mb-4">No indicator models found.</p>
+            <button
+              class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+              (click)="router.navigate(['/indicator-models/new'])"
+            >
+              Create Indicator Model
+            </button>
+          }
         </div>
       } @else {
         <app-data-table
@@ -45,6 +76,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
 export class IndicatorModelListComponent implements OnInit {
   readonly facade = inject(IndicatorModelFacade);
   readonly router = inject(Router);
+  readonly typeFilter = signal<string>('');
   readonly hasLoaded = signal(false);
 
   readonly rows = computed(() =>
@@ -71,7 +103,7 @@ export class IndicatorModelListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.facade.load();
+    this.facade.load(this.buildFilters());
   }
 
   onRowClick(row: Record<string, unknown>): void {
@@ -80,5 +112,25 @@ export class IndicatorModelListComponent implements OnInit {
 
   onLoadMore(): void {
     this.facade.loadMore();
+  }
+
+  onTypeFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.typeFilter.set(value);
+    this.facade.load(this.buildFilters());
+  }
+
+  clearFilters(): void {
+    this.typeFilter.set('');
+    this.facade.load(this.buildFilters());
+  }
+
+  private buildFilters(): Record<string, string> {
+    const filters: Record<string, string> = {};
+    const type = this.typeFilter();
+    if (type) {
+      filters['type'] = type;
+    }
+    return filters;
   }
 }

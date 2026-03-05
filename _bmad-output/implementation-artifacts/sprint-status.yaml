@@ -77,10 +77,10 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Developer Tooling & Cross-Entity Polish
-  epic-4: backlog
-  4-1-api-request-response-inspector: backlog
-  4-2-cross-entity-list-filtering: backlog
-  4-3-end-to-end-configuration-workflow-full-chain-validation: backlog
+  epic-4: in-progress
+  4-1-api-request-response-inspector: review
+  4-2-cross-entity-list-filtering: review
+  4-3-end-to-end-configuration-workflow-full-chain-validation: review
   epic-4-retrospective: optional
 
   # Epic 5: v2 - Ergonomics & UX Refinement
@@ -89,4 +89,7 @@ development_status:
   5-2-jsonlogic-rule-to-prose-translation: backlog
   5-3-deep-link-urls-for-detail-pages: backlog
   5-4-daily-use-ergonomics-ux-polish: backlog
+  5-5-datatable-sorting-and-row-interactions: backlog
+  5-6-detail-page-header-and-navigation-polish: backlog
+  5-7-accessibility-and-cross-cutting-consistency: backlog
   epic-5-retrospective: optional

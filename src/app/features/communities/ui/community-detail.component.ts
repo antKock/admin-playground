@@ -2,13 +2,15 @@ import { Component, inject, OnInit, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
+import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import { CommunityFacade } from '../community.facade';
 import { CommunityUsersComponent } from './community-users.component';
 
 @Component({
   selector: 'app-community-detail',
-  imports: [MetadataGridComponent, CommunityUsersComponent],
+  imports: [MetadataGridComponent, CommunityUsersComponent, ApiInspectorComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -64,6 +66,8 @@ import { CommunityUsersComponent } from './community-users.component';
         <app-metadata-grid [fields]="fields()" />
 
         <app-community-users />
+
+        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
   `,
@@ -72,6 +76,7 @@ export class CommunityDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(CommunityFacade);
+  readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
   readonly community = this.facade.selectedItem;

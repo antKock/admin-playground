@@ -1078,3 +1078,101 @@ So that the admin becomes my go-to tool that I reach for first, every time.
 **When** navigating between sections
 **Then** transitions are smooth and fast
 **And** previously loaded data is available immediately (no unnecessary re-fetches where appropriate)
+
+### Story 5.5: DataTable Sorting & Row Interactions
+
+As an operator (Alex/Sophie),
+I want sortable columns, hover actions, and richer cell rendering in entity list tables,
+So that I can find, identify, and act on entities efficiently without navigating to detail pages.
+
+> **Origin:** UX Gap Analysis review (2026-03-04). Gaps: GAP-EL1 (P0), GAP-EL3 (P1), GAP-EL4 (P1), GAP-EL5 (P2).
+
+**Acceptance Criteria:**
+
+**Given** a DataTable column is configured as sortable
+**When** the operator clicks the column header
+**Then** the table sorts by that column (ascending first, toggle to descending, toggle to unsorted)
+**And** a sort indicator arrow is visible on the active sort column
+
+**Given** the operator hovers over a table row
+**When** the row has configured actions (e.g. duplicate, delete)
+**Then** action buttons appear in the last column with a fade-in transition
+**And** clicking an action triggers the corresponding operation
+
+**Given** an entity has both `name` and `technical_label` fields
+**When** the DataTable renders the name column
+**Then** the display name is shown in bold and the technical name below in monospace gray text
+
+**Given** a DataTable column references a foreign entity (e.g. Funding Program, Action Theme)
+**When** the table renders that column
+**Then** the entity name is shown as a clickable link that navigates to the referenced entity's detail page
+
+### Story 5.6: Detail Page Header & Navigation Polish
+
+As an operator (Alex/Sophie),
+I want breadcrumb navigation, technical names, meta info, and section anchors on detail pages,
+So that I always know where I am, can see key entity metadata at a glance, and can jump between page sections.
+
+> **Origin:** UX Gap Analysis review (2026-03-04). Gaps: GAP-L1 (P1), GAP-MW2 (P1), GAP-MW3/ID7 (P1), GAP-MW5/ID5 (P1), GAP-MW11 (P2).
+
+**Acceptance Criteria:**
+
+**Given** the operator is on any page in the application
+**When** the page renders
+**Then** a breadcrumb trail is shown in the header: "Section > Current page" with clickable parent links
+
+**Given** the operator is on an entity detail page that has a `technical_label` field
+**When** the page renders
+**Then** the technical name is displayed below the title in monospace gray text
+
+**Given** the operator is on an entity detail page
+**When** the page renders
+**Then** a meta line shows: "Updated [formatted date] · ID: [entity id]"
+**And** "Updated by" is omitted until the API provides an `updated_by` field
+
+**Given** the operator is on ActionModel detail or Indicator detail
+**When** the page has multiple sections (Metadata, Indicators, API Inspector, etc.)
+**Then** SectionAnchorsComponent is rendered with clickable pills for each section
+**And** clicking a pill scrolls to the corresponding section
+
+**Given** breadcrumbs are implemented
+**When** the operator is on a detail page
+**Then** the "← Back to list" button is removed in favor of the breadcrumb parent link
+
+### Story 5.7: Accessibility & Cross-Cutting Consistency
+
+As an operator (Alex/Sophie),
+I want consistent behavior, proper accessibility, and polished UI across all entity pages,
+So that the application feels reliable, works with assistive technology, and has no rough edges.
+
+> **Origin:** UX Gap Analysis review (2026-03-04). Gaps: GAP-TR1 (P1), GAP-CC2 (P2), GAP-CC3 (P2), GAP-CC4 (P2), GAP-CC5 (P2), GAP-L2 (P2), GAP-L3 (P2).
+
+**Acceptance Criteria:**
+
+**Given** a ToggleRow component renders a toggle switch
+**When** screen readers interpret the toggle
+**Then** the toggle has `role="switch"`, `aria-checked` reflecting state, and `aria-label` with the toggle label
+
+**Given** any entity detail page shows date fields (Created, Updated)
+**When** the dates render
+**Then** all dates use consistent `fr-FR` locale formatting (no raw ISO strings)
+
+**Given** ActionThemeList loads data
+**When** the API request is in flight
+**Then** no "No items found" empty state flashes before data arrives (add `hasLoaded` guard)
+
+**Given** an ActionModelDetail API request fails
+**When** the error response is received
+**Then** an error message is displayed with a retry option (matching IndicatorModelDetail pattern)
+
+**Given** the operator navigates away from ActionModelDetail
+**When** the component is destroyed
+**Then** `facade.clearSelection()` is called to prevent stale data (matching IndicatorModelDetail pattern)
+
+**Given** the operator is logged in
+**When** they look at the application header
+**Then** a user avatar (initials circle) and full name are displayed next to the logout button
+
+**Given** the sidebar renders navigation items
+**When** the operator scans the navigation
+**Then** items are grouped under section labels ("Configuration" and "Administration") with uppercase gray dividers
