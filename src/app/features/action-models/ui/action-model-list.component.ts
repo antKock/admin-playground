@@ -67,7 +67,7 @@ export class ActionModelListComponent implements OnInit {
   }
 
   readonly columns = computed<ColumnDef[]>(() => [
-    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label', width: '200px' },
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label', width: '250px' },
     {
       key: 'funding_program_name',
       label: 'Programme de financement',

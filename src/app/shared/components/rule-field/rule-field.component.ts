@@ -91,7 +91,6 @@ const ruleFieldTheme = EditorView.theme({
   '&': {
     fontSize: '13px',
     fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-    minHeight: '60px',
     border: '1px solid var(--color-stroke-standard)',
     borderRadius: '6px',
     background: 'var(--color-surface-base)',
@@ -105,7 +104,6 @@ const ruleFieldTheme = EditorView.theme({
     padding: '8px',
     caretColor: 'var(--color-text-primary)',
     color: 'var(--color-text-primary)',
-    minHeight: '52px',
   },
   '.cm-gutters': {
     background: 'var(--color-surface-muted)',
@@ -225,7 +223,7 @@ const ruleFieldTheme = EditorView.theme({
 export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly value = input('');
   readonly label = input('JSONLogic Rule');
-  readonly placeholder = input('{"==": [{"var": "field_name"}, "value"]}');
+  readonly placeholder = input('');
 
   readonly valueChange = output<string>();
   readonly validChange = output<boolean>();

@@ -57,7 +57,7 @@ export class FundingProgramListComponent implements OnInit {
   );
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Nom', sortable: true, bold: true, width: '200px' },
+    { key: 'name', label: 'Nom', sortable: true, bold: true, width: '250px' },
     { key: 'description', label: 'Description' },
     {
       key: 'active_display',

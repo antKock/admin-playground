@@ -28,7 +28,7 @@ const DEFAULT_HINTS: ParamHints = {
     <div class="param-summary">
       @for (hint of hintList(); track hint.label) {
         <span class="param-hint" [class]="hint.stateClass" [title]="hint.tooltip">
-          <lucide-icon [img]="hint.icon" [size]="12" />
+          <lucide-icon [img]="hint.icon" [size]="16" />
         </span>
       }
     </div>
@@ -39,8 +39,8 @@ const DEFAULT_HINTS: ParamHints = {
       gap: 4px;
     }
     .param-hint {
-      width: 26px;
-      height: 26px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -92,21 +92,15 @@ export class ParamHintIconsComponent {
   readonly hintList = computed(() => {
     const h = this.hints();
     return [
-      { state: h.required, label: 'required', icon: this.icons.required, tooltip: `Required: ${this.stateLabel(h.required)}` },
-      { state: h.editable, label: 'editable', icon: this.icons.editable, tooltip: `Editable: ${this.stateLabel(h.editable)}` },
-      { state: h.visibility, label: 'visibility', icon: this.icons.visibility, tooltip: `Visible: ${this.stateLabel(h.visibility)}` },
-      { state: h.defaultValue, label: 'defaultValue', icon: this.icons.defaultValue, tooltip: `Default value: ${this.stateLabel(h.defaultValue)}` },
-      { state: h.duplicable, label: 'duplicable', icon: this.icons.duplicable, tooltip: `Duplicable: ${this.stateLabel(h.duplicable)}` },
-      { state: h.constrained, label: 'constrained', icon: this.icons.constrained, tooltip: `Constraints: ${this.stateLabel(h.constrained)}` },
+      { state: h.required, label: 'required', icon: this.icons.required, tooltip: 'Obligatoire' },
+      { state: h.editable, label: 'editable', icon: this.icons.editable, tooltip: 'Non éditable' },
+      { state: h.visibility, label: 'visibility', icon: this.icons.visibility, tooltip: 'Masqué' },
+      { state: h.defaultValue, label: 'defaultValue', icon: this.icons.defaultValue, tooltip: 'Valeur par défaut' },
+      { state: h.duplicable, label: 'duplicable', icon: this.icons.duplicable, tooltip: 'Duplicable' },
+      { state: h.constrained, label: 'constrained', icon: this.icons.constrained, tooltip: 'Contrainte' },
     ].map(item => ({
       ...item,
       stateClass: item.state === 'rule' ? 'on-rule' : item.state,
     }));
   });
-
-  private stateLabel(state: ParamState): string {
-    if (state === 'off') return 'OFF';
-    if (state === 'on') return 'ON';
-    return 'ON + JSONLogic rule';
-  }
 }

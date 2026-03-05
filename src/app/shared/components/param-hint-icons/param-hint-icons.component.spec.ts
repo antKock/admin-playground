@@ -62,9 +62,9 @@ describe('ParamHintIconsComponent', () => {
     fixture.detectChanges();
 
     const list = component.hintList();
-    expect(list.find(h => h.label === 'visibility')!.tooltip).toBe('Visible: ON');
-    expect(list.find(h => h.label === 'defaultValue')!.tooltip).toBe('Default value: ON + JSONLogic rule');
-    expect(list.find(h => h.label === 'required')!.tooltip).toBe('Required: OFF');
+    expect(list.find(h => h.label === 'visibility')!.tooltip).toBe('Masqué');
+    expect(list.find(h => h.label === 'defaultValue')!.tooltip).toBe('Valeur par défaut');
+    expect(list.find(h => h.label === 'required')!.tooltip).toBe('Obligatoire');
   });
 
   it('should support rule state with on-rule class', () => {

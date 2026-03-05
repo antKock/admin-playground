@@ -50,7 +50,7 @@ export class FolderModelListComponent implements OnInit {
   }
 
   readonly columns = computed<ColumnDef[]>(() => [
-    { key: 'name', label: 'Nom', sortable: true, bold: true, width: '200px' },
+    { key: 'name', label: 'Nom', sortable: true, bold: true, width: '250px' },
     { key: 'description', label: 'Description' },
     {
       key: 'funding_programs_display',
