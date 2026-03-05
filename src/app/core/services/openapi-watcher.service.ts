@@ -61,10 +61,10 @@ export class OpenApiWatcherService {
           const oldSpec = JSON.parse(storedSpecText);
           const newSpec = JSON.parse(specText);
           const changes = this.diffSpecs(oldSpec, newSpec);
-          this.changes.set(changes);
-        } catch {
-          // If parsing fails, just signal a generic change
-          this.changes.set([{ type: 'modified', category: 'schema', name: '(parsing error — spec changed)' }]);
+          this.changes.set(changes.length > 0 ? changes : [{ type: 'modified', category: 'schema', name: '(changement détecté)' }]);
+        } catch (e) {
+          console.error('[OpenAPI Watcher] Diff failed:', e);
+          this.changes.set([{ type: 'modified', category: 'schema', name: '(erreur de comparaison — spec modifiée)' }]);
         }
       } else {
         this.changes.set([{ type: 'modified', category: 'schema', name: '(baseline spec missing — spec changed)' }]);
@@ -102,29 +102,25 @@ export class OpenApiWatcherService {
   diffSpecs(oldSpec: Record<string, unknown>, newSpec: Record<string, unknown>): OpenApiChange[] {
     const changes: OpenApiChange[] = [];
 
-    const oldPaths = Object.keys((oldSpec['paths'] as Record<string, unknown>) ?? {});
-    const newPaths = Object.keys((newSpec['paths'] as Record<string, unknown>) ?? {});
-    this.diffKeys(oldPaths, newPaths, 'path', oldSpec['paths'] as Record<string, unknown>, newSpec['paths'] as Record<string, unknown>, changes);
+    const oldPaths = (oldSpec['paths'] as Record<string, unknown>) ?? {};
+    const newPaths = (newSpec['paths'] as Record<string, unknown>) ?? {};
+    this.diffKeys(oldPaths, newPaths, 'path', changes);
 
-    const oldSchemas = Object.keys(((oldSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {});
-    const newSchemas = Object.keys(((newSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {});
-    this.diffKeys(oldSchemas, newSchemas, 'schema',
-      ((oldSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {},
-      ((newSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {},
-      changes,
-    );
+    const oldSchemas = ((oldSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {};
+    const newSchemas = ((newSpec['components'] as Record<string, unknown>)?.['schemas'] as Record<string, unknown>) ?? {};
+    this.diffKeys(oldSchemas, newSchemas, 'schema', changes);
 
     return changes;
   }
 
   private diffKeys(
-    oldKeys: string[],
-    newKeys: string[],
-    category: 'path' | 'schema',
     oldObj: Record<string, unknown>,
     newObj: Record<string, unknown>,
+    category: 'path' | 'schema',
     changes: OpenApiChange[],
   ): void {
+    const oldKeys = Object.keys(oldObj);
+    const newKeys = Object.keys(newObj);
     const oldSet = new Set(oldKeys);
     const newSet = new Set(newKeys);
 
@@ -139,8 +135,15 @@ export class OpenApiWatcherService {
       }
     }
     for (const key of newKeys) {
-      if (oldSet.has(key) && JSON.stringify(oldObj[key]) !== JSON.stringify(newObj[key])) {
-        changes.push({ type: 'modified', category, name: key });
+      if (oldSet.has(key)) {
+        try {
+          if (JSON.stringify(oldObj[key]) !== JSON.stringify(newObj[key])) {
+            changes.push({ type: 'modified', category, name: key });
+          }
+        } catch {
+          // Fallback if stringify fails (e.g., circular references)
+          changes.push({ type: 'modified', category, name: key });
+        }
       }
     }
   }
