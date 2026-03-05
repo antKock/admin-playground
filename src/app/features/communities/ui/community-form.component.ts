@@ -149,6 +149,7 @@ export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
     }
 
     const raw = this.form.getRawValue();
+    this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {
       this.facade.update(this.editId, raw);

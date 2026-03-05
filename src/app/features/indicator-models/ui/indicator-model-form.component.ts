@@ -182,6 +182,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
 
     const raw = this.form.getRawValue();
     const data = { ...raw, name: raw.name!, technical_label: raw.technical_label!, type: raw.type! };
+    this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {
       await this.facade.update(this.editId, data);

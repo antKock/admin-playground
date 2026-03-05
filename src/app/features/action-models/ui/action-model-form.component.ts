@@ -186,6 +186,7 @@ export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
 
     const raw = this.form.getRawValue();
     const data = { ...raw, name: raw.name! };
+    this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {
       await this.facade.update(this.editId, data);

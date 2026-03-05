@@ -170,6 +170,7 @@ export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
 
     const raw = this.form.getRawValue();
     const data = { ...raw, name: raw.name!, is_active: raw.is_active ?? true };
+    this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {
       this.facade.update(this.editId, data);

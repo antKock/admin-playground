@@ -167,6 +167,7 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
 
     const raw = this.form.getRawValue();
     const data = { ...raw, name: raw.name!, technical_label: raw.technical_label! };
+    this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {
       this.facade.update(this.editId, data);
