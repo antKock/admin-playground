@@ -198,7 +198,7 @@ describe('DataTableComponent', () => {
   });
 
   // Link cell tests
-  it('should render link cells as clickable and emit linkClick', () => {
+  it('should render link cells as anchors opening in new tab', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.componentInstance.columns = [
       { key: 'name', label: 'Name', type: 'link', linkRoute: '/items', linkIdKey: 'id' },
@@ -208,12 +208,12 @@ describe('DataTableComponent', () => {
     ];
     fixture.detectChanges();
 
-    const link = fixture.nativeElement.querySelector('.cell-link');
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.cell-link');
     expect(link).toBeTruthy();
     expect(link.textContent).toContain('Linked Item');
-
-    link.click();
-    expect(fixture.componentInstance.linkClicked).toEqual({ route: '/items', id: 'abc' });
+    expect(link.getAttribute('href')).toBe('/items/abc');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
   // Action button tests

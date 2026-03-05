@@ -13,7 +13,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-text-primary">Action Themes</h1>
         <button
-          class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/action-themes/new'])"
         >
           <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme
@@ -55,7 +55,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
           } @else {
             <p class="text-text-secondary mb-4">No action themes found.</p>
             <button
-              class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/action-themes/new'])"
             >
               <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme

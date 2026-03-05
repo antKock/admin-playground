@@ -5,7 +5,7 @@ import { MetadataGridComponent, MetadataField } from './metadata-grid.component'
 
 @Component({
   imports: [MetadataGridComponent],
-  template: `<app-metadata-grid [fields]="fields" (navigateToLinked)="onNavigate($event)" />`,
+  template: `<app-metadata-grid [fields]="fields" />`,
 })
 class TestHostComponent {
   fields: MetadataField[] = [
@@ -13,11 +13,6 @@ class TestHostComponent {
     { label: 'ID', value: 'abc-123', type: 'mono' },
     { label: 'Related', value: 'Theme A', type: 'linked', linkedRoute: '/action-themes/1' },
   ];
-  navigatedTo: string | null = null;
-
-  onNavigate(route: string): void {
-    this.navigatedTo = route;
-  }
 }
 
 describe('MetadataGridComponent', () => {
@@ -48,20 +43,15 @@ describe('MetadataGridComponent', () => {
     expect(monoDd.classList.contains('font-mono')).toBe(true);
   });
 
-  it('should render linked field with button', () => {
+  it('should render linked field as anchor with target _blank', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const linkedButton = fixture.nativeElement.querySelector('.metadata-field:last-child button');
-    expect(linkedButton).toBeTruthy();
-    expect(linkedButton.textContent).toContain('Theme A');
-  });
-
-  it('should emit navigateToLinked when linked field clicked', () => {
-    const fixture = TestBed.createComponent(TestHostComponent);
-    fixture.detectChanges();
-    const linkedButton = fixture.nativeElement.querySelector('.metadata-field:last-child button');
-    linkedButton.click();
-    expect(fixture.componentInstance.navigatedTo).toBe('/action-themes/1');
+    const linkedAnchor: HTMLAnchorElement = fixture.nativeElement.querySelector('.metadata-field:last-child a');
+    expect(linkedAnchor).toBeTruthy();
+    expect(linkedAnchor.textContent).toContain('Theme A');
+    expect(linkedAnchor.getAttribute('href')).toBe('/action-themes/1');
+    expect(linkedAnchor.getAttribute('target')).toBe('_blank');
+    expect(linkedAnchor.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
   it('should render labels with correct styling class', () => {

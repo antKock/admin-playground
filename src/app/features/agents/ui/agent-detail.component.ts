@@ -70,7 +70,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
           </div>
         </div>
 
-        <app-metadata-grid [fields]="fields()" (navigateToLinked)="router.navigate([$event])" />
+        <app-metadata-grid [fields]="fields()" />
 
         <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }

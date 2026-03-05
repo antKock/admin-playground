@@ -72,7 +72,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             <ul class="space-y-1">
               @for (am of facade.usedInModels(); track am.id) {
                 <li>
-                  <a [routerLink]="['/action-models', am.id]" class="text-brand hover:underline text-sm">
+                  <a [routerLink]="['/action-models', am.id]" target="_blank" rel="noopener noreferrer" class="text-brand hover:underline text-sm">
                     {{ am.name }}
                   </a>
                 </li>

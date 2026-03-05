@@ -13,7 +13,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-text-primary">Indicator Models</h1>
         <button
-          class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/indicator-models/new'])"
         >
           <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model
@@ -54,7 +54,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           } @else {
             <p class="text-text-secondary mb-4">No indicator models found.</p>
             <button
-              class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/indicator-models/new'])"
             >
               <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model

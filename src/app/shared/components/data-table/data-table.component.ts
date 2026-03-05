@@ -126,6 +126,10 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
     return !!col.linkIdKey && typeof row[col.linkIdKey] === 'string';
   }
 
+  getLinkHref(col: ColumnDef, row: Record<string, unknown>): string {
+    return `${col.linkRoute}/${row[col.linkIdKey!]}`;
+  }
+
   getCellValue(row: Record<string, unknown>, key: string): unknown {
     return row[key];
   }

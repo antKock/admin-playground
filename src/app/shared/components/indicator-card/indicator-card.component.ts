@@ -39,7 +39,7 @@ export interface IndicatorParams {
             <lucide-icon [img]="GripVertical" [size]="16" />
           </span>
           <div>
-            <div class="indicator-card-title">{{ indicator().name }}</div>
+            <a class="indicator-card-title" [href]="'/indicator-models/' + indicator().id" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">{{ indicator().name }}</a>
             <div class="indicator-card-technical">
               {{ indicator().technical_label }}
               &nbsp;
@@ -204,6 +204,7 @@ export interface IndicatorParams {
       font-size: 15px;
       font-weight: 600;
       color: var(--color-text-link, #1400cc);
+      text-decoration: none;
     }
     .indicator-card-title:hover {
       text-decoration: underline;
