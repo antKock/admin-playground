@@ -5,7 +5,7 @@ import { FilterOption } from '../data-table/data-table.component';
 @Component({
   selector: 'app-column-filter-popover',
   template: `
-    <div class="filter-popover" [style.top.px]="popoverTop()" [style.left.px]="popoverLeft()" (keydown)="onKeydown($event)">
+    <div class="filter-popover" role="dialog" aria-label="Filtrer la colonne" [style.top.px]="popoverTop()" [style.left.px]="popoverLeft()" (keydown)="onKeydown($event)">
       @if (options().length > 10) {
         <div class="filter-search">
           <input
@@ -148,6 +148,7 @@ export class ColumnFilterPopoverComponent implements OnInit, OnDestroy {
   private readonly el = inject(ElementRef);
   private outsideClickHandler = this.handleOutsideClick.bind(this);
   private scrollHandler = this.handleScroll.bind(this);
+  private resizeHandler = this.handleResize.bind(this);
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -160,6 +161,7 @@ export class ColumnFilterPopoverComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.updatePosition();
     window.addEventListener('scroll', this.scrollHandler, true);
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   private updatePosition(): void {
@@ -177,6 +179,7 @@ export class ColumnFilterPopoverComponent implements OnInit, OnDestroy {
     }
     document.removeEventListener('click', this.outsideClickHandler);
     window.removeEventListener('scroll', this.scrollHandler, true);
+    window.removeEventListener('resize', this.resizeHandler);
   }
 
   readonly filteredOptions = computed(() => {
@@ -209,6 +212,10 @@ export class ColumnFilterPopoverComponent implements OnInit, OnDestroy {
     if (event.key === 'Escape') {
       this.closePopover.emit();
     }
+  }
+
+  private handleResize(): void {
+    this.closePopover.emit();
   }
 
   private handleScroll(event: Event): void {

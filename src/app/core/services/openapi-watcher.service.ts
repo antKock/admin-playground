@@ -16,11 +16,15 @@ const STORAGE_KEY_DISMISSED = 'openapi-dismissed-hash';
 export class OpenApiWatcherService {
   readonly changes = signal<OpenApiChange[] | null>(null);
   readonly currentHash = signal<string | null>(null);
+  private pendingSpecText: string | null = null;
 
   async check(): Promise<void> {
     try {
       const specUrl = `${environment.apiBaseUrl}/openapi.json`;
-      const response = await fetch(specUrl);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      const response = await fetch(specUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         console.warn(`[OpenAPI Watcher] Fetch failed with status ${response.status}`);
         return;
@@ -66,9 +70,8 @@ export class OpenApiWatcherService {
         this.changes.set([{ type: 'modified', category: 'schema', name: '(baseline spec missing — spec changed)' }]);
       }
 
-      // Update stored spec for next comparison
-      localStorage.setItem(STORAGE_KEY_HASH, newHash);
-      localStorage.setItem(STORAGE_KEY_SPEC, specText);
+      // Keep the NEW spec text in memory so dismiss() can update the baseline
+      this.pendingSpecText = specText;
     } catch (err) {
       console.warn('[OpenAPI Watcher] Check failed:', err);
     }
@@ -78,6 +81,12 @@ export class OpenApiWatcherService {
     const hash = this.currentHash();
     if (hash) {
       localStorage.setItem(STORAGE_KEY_DISMISSED, hash);
+      // Update baseline to the new spec so future checks compare against it
+      localStorage.setItem(STORAGE_KEY_HASH, hash);
+      if (this.pendingSpecText) {
+        localStorage.setItem(STORAGE_KEY_SPEC, this.pendingSpecText);
+        this.pendingSpecText = null;
+      }
     }
     this.changes.set(null);
   }

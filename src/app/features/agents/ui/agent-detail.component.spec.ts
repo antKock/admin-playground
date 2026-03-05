@@ -43,9 +43,9 @@ describe('AgentDetailComponent', () => {
     expect(component.agentTypeLabel('unknown_type')).toBe('unknown_type');
   });
 
-  it('should capitalize transition labels', () => {
-    expect(component.transitionLabel('completed')).toBe('Completed');
-    expect(component.transitionLabel('draft')).toBe('Draft');
-    expect(component.transitionLabel('deleted')).toBe('Deleted');
+  it('should return French transition labels', () => {
+    expect(component.transitionLabel('completed')).toBe('Complété');
+    expect(component.transitionLabel('draft')).toBe('Brouillon');
+    expect(component.transitionLabel('deleted')).toBe('Supprimé');
   });
 });

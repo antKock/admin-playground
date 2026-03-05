@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, UserCog, BarChart3, LogOut, HelpCircle } from 'lucide-angular';
 
 import { AuthService } from '@app/core/auth/auth.service';
+import { OpenApiBannerComponent } from '@app/shared/components/openapi-banner/openapi-banner.component';
 
 interface NavItem {
   label: string;
@@ -12,7 +13,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, OpenApiBannerComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.css',
 })

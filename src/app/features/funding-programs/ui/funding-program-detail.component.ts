@@ -37,7 +37,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ program()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(program()!.updated_at) }} · ID: {{ program()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(program()!.updated_at) }} · ID: {{ program()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button

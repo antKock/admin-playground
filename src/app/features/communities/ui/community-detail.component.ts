@@ -38,7 +38,7 @@ import { CommunityUsersComponent } from './community-users.component';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ community()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(community()!.updated_at) }} · ID: {{ community()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(community()!.updated_at) }} · ID: {{ community()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button

@@ -146,8 +146,14 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
     return this.agentTypeLabels[type] ?? type;
   }
 
+  private readonly statusLabels: Record<string, string> = {
+    draft: 'Brouillon',
+    completed: 'Complété',
+    deleted: 'Supprimé',
+  };
+
   transitionLabel(status: AgentStatus): string {
-    return status.charAt(0).toUpperCase() + status.slice(1);
+    return this.statusLabels[status] ?? status;
   }
 
   transitionButtonClass(status: AgentStatus): string {
