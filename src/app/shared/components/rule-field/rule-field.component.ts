@@ -244,7 +244,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     if (lines.length > 1) {
       return {
         prefix: isValue
-          ? "La valeur par défaut est celle correspondant à la première condition vérifiée :"
+          ? "La valeur par défaut correspond à la première condition vérifiée :"
           : "Le paramètre est activé si au moins une de ces conditions est vraie :",
         branches: lines.map((l) => l.replace(/^• /, '')),
       };
