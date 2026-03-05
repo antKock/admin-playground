@@ -90,7 +90,7 @@ export class ActionModelListComponent implements OnInit {
       filterKey: 'action_theme_id',
       filterOptions: this.facade.atOptions().map(at => ({ id: at.id, label: at.name })),
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
   ]);
 
   ngOnInit(): void {

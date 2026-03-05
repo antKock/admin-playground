@@ -6,6 +6,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 thead {
@@ -118,6 +119,8 @@ td {
   font-size: 14px;
   color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-stroke-standard);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-row {
@@ -136,8 +139,12 @@ td {
 }
 
 /* Dual-line cells */
+.cell-bold,
 .dual-line-primary {
   font-weight: 600;
+}
+
+.dual-line-primary {
   color: var(--color-text-primary);
 }
 

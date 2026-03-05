@@ -127,15 +127,20 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
-    return [
+    const fields: MetadataField[] = [
       { label: 'Nom', value: m.name, type: 'text' as const },
       { label: 'Label technique', value: m.technical_label, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
       { label: 'Type', value: m.type, type: 'text' as const },
-      { label: 'Unité', value: m.unit ?? '—', type: 'text' as const },
+    ];
+    if (m.type === 'number') {
+      fields.push({ label: 'Unité', value: m.unit ?? '—', type: 'text' as const });
+    }
+    fields.push(
       { label: 'Créé le', value: m.created_at, type: 'date' as const },
       { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
-    ];
+    );
+    return fields;
   });
 
   ngOnInit(): void {

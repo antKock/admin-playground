@@ -57,11 +57,12 @@ export class FundingProgramListComponent implements OnInit {
   );
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Nom', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true, bold: true },
     { key: 'description', label: 'Description' },
     {
       key: 'active_display',
       label: 'Statut',
+      width: '120px',
       filterable: true,
       filterKey: 'is_active',
       filterOptions: [
@@ -69,7 +70,7 @@ export class FundingProgramListComponent implements OnInit {
         { id: 'false', label: 'Inactif' },
       ],
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
   ];
 
   ngOnInit(): void {

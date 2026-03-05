@@ -62,6 +62,7 @@ export class ActionThemeListComponent implements OnInit {
       key: 'status',
       label: 'Statut',
       type: 'status-badge',
+      width: '120px',
       filterable: true,
       filterKey: 'status',
       filterOptions: [
@@ -70,7 +71,7 @@ export class ActionThemeListComponent implements OnInit {
         { id: 'disabled', label: 'Désactivé' },
       ],
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
   ];
 
   ngOnInit(): void {

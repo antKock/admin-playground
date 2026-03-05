@@ -52,6 +52,7 @@ export class IndicatorModelListComponent implements OnInit {
     this.facade.items().map((item) => ({
       ...item,
       type_display: item.type,
+      unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
     })),
   );
 
@@ -69,6 +70,7 @@ export class IndicatorModelListComponent implements OnInit {
       key: 'type_display',
       label: 'Type',
       type: 'status-badge',
+      width: '120px',
       filterable: true,
       filterKey: 'type',
       filterOptions: [
@@ -76,8 +78,8 @@ export class IndicatorModelListComponent implements OnInit {
         { id: 'number', label: 'Nombre' },
       ],
     },
-    { key: 'unit', label: 'Unité', sortable: true },
-    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true },
+    { key: 'unit_display', label: 'Unité', sortable: true, width: '100px' },
+    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '150px' },
   ];
 
   ngOnInit(): void {

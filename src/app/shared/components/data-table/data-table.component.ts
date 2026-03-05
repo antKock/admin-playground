@@ -15,6 +15,7 @@ export interface ColumnDef {
   label: string;
   width?: string;
   type?: 'text' | 'status-badge' | 'date' | 'dual-line' | 'link';
+  bold?: boolean;
   sortable?: boolean;
   secondaryKey?: string;
   linkRoute?: string;

@@ -61,14 +61,16 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           }
         </div>
 
-        <div>
-          <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
-          <input
-            id="unit"
-            formControlName="unit"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          />
-        </div>
+        @if (form.get('type')?.value === 'number') {
+          <div>
+            <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
+            <input
+              id="unit"
+              formControlName="unit"
+              class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        }
 
         <div>
           <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>

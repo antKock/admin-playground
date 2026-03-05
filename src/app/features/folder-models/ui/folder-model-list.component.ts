@@ -50,7 +50,7 @@ export class FolderModelListComponent implements OnInit {
   }
 
   readonly columns = computed<ColumnDef[]>(() => [
-    { key: 'name', label: 'Nom', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true, bold: true },
     { key: 'description', label: 'Description' },
     {
       key: 'funding_programs_display',
@@ -59,7 +59,7 @@ export class FolderModelListComponent implements OnInit {
       filterKey: 'funding_program_id',
       filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.label })),
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
   ]);
 
   readonly rows = computed(() =>
