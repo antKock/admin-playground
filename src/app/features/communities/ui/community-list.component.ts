@@ -48,10 +48,10 @@ export class CommunityListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Nom', sortable: true, bold: true },
+    { key: 'name', label: 'Nom', sortable: true, bold: true, width: '200px' },
     { key: 'siret', label: 'SIRET', width: '140px' },
     { key: 'public_comment', label: 'Commentaire public' },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {

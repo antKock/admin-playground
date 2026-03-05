@@ -65,7 +65,7 @@ export class IndicatorModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label', width: '200px' },
     {
       key: 'type_display',
       label: 'Type',
@@ -79,7 +79,7 @@ export class IndicatorModelListComponent implements OnInit {
       ],
     },
     { key: 'unit_display', label: 'Unité', sortable: true, width: '100px' },
-    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '150px' },
+    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '175px' },
   ];
 
   ngOnInit(): void {

@@ -69,7 +69,7 @@ export class AgentListComponent implements OnInit {
       ],
     },
     { key: 'community_name', label: 'Communauté', sortable: true, type: 'link', linkRoute: '/communities', linkIdKey: 'community_id' },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   private readonly agentTypeLabels: Record<string, string> = {

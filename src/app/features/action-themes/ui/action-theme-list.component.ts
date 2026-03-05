@@ -57,7 +57,7 @@ export class ActionThemeListComponent implements OnInit {
   });
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label', width: '200px' },
     {
       key: 'status',
       label: 'Statut',
@@ -71,7 +71,7 @@ export class ActionThemeListComponent implements OnInit {
         { id: 'disabled', label: 'Désactivé' },
       ],
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '150px' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {
