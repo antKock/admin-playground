@@ -43,9 +43,24 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse(rule)).toBe(`• ${b('x')} contient ${b('1')}\n• ${b('y')} contient ${b('2')}`);
   });
 
-  it('translates not', () => {
+  it('translates not by inverting comparison', () => {
     const rule = '{"!": [{"==": [{"var": "x"}, "y"]}]}';
-    expect(translateJsonLogicToProse(rule)).toBe(`non (${b('x')} contient ${b("'y'")})`);
+    expect(translateJsonLogicToProse(rule)).toBe(`${b('x')} ne contient pas ${b("'y'")}`);
+  });
+
+  it('translates not-missing as aucun champ manquant', () => {
+    const rule = '{"!": {"missing": ["numero_siret"]}}';
+    expect(translateJsonLogicToProse(rule)).toBe(`aucun champ manquant parmi ${b("['numero_siret']")}`);
+  });
+
+  it('translates not-some as aucun élément', () => {
+    const rule = '{"!": [{"some": [{"var": "items"}, {"===": [{"var": "status"}, "ok"]}]}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`aucun élément de ${b('items')} ne satisfait : ${b('status')} = ${b("'ok'")}`);
+  });
+
+  it('translates not-var as absent', () => {
+    const rule = '{"!": [{"var": "x"}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`${b('x')} est absent`);
   });
 
   it('translates in operator', () => {
@@ -90,9 +105,14 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse(rule)).toBe(`(${b('x')} contient ${b('1')} ou ${b('y')} contient ${b('2')}) et ${b('z')} contient ${b('3')}`);
   });
 
-  it('translates complex or with and branches', () => {
+  it('translates complex or with and branches (parenthesized)', () => {
     const rule = '{"or": [{"and": [{"==": [{"var": "a"}, 1]}, {"==": [{"var": "b"}, 2]}]}, {"==": [{"var": "c"}, 3]}]}';
-    expect(translateJsonLogicToProse(rule)).toBe(`• ${b('a')} contient ${b('1')} et ${b('b')} contient ${b('2')}\n• ${b('c')} contient ${b('3')}`);
+    expect(translateJsonLogicToProse(rule)).toBe(`• (${b('a')} contient ${b('1')} et ${b('b')} contient ${b('2')})\n• ${b('c')} contient ${b('3')}`);
+  });
+
+  it('wraps nested and-inside-or with parentheses', () => {
+    const rule = '{"or": [{"<": [{"var": "x"}, 10]}, {"and": [{"===": [{"var": "s"}, "p"]}, {">": [{"var": "b"}, 100]}]}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`• ${b('x')} &lt; ${b('10')}\n• (${b('s')} = ${b("'p'")} et ${b('b')} &gt; ${b('100')})`);
   });
 
   it('returns null for invalid JSON', () => {
@@ -117,11 +137,66 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse('42')).toBeNull();
   });
 
+  it('translates some with condition', () => {
+    const rule = '{"some": [{"var": "beneficiaries"}, {"===": [{"var": "departement"}, "75"]}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`au moins un élément de ${b('beneficiaries')} satisfait : ${b('departement')} = ${b("'75'")}`);
+  });
+
+  it('translates all with condition', () => {
+    const rule = '{"all": [{"var": "items"}, {">": [{"var": "qty"}, 0]}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`tous les éléments de ${b('items')} satisfont : ${b('qty')} &gt; ${b('0')}`);
+  });
+
+  it('translates none with condition', () => {
+    const rule = '{"none": [{"var": "items"}, {"==": [{"var": "status"}, "rejected"]}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`aucun élément de ${b('items')} ne satisfait : ${b('status')} contient ${b("'rejected'")}`);
+  });
+
   it('handles boolean values in comparisons', () => {
     expect(translateJsonLogicToProse('{"==": [{"var": "active"}, true]}')).toBe(`${b('active')} contient ${b('true')}`);
   });
 
   it('handles null values', () => {
     expect(translateJsonLogicToProse('{"==": [{"var": "field"}, null]}')).toBe(`${b('field')} contient ${b('null')}`);
+  });
+
+  // Edge case fixes
+  it('handles empty var "" as (données)', () => {
+    expect(translateJsonLogicToProse('{"var": ""}')).toBe(b('(données)'));
+  });
+
+  it('handles chained if/else-if (5 args)', () => {
+    const rule = '{"if": [{"==": [{"var": "x"}, 1]}, "a", {"==": [{"var": "x"}, 2]}, "b", "c"]}';
+    expect(translateJsonLogicToProse(rule)).toBe(
+      `Si ${b('x')} contient ${b('1')} alors ${b("'a'")} sinon si ${b('x')} contient ${b('2')} alors ${b("'b'")} sinon ${b("'c'")}`
+    );
+  });
+
+  it('handles chained if without default (4 args)', () => {
+    const rule = '{"if": [{"==": [{"var": "x"}, 1]}, "a", {"==": [{"var": "x"}, 2]}, "b"]}';
+    expect(translateJsonLogicToProse(rule)).toBe(
+      `Si ${b('x')} contient ${b('1')} alors ${b("'a'")} sinon si ${b('x')} contient ${b('2')} alors ${b("'b'")}`
+    );
+  });
+
+  it('returns null for empty + args', () => {
+    expect(translateJsonLogicToProse('{"+":[]}' )).toBeNull();
+  });
+
+  it('returns null for empty cat args', () => {
+    expect(translateJsonLogicToProse('{"cat":[]}')).toBeNull();
+  });
+
+  it('handles unary negation {"-": [x]}', () => {
+    expect(translateJsonLogicToProse('{"-": [{"var": "x"}]}')).toBe(`-${b('x')}`);
+  });
+
+  it('handles !! non-array form', () => {
+    expect(translateJsonLogicToProse('{"!!": {"var": "x"}}')).toBe(`booléen(${b('x')})`);
+  });
+
+  it('handles missing_some operator', () => {
+    const rule = '{"missing_some": [1, ["a", "b", "c"]]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`au moins ${b('1')} champ(s) manquant(s) parmi ${b("['a', 'b', 'c']")}`);
   });
 });

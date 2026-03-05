@@ -37,7 +37,7 @@ function formatValue(val: unknown): string {
 
 function resolveVar(node: Record<string, unknown>): string | null {
   const v = node['var'];
-  if (typeof v === 'string') return bold(escapeHtml(v));
+  if (typeof v === 'string') return v === '' ? bold('(données)') : bold(escapeHtml(v));
   if (typeof v === 'number') return bold(String(v));
   // Array syntax: {"var": ["name", default]}
   if (Array.isArray(v) && v.length >= 1) {
@@ -67,6 +67,51 @@ function resolveOperand(node: unknown, depth: number, topLevel = false): string 
     }
     // Nested operation — translate recursively
     return translateNode(obj, depth + 1, topLevel);
+  }
+
+  return null;
+}
+
+const INVERT_OP: Record<string, string> = {
+  '==': '!=', '!=': '==',
+  '===': '!==', '!==': '===',
+  '<': '>=', '>=': '<',
+  '>': '<=', '<=': '>',
+};
+
+/** Try to produce a natural French negation instead of "non (...)". */
+function tryNegate(innerNode: unknown, depth: number, topLevel: boolean): string | null {
+  if (!innerNode || typeof innerNode !== 'object' || Array.isArray(innerNode)) return null;
+  const obj = innerNode as Record<string, unknown>;
+  const keys = Object.keys(obj);
+  if (keys.length !== 1) return null;
+  const op = keys[0];
+  const innerArgs = obj[op];
+
+  // Invert comparison: !(x == y) → x != y
+  if (op in INVERT_OP && Array.isArray(innerArgs) && innerArgs.length === 2) {
+    return translateNode({ [INVERT_OP[op]]: innerArgs }, depth, topLevel);
+  }
+
+  // !missing → "aucun champ manquant parmi [...]"
+  if (op === 'missing' && Array.isArray(innerArgs)) {
+    return `aucun champ manquant parmi ${bold(`[${innerArgs.map(formatValue).join(', ')}]`)}`;
+  }
+
+  // !some → none phrasing
+  if (op === 'some' && Array.isArray(innerArgs) && innerArgs.length === 2) {
+    const arr = resolveOperand(innerArgs[0], depth);
+    if (arr === null) return null;
+    const cond = resolveOperand(innerArgs[1], depth + 1);
+    return cond
+      ? `aucun élément de ${arr} ne satisfait : ${cond}`
+      : `aucun élément de ${arr} ne satisfait la condition`;
+  }
+
+  // !var → "x est absent"
+  if (op === 'var') {
+    const v = resolveVar(obj);
+    if (v) return `${v} est absent`;
   }
 
   return null;
@@ -116,7 +161,8 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
     }
     if (parts.length === 0) return null;
     if (operator === 'and') {
-      return parts.join(' et ');
+      const result = parts.join(' et ');
+      return (depth > 0 && parts.length > 1) ? `(${result})` : result;
     }
     // OR: bullet format only at top level; inline with parentheses when nested
     if (topLevel && parts.length > 1) {
@@ -128,30 +174,47 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
 
   // Negation: !
   if (operator === '!' && Array.isArray(args) && args.length === 1) {
+    const negated = tryNegate(args[0], depth, topLevel);
+    if (negated) return negated;
     const inner = resolveOperand(args[0], depth);
     if (inner === null) return null;
     return `non (${inner})`;
   }
   if (operator === '!') {
+    const negated = tryNegate(args, depth, topLevel);
+    if (negated) return negated;
     const inner = resolveOperand(args, depth);
     if (inner === null) return null;
     return `non (${inner})`;
   }
 
   // Double negation: !!
-  if (operator === '!!' && Array.isArray(args) && args.length === 1) {
-    const inner = resolveOperand(args[0], depth);
+  if (operator === '!!') {
+    const target = Array.isArray(args) && args.length === 1 ? args[0] : args;
+    const inner = resolveOperand(target, depth);
     if (inner === null) return null;
     return `booléen(${inner})`;
   }
 
-  // if / ternary
+  // if / ternary — supports chained if/else-if: [cond1, val1, cond2, val2, ..., default]
   if (operator === 'if' && Array.isArray(args) && args.length >= 3) {
-    const condition = resolveOperand(args[0], depth);
-    const thenBranch = resolveOperand(args[1], depth);
-    const elseBranch = resolveOperand(args[2], depth);
-    if (condition === null || thenBranch === null || elseBranch === null) return null;
-    return `Si ${condition} alors ${thenBranch} sinon ${elseBranch}`;
+    const chunks: string[] = [];
+    let i = 0;
+    while (i + 1 < args.length) {
+      const cond = resolveOperand(args[i], depth);
+      const val = resolveOperand(args[i + 1], depth);
+      if (cond === null || val === null) return null;
+      const prefix = chunks.length === 0 ? 'Si' : 'sinon si';
+      chunks.push(`${prefix} ${cond} alors ${val}`);
+      i += 2;
+    }
+    // Remaining single arg = default else
+    if (i < args.length) {
+      const fallback = resolveOperand(args[i], depth);
+      if (fallback === null) return null;
+      chunks.push(`sinon ${fallback}`);
+    }
+    return chunks.join(' ');
   }
 
   // in operator
@@ -167,11 +230,26 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
     return `champs manquants parmi ${bold(`[${args.map(formatValue).join(', ')}]`)}`;
   }
 
+  // missing_some: {"missing_some": [min, [fields]]}
+  if (operator === 'missing_some' && Array.isArray(args) && args.length === 2) {
+    const min = args[0];
+    const fields = args[1];
+    if (typeof min === 'number' && Array.isArray(fields)) {
+      return `au moins ${bold(String(min))} champ(s) manquant(s) parmi ${bold(`[${fields.map(formatValue).join(', ')}]`)}`;
+    }
+  }
+
   // Arithmetic
   if (operator === '+' && Array.isArray(args)) {
+    if (args.length === 0) return null;
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
     return parts.join(' + ');
+  }
+  if (operator === '-' && Array.isArray(args) && args.length === 1) {
+    const operand = resolveOperand(args[0], depth);
+    if (operand === null) return null;
+    return `-${operand}`;
   }
   if (operator === '-' && Array.isArray(args) && args.length === 2) {
     const left = resolveOperand(args[0], depth);
@@ -211,6 +289,7 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
 
   // cat (string concatenation)
   if (operator === 'cat' && Array.isArray(args)) {
+    if (args.length === 0) return null;
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
     return parts.join(' + ');
@@ -225,22 +304,32 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
   if (operator === 'filter' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
-    return `filtrer ${arr}`;
+    const cond = resolveOperand(args[1], depth + 1);
+    return cond ? `filtrer ${arr} où ${cond}` : `filtrer ${arr}`;
   }
   if (operator === 'all' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
-    return `tous les éléments de ${arr} satisfont la condition`;
+    const cond = resolveOperand(args[1], depth + 1);
+    return cond
+      ? `tous les éléments de ${arr} satisfont : ${cond}`
+      : `tous les éléments de ${arr} satisfont la condition`;
   }
   if (operator === 'some' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
-    return `au moins un élément de ${arr} satisfait la condition`;
+    const cond = resolveOperand(args[1], depth + 1);
+    return cond
+      ? `au moins un élément de ${arr} satisfait : ${cond}`
+      : `au moins un élément de ${arr} satisfait la condition`;
   }
   if (operator === 'none' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
-    return `aucun élément de ${arr} ne satisfait la condition`;
+    const cond = resolveOperand(args[1], depth + 1);
+    return cond
+      ? `aucun élément de ${arr} ne satisfait : ${cond}`
+      : `aucun élément de ${arr} ne satisfait la condition`;
   }
 
   return null;
