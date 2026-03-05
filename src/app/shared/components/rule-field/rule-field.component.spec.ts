@@ -34,13 +34,13 @@ describe('RuleFieldComponent', () => {
   it('should extract variable names from JSONLogic', () => {
     fixture.componentRef.setInput('value', '{"==": [{"var": "mode_chauffe"}, "autre"]}');
     fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('Rule references: mode_chauffe');
+    expect(component.variablesLabel()).toBe('Variables référencées : mode_chauffe');
   });
 
   it('should extract multiple variables', () => {
     fixture.componentRef.setInput('value', '{"and": [{"==": [{"var": "mode"}, "a"]}, {"==": [{"var": "type"}, "b"]}]}');
     fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('Rule references: mode, type');
+    expect(component.variablesLabel()).toBe('Variables référencées : mode, type');
   });
 
   it('should show no error initially', () => {
@@ -145,7 +145,7 @@ describe('RuleFieldComponent', () => {
   it('should show prose translation for translatable JSONLogic rule', () => {
     fixture.componentRef.setInput('value', '{"==": [{"var": "mode_chauffe"}, "autre"]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe("mode_chauffe equals 'autre'");
+    expect(component.proseTranslation()).toBe("mode_chauffe est égal à 'autre'");
     expect(fixture.nativeElement.querySelector('.rule-prose')).toBeTruthy();
   });
 
@@ -166,10 +166,10 @@ describe('RuleFieldComponent', () => {
   it('should update prose when value input changes', () => {
     fixture.componentRef.setInput('value', '{"==": [{"var": "x"}, 1]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe('x equals 1');
+    expect(component.proseTranslation()).toBe('x est égal à 1');
 
     fixture.componentRef.setInput('value', '{"!=": [{"var": "y"}, 2]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe('y does not equal 2');
+    expect(component.proseTranslation()).toBe('y est différent de 2');
   });
 });

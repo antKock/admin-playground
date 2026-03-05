@@ -35,6 +35,7 @@ import { bracketMatching } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
 import { translateJsonLogicToProse } from '../../utils/jsonlogic-prose';
+import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 
 function extractVariables(jsonLogicStr: string): string[] {
   if (!jsonLogicStr || jsonLogicStr === 'true' || jsonLogicStr === 'false') return [];
@@ -47,6 +48,11 @@ function extractVariables(jsonLogicStr: string): string[] {
           const v = (obj as Record<string, unknown>)['var'];
           if (typeof v === 'string' && v !== '') vars.push(v);
           if (typeof v === 'number') vars.push(String(v));
+          // Array syntax: {"var": ["name", default]}
+          if (Array.isArray(v) && v.length >= 1) {
+            if (typeof v[0] === 'string' && v[0] !== '') vars.push(v[0]);
+            if (typeof v[0] === 'number') vars.push(String(v[0]));
+          }
         }
         for (const val of Object.values(obj as Record<string, unknown>)) {
           walk(val);
@@ -60,29 +66,35 @@ function extractVariables(jsonLogicStr: string): string[] {
   }
 }
 
-/** Custom JSON linter for CodeMirror 6 */
-function jsonLinter(): (view: EditorView) => Diagnostic[] {
+/** Custom JSON + JSONLogic linter for CodeMirror 6 */
+function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
   return (view: EditorView): Diagnostic[] => {
     const doc = view.state.doc.toString();
     const trimmed = doc.trim();
     if (!trimmed) return [];
     try {
       JSON.parse(trimmed);
-      return [];
     } catch (e) {
-      const msg = e instanceof SyntaxError ? e.message : 'Invalid JSON';
-      // Try to extract position from error message (e.g., "at position 5")
+      const msg = e instanceof SyntaxError ? e.message : 'JSON invalide';
       const posMatch = msg.match(/position\s+(\d+)/i);
       let from = 0;
       let to = doc.length;
       if (posMatch) {
-        // Offset by leading whitespace since JSON.parse position is relative to trimmed string
         const leadingWhitespace = doc.length - doc.trimStart().length;
         from = Math.min(parseInt(posMatch[1], 10) + leadingWhitespace, doc.length);
         to = Math.min(from + 1, doc.length);
       }
       return [{ from, to, severity: 'error', message: msg }];
     }
+
+    // JSON is valid — now validate JSONLogic structure
+    const logicErrors = validateJsonLogic(trimmed);
+    return logicErrors.map((err) => ({
+      from: 0,
+      to: doc.length,
+      severity: 'error' as const,
+      message: err.message,
+    }));
   };
 }
 
@@ -238,7 +250,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly variablesLabel = computed(() => {
     const vars = extractVariables(this.value());
     return vars.length > 0
-      ? `Rule references: ${vars.join(', ')}`
+      ? `Variables référencées : ${vars.join(', ')}`
       : '';
   });
 
@@ -263,7 +275,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    const jsonLint = linter(jsonLinter(), { delay: 300 });
+    const jsonLint = linter(jsonLogicLinter(), { delay: 300 });
 
     const updateListener = EditorView.updateListener.of((update) => {
       if (update.docChanged && !this.suppressEmit) {
@@ -309,14 +321,23 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     }
     try {
       JSON.parse(trimmed);
-      this.hasError.set(false);
-      this.errorMessage.set('');
-      this.validChange.emit(true);
     } catch (e) {
-      const msg = e instanceof SyntaxError ? e.message : 'Invalid JSON syntax';
+      const msg = e instanceof SyntaxError ? e.message : 'JSON invalide';
       this.hasError.set(true);
       this.errorMessage.set(msg);
       this.validChange.emit(false);
+      return;
+    }
+    // JSON is valid — check JSONLogic structure
+    const logicErrors = validateJsonLogic(trimmed);
+    if (logicErrors.length > 0) {
+      this.hasError.set(true);
+      this.errorMessage.set(logicErrors[0].message);
+      this.validChange.emit(false);
+    } else {
+      this.hasError.set(false);
+      this.errorMessage.set('');
+      this.validChange.emit(true);
     }
   }
 }

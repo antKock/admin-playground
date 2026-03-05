@@ -1,17 +1,17 @@
 /**
- * Translates a JSONLogic rule string into human-readable prose.
+ * Translates a JSONLogic rule string into human-readable French prose.
  * Returns null if the input is invalid, un-translatable, or too deeply nested.
  */
 
 const OPERATOR_NAMES: Record<string, string> = {
-  '==': 'equals',
-  '===': 'strictly equals',
-  '!=': 'does not equal',
-  '!==': 'does not strictly equal',
-  '<': 'is less than',
-  '<=': 'is at most',
-  '>': 'is greater than',
-  '>=': 'is at least',
+  '==': 'est égal à',
+  '===': 'est strictement égal à',
+  '!=': 'est différent de',
+  '!==': 'est strictement différent de',
+  '<': 'est inférieur à',
+  '<=': 'est inférieur ou égal à',
+  '>': 'est supérieur à',
+  '>=': 'est supérieur ou égal à',
 };
 
 const MAX_DEPTH = 3;
@@ -25,6 +25,19 @@ function formatValue(val: unknown): string {
   if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   if (val === null) return 'null';
   return String(val);
+}
+
+function resolveVar(node: Record<string, unknown>): string | null {
+  const v = node['var'];
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number') return String(v);
+  // Array syntax: {"var": ["name", default]}
+  if (Array.isArray(v) && v.length >= 1) {
+    const name = v[0];
+    if (typeof name === 'string') return name;
+    if (typeof name === 'number') return String(name);
+  }
+  return null;
 }
 
 function resolveOperand(node: unknown, depth: number): string | null {
@@ -41,8 +54,8 @@ function resolveOperand(node: unknown, depth: number): string | null {
 
   if (typeof node === 'object') {
     const obj = node as Record<string, unknown>;
-    if ('var' in obj && typeof obj['var'] === 'string') {
-      return obj['var'];
+    if ('var' in obj) {
+      return resolveVar(obj);
     }
     // Nested operation — translate recursively
     return translateNode(obj, depth + 1);
@@ -64,7 +77,7 @@ function translateNode(node: unknown, depth: number): string | null {
 
   // Variable reference
   if (operator === 'var') {
-    return typeof args === 'string' ? args : null;
+    return resolveVar(obj);
   }
 
   // Comparison operators
@@ -75,28 +88,46 @@ function translateNode(node: unknown, depth: number): string | null {
     return `${left} ${OPERATOR_NAMES[operator]} ${right}`;
   }
 
+  // Between: {"<": [a, var, b]} or {"<=": [a, var, b]}
+  if ((operator === '<' || operator === '<=') && Array.isArray(args) && args.length === 3) {
+    const low = resolveOperand(args[0], depth);
+    const mid = resolveOperand(args[1], depth);
+    const high = resolveOperand(args[2], depth);
+    if (low === null || mid === null || high === null) return null;
+    const op = OPERATOR_NAMES[operator];
+    return `${low} ${op} ${mid} ${op} ${high}`;
+  }
+
   // Logic: and / or
   if ((operator === 'and' || operator === 'or') && Array.isArray(args)) {
     const parts: string[] = [];
+    const connector = operator === 'and' ? 'et' : 'ou';
     for (const arg of args) {
       const translated = resolveOperand(arg, depth);
       if (translated === null) return null;
       parts.push(translated);
     }
     if (parts.length === 0) return null;
-    return parts.join(` ${operator} `);
+    return parts.join(` ${connector} `);
   }
 
   // Negation: !
   if (operator === '!' && Array.isArray(args) && args.length === 1) {
     const inner = resolveOperand(args[0], depth);
     if (inner === null) return null;
-    return `not (${inner})`;
+    return `non (${inner})`;
   }
   if (operator === '!') {
     const inner = resolveOperand(args, depth);
     if (inner === null) return null;
-    return `not (${inner})`;
+    return `non (${inner})`;
+  }
+
+  // Double negation: !!
+  if (operator === '!!' && Array.isArray(args) && args.length === 1) {
+    const inner = resolveOperand(args[0], depth);
+    if (inner === null) return null;
+    return `booléen(${inner})`;
   }
 
   // if / ternary
@@ -105,7 +136,7 @@ function translateNode(node: unknown, depth: number): string | null {
     const thenBranch = resolveOperand(args[1], depth);
     const elseBranch = resolveOperand(args[2], depth);
     if (condition === null || thenBranch === null || elseBranch === null) return null;
-    return `If ${condition} then ${thenBranch} else ${elseBranch}`;
+    return `Si ${condition} alors ${thenBranch} sinon ${elseBranch}`;
   }
 
   // in operator
@@ -113,7 +144,88 @@ function translateNode(node: unknown, depth: number): string | null {
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} is one of ${right}`;
+    return `${left} fait partie de ${right}`;
+  }
+
+  // missing
+  if (operator === 'missing' && Array.isArray(args)) {
+    return `champs manquants parmi [${args.map(formatValue).join(', ')}]`;
+  }
+
+  // Arithmetic
+  if (operator === '+' && Array.isArray(args)) {
+    const parts = args.map((a) => resolveOperand(a, depth));
+    if (parts.some((p) => p === null)) return null;
+    return parts.join(' + ');
+  }
+  if (operator === '-' && Array.isArray(args) && args.length === 2) {
+    const left = resolveOperand(args[0], depth);
+    const right = resolveOperand(args[1], depth);
+    if (left === null || right === null) return null;
+    return `${left} - ${right}`;
+  }
+  if (operator === '*' && Array.isArray(args)) {
+    const parts = args.map((a) => resolveOperand(a, depth));
+    if (parts.some((p) => p === null)) return null;
+    return parts.join(' × ');
+  }
+  if (operator === '/' && Array.isArray(args) && args.length === 2) {
+    const left = resolveOperand(args[0], depth);
+    const right = resolveOperand(args[1], depth);
+    if (left === null || right === null) return null;
+    return `${left} ÷ ${right}`;
+  }
+  if (operator === '%' && Array.isArray(args) && args.length === 2) {
+    const left = resolveOperand(args[0], depth);
+    const right = resolveOperand(args[1], depth);
+    if (left === null || right === null) return null;
+    return `${left} modulo ${right}`;
+  }
+
+  // min / max
+  if (operator === 'min' && Array.isArray(args)) {
+    const parts = args.map((a) => resolveOperand(a, depth));
+    if (parts.some((p) => p === null)) return null;
+    return `minimum de (${parts.join(', ')})`;
+  }
+  if (operator === 'max' && Array.isArray(args)) {
+    const parts = args.map((a) => resolveOperand(a, depth));
+    if (parts.some((p) => p === null)) return null;
+    return `maximum de (${parts.join(', ')})`;
+  }
+
+  // cat (string concatenation)
+  if (operator === 'cat' && Array.isArray(args)) {
+    const parts = args.map((a) => resolveOperand(a, depth));
+    if (parts.some((p) => p === null)) return null;
+    return parts.join(' + ');
+  }
+
+  // Array operations: map, filter, reduce, all, some, none
+  if (operator === 'map' && Array.isArray(args) && args.length === 2) {
+    const arr = resolveOperand(args[0], depth);
+    if (arr === null) return null;
+    return `transformer chaque élément de ${arr}`;
+  }
+  if (operator === 'filter' && Array.isArray(args) && args.length === 2) {
+    const arr = resolveOperand(args[0], depth);
+    if (arr === null) return null;
+    return `filtrer ${arr}`;
+  }
+  if (operator === 'all' && Array.isArray(args) && args.length === 2) {
+    const arr = resolveOperand(args[0], depth);
+    if (arr === null) return null;
+    return `tous les éléments de ${arr} satisfont la condition`;
+  }
+  if (operator === 'some' && Array.isArray(args) && args.length === 2) {
+    const arr = resolveOperand(args[0], depth);
+    if (arr === null) return null;
+    return `au moins un élément de ${arr} satisfait la condition`;
+  }
+  if (operator === 'none' && Array.isArray(args) && args.length === 2) {
+    const arr = resolveOperand(args[0], depth);
+    if (arr === null) return null;
+    return `aucun élément de ${arr} ne satisfait la condition`;
   }
 
   return null;
