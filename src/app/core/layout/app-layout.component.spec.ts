@@ -42,13 +42,15 @@ describe('AppLayoutComponent', () => {
     expect(labels[1].textContent).toContain('Administration');
   });
 
-  it('should render user avatar in header', async () => {
+  it('should render help link in header', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    const avatar = compiled.querySelector('.user-avatar');
-    expect(avatar).toBeTruthy();
+    const helpLink = compiled.querySelector('a[href="https://actee.gitbook.io/actee/"]');
+    expect(helpLink).toBeTruthy();
+    expect(helpLink?.getAttribute('target')).toBe('_blank');
+    expect(helpLink?.textContent).toContain('Aide');
   });
 
   it('should render sidebar with navigation landmark', async () => {

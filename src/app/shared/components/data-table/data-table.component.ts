@@ -45,12 +45,14 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   readonly isLoading = input(false);
   readonly hasMore = input(false);
   readonly actions = input<RowAction[]>([]);
+  readonly emptyMessage = input<string | null>(null);
 
   readonly rowClick = output<Record<string, unknown>>();
   readonly loadMore = output<void>();
   readonly actionClick = output<{ action: string; row: Record<string, unknown> }>();
   readonly linkClick = output<{ route: string; id: string }>();
   readonly filterChange = output<{ key: string; values: string[] }>();
+  readonly clearFiltersClick = output<void>();
 
   readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
 
@@ -58,6 +60,8 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   readonly sortDirection = signal<'asc' | 'desc' | null>(null);
   readonly openFilterColumn = signal<string | null>(null);
   readonly activeFilters = signal<Record<string, string[]>>({});
+
+  readonly totalColumns = computed(() => this.columns().length + (this.actions().length > 0 ? 1 : 0));
 
   readonly sortedData = computed(() => {
     const items = this.data();
@@ -120,6 +124,16 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   hasActiveFilter(colKey: string): boolean {
     const values = this.activeFilters()[colKey];
     return !!values && values.length > 0;
+  }
+
+  hasAnyActiveFilter(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
+  onClearFilters(): void {
+    this.activeFilters.set({});
+    this.openFilterColumn.set(null);
+    this.clearFiltersClick.emit();
   }
 
   closeFilter(): void {

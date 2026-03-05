@@ -1,6 +1,6 @@
 # Story 5.1: JSONLogic Editor with Syntax Highlighting
 
-Status: review
+Status: done
 
 ## Story
 

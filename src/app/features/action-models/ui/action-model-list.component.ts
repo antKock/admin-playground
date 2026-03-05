@@ -21,38 +21,18 @@ import { ActionModelFacade } from '../action-model.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (hasActiveFilters()) {
-            <p class="text-text-secondary mb-4">Aucun modèle d'action ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun modèle d'action trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/action-models/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'action
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns()"
-          [data]="rows()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (linkClick)="onLinkClick($event)"
-          (loadMore)="onLoadMore()"
-          (filterChange)="onFilterChange($event)"
-        />
-      }
+      <app-data-table
+        [columns]="columns()"
+        [data]="rows()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="emptyMessage()"
+        (rowClick)="onRowClick($event)"
+        (linkClick)="onLinkClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })
@@ -62,6 +42,13 @@ export class ActionModelListComponent implements OnInit {
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun modèle d\'action ne correspond à vos filtres.'
+      : 'Aucun modèle d\'action trouvé.';
+  });
 
   readonly rows = computed(() =>
     this.facade.items().map((item) => ({
@@ -92,7 +79,17 @@ export class ActionModelListComponent implements OnInit {
       filterKey: 'funding_program_id',
       filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.name })),
     },
-    { key: 'action_theme_name', label: 'Thème d\'action', sortable: true, type: 'link', linkRoute: '/action-themes', linkIdKey: 'action_theme_id' },
+    {
+      key: 'action_theme_name',
+      label: 'Thème d\'action',
+      sortable: true,
+      type: 'link',
+      linkRoute: '/action-themes',
+      linkIdKey: 'action_theme_id',
+      filterable: true,
+      filterKey: 'action_theme_id',
+      filterOptions: this.facade.atOptions().map(at => ({ id: at.id, label: at.name })),
+    },
     { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
   ]);
 

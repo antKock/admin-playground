@@ -21,38 +21,18 @@ import { AgentFacade } from '../agent.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (hasActiveFilters()) {
-            <p class="text-text-secondary mb-4">Aucun agent ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun agent trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/agents/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="rows()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (linkClick)="onLinkClick($event)"
-          (loadMore)="onLoadMore()"
-          (filterChange)="onFilterChange($event)"
-        />
-      }
+      <app-data-table
+        [columns]="columns"
+        [data]="rows()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun agent ne correspond à vos filtres.' : 'Aucun agent trouvé.') : null"
+        (rowClick)="onRowClick($event)"
+        (linkClick)="onLinkClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })

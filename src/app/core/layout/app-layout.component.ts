@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, UserCog, BarChart3, LogOut } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, UserCog, BarChart3, LogOut, HelpCircle } from 'lucide-angular';
 
 import { AuthService } from '@app/core/auth/auth.service';
 
@@ -19,12 +19,12 @@ interface NavItem {
 export class AppLayoutComponent {
   private readonly authService = inject(AuthService);
 
-  readonly userName = this.authService.userName;
-  readonly userInitials = this.authService.userInitials;
+  readonly userEmail = this.authService.userEmail;
   readonly LogOut = LogOut;
+  readonly HelpCircle = HelpCircle;
 
   readonly configItems: NavItem[] = [
-    { label: 'Programmes de financement', route: '/funding-programs', icon: Landmark },
+    { label: 'Programmes', route: '/funding-programs', icon: Landmark },
     { label: 'Thèmes d\'action', route: '/action-themes', icon: Tags },
     { label: 'Modèles d\'action', route: '/action-models', icon: FileText },
     { label: 'Modèles de dossier', route: '/folder-models', icon: FolderOpen },

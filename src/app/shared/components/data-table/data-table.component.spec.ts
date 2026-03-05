@@ -373,4 +373,98 @@ describe('DataTableComponent', () => {
     // Sort should still be ascending
     expect(th.getAttribute('aria-sort')).toBe('ascending');
   });
+
+  // Empty state tests
+  it('should show empty message when data is empty and emptyMessage is set', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.data = [];
+    fixture.componentInstance.isLoading = false;
+    fixture.detectChanges();
+
+    // Without emptyMessage, no empty state shown
+    expect(fixture.nativeElement.querySelector('.empty-row')).toBeNull();
+  });
+
+  it('should show headers even when data is empty with emptyMessage', async () => {
+    @Component({
+      imports: [DataTableComponent],
+      template: `
+        <app-data-table
+          [columns]="columns"
+          [data]="data"
+          [emptyMessage]="'No results found.'"
+        />
+      `,
+    })
+    class EmptyTestHost {
+      columns: ColumnDef[] = [
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Name' },
+      ];
+      data: TestRow[] = [];
+    }
+
+    await TestBed.configureTestingModule({ imports: [EmptyTestHost] }).compileComponents();
+    const fixture = TestBed.createComponent(EmptyTestHost);
+    fixture.detectChanges();
+
+    // Headers should still be visible
+    const headers = fixture.nativeElement.querySelectorAll('th');
+    expect(headers.length).toBe(2);
+
+    // Empty message should be in tbody
+    const emptyRow = fixture.nativeElement.querySelector('.empty-row');
+    expect(emptyRow).toBeTruthy();
+    expect(emptyRow.textContent).toContain('No results found.');
+  });
+
+  it('should emit clearFiltersClick and reset internal activeFilters when clear button is clicked', async () => {
+    @Component({
+      imports: [DataTableComponent],
+      template: `
+        <app-data-table
+          [columns]="columns"
+          [data]="data"
+          [emptyMessage]="'No results.'"
+          (filterChange)="onFilterChange($event)"
+          (clearFiltersClick)="clearClicked = true"
+        />
+      `,
+    })
+    class ClearFilterTestHost {
+      columns: ColumnDef[] = [
+        { key: 'name', label: 'Name', filterable: true, filterKey: 'name', filterOptions: [{ id: 'a', label: 'A' }] },
+      ];
+      data: TestRow[] = [];
+      clearClicked = false;
+      onFilterChange(_event: { key: string; values: string[] }): void {}
+    }
+
+    await TestBed.configureTestingModule({ imports: [ClearFilterTestHost] }).compileComponents();
+    const fixture = TestBed.createComponent(ClearFilterTestHost);
+    fixture.detectChanges();
+
+    // Open filter and select a value to create active filter state
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    filterBtn.click();
+    fixture.detectChanges();
+    const checkbox = fixture.nativeElement.querySelector('app-column-filter-popover input[type="checkbox"]');
+    checkbox.click();
+    fixture.detectChanges();
+
+    // Verify filter badge is shown
+    expect(fixture.nativeElement.querySelector('.filter-badge')).toBeTruthy();
+
+    // Click clear filters button
+    const clearBtn = fixture.nativeElement.querySelector('.clear-filters-btn');
+    expect(clearBtn).toBeTruthy();
+    clearBtn.click();
+    fixture.detectChanges();
+
+    // Verify parent was notified
+    expect(fixture.componentInstance.clearClicked).toBe(true);
+
+    // Verify DataTable's internal filter state was reset (no badge)
+    expect(fixture.nativeElement.querySelector('.filter-badge')).toBeNull();
+  });
 });

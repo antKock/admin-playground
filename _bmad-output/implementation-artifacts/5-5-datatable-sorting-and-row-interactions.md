@@ -1,6 +1,6 @@
 # Story 5.5: DataTable Sorting & Row Interactions
 
-Status: review
+Status: done
 
 ## Story
 

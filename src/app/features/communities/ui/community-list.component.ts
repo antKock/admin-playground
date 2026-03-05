@@ -20,26 +20,15 @@ import { CommunityFacade } from '../community.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          <p class="text-text-secondary mb-4">Aucune communauté trouvée.</p>
-          <button
-            class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-            (click)="router.navigate(['/communities/new'])"
-          >
-            <lucide-icon [img]="PlusIcon" [size]="16" /> Créer une communauté
-          </button>
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="facade.items()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (loadMore)="onLoadMore()"
-        />
-      }
+      <app-data-table
+        [columns]="columns"
+        [data]="facade.items()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="hasLoaded() ? 'Aucune communauté trouvée.' : null"
+        (rowClick)="onRowClick($event)"
+        (loadMore)="onLoadMore()"
+      />
     </div>
   `,
 })
@@ -62,8 +51,8 @@ export class CommunityListComponent implements OnInit {
     { key: 'name', label: 'Nom', sortable: true },
     { key: 'siret', label: 'SIRET' },
     { key: 'public_comment', label: 'Commentaire public' },
-    { key: 'created_at', label: 'Créé le', sortable: true },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true },
+    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
   ];
 
   ngOnInit(): void {

@@ -1,6 +1,6 @@
 # Story 5.4: Daily-Use Ergonomics & UX Polish
 
-Status: review
+Status: done
 
 ## Story
 

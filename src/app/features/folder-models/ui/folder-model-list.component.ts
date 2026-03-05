@@ -20,58 +20,17 @@ import { FolderModelFacade } from '../folder-model.facade';
         </button>
       </div>
 
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="fpFilter()"
-          [value]="fpFilter() || ''"
-          (change)="onFpFilterChange($event)"
-        >
-          <option value="">Tous les programmes de financement</option>
-          @for (fp of facade.fpOptions(); track fp.id) {
-            <option [value]="fp.id">{{ fp.label }}</option>
-          }
-        </select>
-        @if (fpFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Effacer les filtres
-          </button>
-        }
-      </div>
-
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (fpFilter()) {
-            <p class="text-text-secondary mb-4">Aucun modèle de dossier ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun modèle de dossier trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/folder-models/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle de dossier
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="rows()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (loadMore)="onLoadMore()"
-        />
-      }
+      <app-data-table
+        [columns]="columns()"
+        [data]="rows()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun modèle de dossier ne correspond à vos filtres.' : 'Aucun modèle de dossier trouvé.') : null"
+        (rowClick)="onRowClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })
@@ -79,8 +38,7 @@ export class FolderModelListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(FolderModelFacade);
   readonly router = inject(Router);
-  readonly fpFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
 
   constructor() {
@@ -91,12 +49,18 @@ export class FolderModelListComponent implements OnInit {
     });
   }
 
-  readonly columns: ColumnDef[] = [
+  readonly columns = computed<ColumnDef[]>(() => [
     { key: 'name', label: 'Nom', sortable: true },
     { key: 'description', label: 'Description' },
-    { key: 'funding_programs_display', label: 'Programmes de financement' },
-    { key: 'created_at', label: 'Créé le', sortable: true },
-  ];
+    {
+      key: 'funding_programs_display',
+      label: 'Programmes de financement',
+      filterable: true,
+      filterKey: 'funding_program_id',
+      filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.label })),
+    },
+    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
+  ]);
 
   readonly rows = computed(() =>
     this.facade.items().map((item) => ({
@@ -119,22 +83,33 @@ export class FolderModelListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onFpFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.fpFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.fpFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const fp = this.fpFilter();
-    if (fp) {
-      filters['funding_program_id'] = fp;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

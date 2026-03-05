@@ -31,7 +31,7 @@ th {
 .th-content {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
 }
 
 .th-label {
@@ -196,6 +196,34 @@ td {
   color: var(--color-text-error, #dc2626);
   border-color: var(--color-text-error, #dc2626);
   background: var(--color-surface-error, #fef2f2);
+}
+
+/* Empty state */
+.empty-row td {
+  border-bottom: none;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.empty-message {
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+.clear-filters-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-link, #1400cc);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.clear-filters-btn:hover {
+  text-decoration: underline;
 }
 
 /* Skeleton rows */

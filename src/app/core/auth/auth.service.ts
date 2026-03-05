@@ -21,23 +21,26 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this._token() !== null);
 
-  readonly userName = computed(() => {
+  private readonly decodedPayload = computed<Record<string, unknown> | null>(() => {
     const token = this._token();
     if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.name ?? payload.email ?? null;
+      return JSON.parse(atob(token.split('.')[1]));
     } catch {
       return null;
     }
   });
 
-  readonly userInitials = computed(() => {
-    const name = this.userName();
-    if (!name) return '?';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return name[0].toUpperCase();
+  readonly userName = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['name'] as string) ?? (payload['email'] as string) ?? null;
+  });
+
+  readonly userEmail = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['email'] as string) ?? null;
   });
 
   login(email: string, password: string): Observable<LoginResponse> {

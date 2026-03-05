@@ -1,6 +1,6 @@
 # Story 5.6: Detail Page Header & Navigation Polish
 
-Status: review
+Status: done
 
 ## Story
 

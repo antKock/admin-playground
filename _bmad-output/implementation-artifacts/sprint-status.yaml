@@ -100,4 +100,5 @@ development_status:
   6-1-datatable-in-column-multi-select-filters: review
   6-2-french-localization: review
   6-3-openapi-change-detection-banner: review
+  6-4-table-filter-ux-layout-fixes-header-polish: done
   epic-6-retrospective: optional

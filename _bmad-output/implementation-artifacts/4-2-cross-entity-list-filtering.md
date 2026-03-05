@@ -1,6 +1,6 @@
 # Story 4.2: Cross-Entity List Filtering
 
-Status: review
+Status: done
 
 ## Story
 

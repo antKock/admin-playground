@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LucideAngularModule, Plus } from 'lucide-angular';
@@ -20,57 +20,17 @@ import { FundingProgramFacade } from '../funding-program.facade';
         </button>
       </div>
 
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="activeFilter()"
-          [value]="activeFilter() || ''"
-          (change)="onActiveFilterChange($event)"
-        >
-          <option value="">Tous les programmes</option>
-          <option value="true">Actif</option>
-          <option value="false">Inactif</option>
-        </select>
-        @if (activeFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Effacer les filtres
-          </button>
-        }
-      </div>
-
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (activeFilter()) {
-            <p class="text-text-secondary mb-4">Aucun programme de financement ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun programme de financement trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/funding-programs/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un programme
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="facade.items()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (loadMore)="onLoadMore()"
-        />
-      }
+      <app-data-table
+        [columns]="columns"
+        [data]="rows()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun programme de financement ne correspond à vos filtres.' : 'Aucun programme de financement trouvé.') : null"
+        (rowClick)="onRowClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })
@@ -78,8 +38,7 @@ export class FundingProgramListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(FundingProgramFacade);
   readonly router = inject(Router);
-  readonly activeFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
 
   constructor() {
@@ -90,10 +49,27 @@ export class FundingProgramListComponent implements OnInit {
     });
   }
 
+  readonly rows = computed(() =>
+    this.facade.items().map((item) => ({
+      ...item,
+      active_display: item.is_active ? 'Actif' : 'Inactif',
+    })),
+  );
+
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Nom', sortable: true },
     { key: 'description', label: 'Description' },
-    { key: 'created_at', label: 'Créé le', sortable: true },
+    {
+      key: 'active_display',
+      label: 'Statut',
+      filterable: true,
+      filterKey: 'is_active',
+      filterOptions: [
+        { id: 'true', label: 'Actif' },
+        { id: 'false', label: 'Inactif' },
+      ],
+    },
+    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
   ];
 
   ngOnInit(): void {
@@ -108,22 +84,33 @@ export class FundingProgramListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onActiveFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.activeFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.activeFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const active = this.activeFilter();
-    if (active) {
-      filters['is_active'] = active;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

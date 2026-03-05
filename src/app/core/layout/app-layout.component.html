@@ -38,10 +38,19 @@
     <header class="header">
       <div class="flex-1"></div>
       <div class="flex items-center gap-3">
-        <div class="user-avatar" aria-hidden="true">{{ userInitials() }}</div>
-        @if (userName(); as name) {
-          <span class="text-sm text-text-primary">{{ name }}</span>
+        @if (userEmail(); as email) {
+          <span class="text-sm text-text-primary">{{ email }}</span>
         }
+        <a
+          href="https://actee.gitbook.io/actee/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-1 rounded px-2 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary"
+          aria-label="Aide"
+        >
+          <lucide-icon [img]="HelpCircle" [size]="16"></lucide-icon>
+          <span>Aide</span>
+        </a>
         <button
           (click)="onLogout()"
           class="flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary"

@@ -1,6 +1,6 @@
 # Story 5.7: Accessibility & Cross-Cutting Consistency
 
-Status: review
+Status: done
 
 ## Story
 

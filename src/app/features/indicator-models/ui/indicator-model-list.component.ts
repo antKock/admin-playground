@@ -20,57 +20,17 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
         </button>
       </div>
 
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="typeFilter()"
-          [value]="typeFilter() || ''"
-          (change)="onTypeFilterChange($event)"
-        >
-          <option value="">Tous les types</option>
-          <option value="text">Texte</option>
-          <option value="number">Nombre</option>
-        </select>
-        @if (typeFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Effacer les filtres
-          </button>
-        }
-      </div>
-
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (typeFilter()) {
-            <p class="text-text-secondary mb-4">Aucun modèle d'indicateur ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun modèle d'indicateur trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/indicator-models/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'indicateur
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="rows()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (loadMore)="onLoadMore()"
-        />
-      }
+      <app-data-table
+        [columns]="columns"
+        [data]="rows()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="emptyMessage()"
+        (rowClick)="onRowClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })
@@ -78,9 +38,15 @@ export class IndicatorModelListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(IndicatorModelFacade);
   readonly router = inject(Router);
-  readonly typeFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun modèle d\'indicateur ne correspond à vos filtres.'
+      : 'Aucun modèle d\'indicateur trouvé.';
+  });
 
   readonly rows = computed(() =>
     this.facade.items().map((item) => ({
@@ -99,7 +65,17 @@ export class IndicatorModelListComponent implements OnInit {
 
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
-    { key: 'type_display', label: 'Type', type: 'status-badge' },
+    {
+      key: 'type_display',
+      label: 'Type',
+      type: 'status-badge',
+      filterable: true,
+      filterKey: 'type',
+      filterOptions: [
+        { id: 'text', label: 'Texte' },
+        { id: 'number', label: 'Nombre' },
+      ],
+    },
     { key: 'unit', label: 'Unité', sortable: true },
     { key: 'created_at', label: 'Créé le', type: 'date', sortable: true },
   ];
@@ -116,22 +92,33 @@ export class IndicatorModelListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onTypeFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.typeFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.typeFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const type = this.typeFilter();
-    if (type) {
-      filters['type'] = type;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

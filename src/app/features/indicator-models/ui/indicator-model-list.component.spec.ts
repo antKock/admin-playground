@@ -34,29 +34,39 @@ describe('IndicatorModelListComponent', () => {
     expect(typeCol?.type).toBe('status-badge');
   });
 
+  it('should have filterable type column', () => {
+    const typeCol = component.columns.find(c => c.key === 'type_display');
+    expect(typeCol?.filterable).toBe(true);
+    expect(typeCol?.filterKey).toBe('type');
+    expect(typeCol?.filterOptions).toEqual([
+      { id: 'text', label: 'Texte' },
+      { id: 'number', label: 'Nombre' },
+    ]);
+  });
+
   it('should call facade.load on init', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.ngOnInit();
     expect(loadSpy).toHaveBeenCalledWith({});
   });
 
-  it('should start with empty filter', () => {
-    expect(component.typeFilter()).toBe('');
+  it('should start with empty filters', () => {
+    expect(component.activeFilters()).toEqual({});
+    expect(component.hasActiveFilters()).toBe(false);
   });
 
   it('should pass type filter to facade.load on filter change', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
-    const event = { target: { value: 'number' } } as unknown as Event;
-    component.onTypeFilterChange(event);
-    expect(component.typeFilter()).toBe('number');
+    component.onFilterChange({ key: 'type', values: ['number'] });
+    expect(component.activeFilters()).toEqual({ type: ['number'] });
     expect(loadSpy).toHaveBeenCalledWith({ type: 'number' });
   });
 
-  it('should clear filter and reload with empty filters', () => {
-    component.typeFilter.set('text');
+  it('should clear filters and reload with empty filters', () => {
+    component.activeFilters.set({ type: ['text'] });
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.clearFilters();
-    expect(component.typeFilter()).toBe('');
+    expect(component.activeFilters()).toEqual({});
     expect(loadSpy).toHaveBeenCalledWith({});
   });
 });

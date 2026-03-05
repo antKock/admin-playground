@@ -1,6 +1,6 @@
 # Story 5.2: JSONLogic Rule-to-Prose Translation
 
-Status: review
+Status: done
 
 ## Story
 

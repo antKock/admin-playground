@@ -1,6 +1,6 @@
 # Story 4.1: API Request/Response Inspector
 
-Status: review
+Status: done
 
 ## Story
 

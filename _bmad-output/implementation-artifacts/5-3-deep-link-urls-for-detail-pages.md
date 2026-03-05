@@ -1,6 +1,6 @@
 # Story 5.3: Deep-Link URLs for Detail Pages
 
-Status: review
+Status: done
 
 ## Story
 

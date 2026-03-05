@@ -57,6 +57,22 @@ describe('AuthService', () => {
     expect(localStorage.getItem('laureat_admin_jwt')).toBeNull();
   });
 
+  it('should extract userEmail from JWT payload', () => {
+    const payload = btoa(JSON.stringify({ email: 'user@example.com', name: 'Test User' }));
+    const fakeToken = `header.${payload}.signature`;
+    localStorage.setItem('laureat_admin_jwt', fakeToken);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    const freshService = TestBed.inject(AuthService);
+    expect(freshService.userEmail()).toBe('user@example.com');
+  });
+
+  it('should return null userEmail when no token', () => {
+    expect(service.userEmail()).toBeNull();
+  });
+
   it('should read token from localStorage on init', () => {
     localStorage.setItem('laureat_admin_jwt', 'existing-token');
     // Need fresh instance to read from localStorage

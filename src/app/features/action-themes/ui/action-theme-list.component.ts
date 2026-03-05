@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { LucideAngularModule, Plus } from 'lucide-angular';
@@ -20,58 +20,17 @@ import { ActionThemeFacade } from '../action-theme.facade';
         </button>
       </div>
 
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="statusFilter()"
-          [value]="statusFilter() || ''"
-          (change)="onStatusFilterChange($event)"
-        >
-          <option value="">Tous les statuts</option>
-          <option value="draft">Brouillon</option>
-          <option value="published">Publié</option>
-          <option value="disabled">Désactivé</option>
-        </select>
-        @if (statusFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Effacer les filtres
-          </button>
-        }
-      </div>
-
-      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
-        <div class="text-center py-16">
-          @if (statusFilter()) {
-            <p class="text-text-secondary mb-4">Aucun thème d'action ne correspond à vos filtres.</p>
-            <button
-              class="text-sm text-text-link hover:text-text-link-hover"
-              (click)="clearFilters()"
-            >
-              Effacer les filtres
-            </button>
-          } @else {
-            <p class="text-text-secondary mb-4">Aucun thème d'action trouvé.</p>
-            <button
-              class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-              (click)="router.navigate(['/action-themes/new'])"
-            >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un thème d'action
-            </button>
-          }
-        </div>
-      } @else {
-        <app-data-table
-          [columns]="columns"
-          [data]="facade.items()"
-          [isLoading]="facade.isLoading()"
-          [hasMore]="facade.hasMore()"
-          (rowClick)="onRowClick($event)"
-          (loadMore)="onLoadMore()"
-        />
-      }
+      <app-data-table
+        [columns]="columns"
+        [data]="facade.items()"
+        [isLoading]="facade.isLoading()"
+        [hasMore]="facade.hasMore()"
+        [emptyMessage]="emptyMessage()"
+        (rowClick)="onRowClick($event)"
+        (loadMore)="onLoadMore()"
+        (filterChange)="onFilterChange($event)"
+        (clearFiltersClick)="clearFilters()"
+      />
     </div>
   `,
 })
@@ -79,8 +38,7 @@ export class ActionThemeListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(ActionThemeFacade);
   readonly router = inject(Router);
-  readonly statusFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
 
   constructor() {
@@ -91,10 +49,28 @@ export class ActionThemeListComponent implements OnInit {
     });
   }
 
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun thème d\'action ne correspond à vos filtres.'
+      : 'Aucun thème d\'action trouvé.';
+  });
+
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
-    { key: 'status', label: 'Statut', type: 'status-badge' },
-    { key: 'created_at', label: 'Créé le', sortable: true },
+    {
+      key: 'status',
+      label: 'Statut',
+      type: 'status-badge',
+      filterable: true,
+      filterKey: 'status',
+      filterOptions: [
+        { id: 'draft', label: 'Brouillon' },
+        { id: 'published', label: 'Publié' },
+        { id: 'disabled', label: 'Désactivé' },
+      ],
+    },
+    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
   ];
 
   ngOnInit(): void {
@@ -109,22 +85,33 @@ export class ActionThemeListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onStatusFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.statusFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.statusFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const status = this.statusFilter();
-    if (status) {
-      filters['status'] = status;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

@@ -68,6 +68,19 @@
             }
           </tr>
         }
+      } @else if (!isLoading() && sortedData().length === 0 && emptyMessage()) {
+        <tr class="empty-row">
+          <td [attr.colspan]="totalColumns()">
+            <div class="empty-state">
+              <p class="empty-message">{{ emptyMessage() }}</p>
+              @if (hasAnyActiveFilter()) {
+                <button class="clear-filters-btn" (click)="onClearFilters()">
+                  Effacer les filtres
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
       } @else {
         @for (row of sortedData(); track (row['id'] ?? $index)) {
           <tr

@@ -1,11 +1,11 @@
-import { Component, input, output, signal, computed, ElementRef, inject, OnDestroy } from '@angular/core';
+import { Component, input, output, signal, computed, ElementRef, inject, OnDestroy, OnInit } from '@angular/core';
 
 import { FilterOption } from '../data-table/data-table.component';
 
 @Component({
   selector: 'app-column-filter-popover',
   template: `
-    <div class="filter-popover" (keydown)="onKeydown($event)">
+    <div class="filter-popover" [style.top.px]="popoverTop()" [style.left.px]="popoverLeft()" (keydown)="onKeydown($event)">
       @if (options().length > 10) {
         <div class="filter-search">
           <input
@@ -41,10 +41,8 @@ import { FilterOption } from '../data-table/data-table.component';
   `,
   styles: `
     .filter-popover {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      z-index: 10;
+      position: fixed;
+      z-index: 100;
       min-width: 200px;
       max-width: 300px;
       background: var(--color-surface-base, #fff);
@@ -138,15 +136,18 @@ import { FilterOption } from '../data-table/data-table.component';
     }
   `,
 })
-export class ColumnFilterPopoverComponent implements OnDestroy {
+export class ColumnFilterPopoverComponent implements OnInit, OnDestroy {
   readonly options = input.required<FilterOption[]>();
   readonly selected = input<string[]>([]);
   readonly selectionChange = output<string[]>();
   readonly closePopover = output<void>();
 
   readonly searchTerm = signal('');
+  readonly popoverTop = signal(0);
+  readonly popoverLeft = signal(0);
   private readonly el = inject(ElementRef);
   private outsideClickHandler = this.handleOutsideClick.bind(this);
+  private scrollHandler = this.handleScroll.bind(this);
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -156,11 +157,26 @@ export class ColumnFilterPopoverComponent implements OnDestroy {
     });
   }
 
+  ngOnInit(): void {
+    this.updatePosition();
+    window.addEventListener('scroll', this.scrollHandler, true);
+  }
+
+  private updatePosition(): void {
+    const parentTh = this.el.nativeElement.closest('th');
+    if (parentTh) {
+      const rect = parentTh.getBoundingClientRect();
+      this.popoverTop.set(rect.bottom + 4);
+      this.popoverLeft.set(rect.left);
+    }
+  }
+
   ngOnDestroy(): void {
     if (this.timeoutId !== null) {
       clearTimeout(this.timeoutId);
     }
     document.removeEventListener('click', this.outsideClickHandler);
+    window.removeEventListener('scroll', this.scrollHandler, true);
   }
 
   readonly filteredOptions = computed(() => {
@@ -191,6 +207,12 @@ export class ColumnFilterPopoverComponent implements OnDestroy {
 
   onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      this.closePopover.emit();
+    }
+  }
+
+  private handleScroll(event: Event): void {
+    if (!this.el.nativeElement.contains(event.target)) {
       this.closePopover.emit();
     }
   }
