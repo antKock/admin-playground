@@ -241,7 +241,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     const lines = prose.split('\n');
     if (lines.length > 1) {
       return {
-        prefix: "Le paramètre est activé si l'une de ces conditions est vraie :",
+        prefix: "Le paramètre est activé si au moins une de ces conditions est vraie :",
         branches: lines.map((l) => l.replace(/^• /, '')),
       };
     }
