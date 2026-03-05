@@ -89,10 +89,10 @@ export class FolderModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: 'Name', sortable: true },
     { key: 'description', label: 'Description' },
     { key: 'funding_programs_display', label: 'Funding Programs' },
-    { key: 'created_at', label: 'Created' },
+    { key: 'created_at', label: 'Created', sortable: true },
   ];
 
   readonly rows = computed(() =>

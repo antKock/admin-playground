@@ -62,4 +62,10 @@ describe('ActionModelDetailComponent', () => {
     component.onDiscard();
     expect(discardSpy).toHaveBeenCalled();
   });
+
+  it('should call facade.clearSelection on destroy', () => {
+    const clearSpy = vi.spyOn(component.facade, 'clearSelection');
+    component.ngOnDestroy();
+    expect(clearSpy).toHaveBeenCalled();
+  });
 });

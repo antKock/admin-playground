@@ -89,12 +89,12 @@ export class AgentListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'displayName', label: 'Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'agent_type', label: 'Agent Type' },
+    { key: 'displayName', label: 'Name', sortable: true },
+    { key: 'email', label: 'Email', sortable: true },
+    { key: 'agent_type', label: 'Agent Type', sortable: true },
     { key: 'status', label: 'Status', type: 'status-badge' },
-    { key: 'community_name', label: 'Community' },
-    { key: 'created_at', label: 'Created' },
+    { key: 'community_name', label: 'Community', sortable: true },
+    { key: 'created_at', label: 'Created', sortable: true },
   ];
 
   private readonly agentTypeLabels: Record<string, string> = {

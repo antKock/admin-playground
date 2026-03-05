@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -41,7 +41,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
         }
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (statusFilter()) {
             <p class="text-text-secondary mb-4">No action themes match your filters.</p>
@@ -78,12 +78,20 @@ export class ActionThemeListComponent implements OnInit {
   readonly facade = inject(ActionThemeFacade);
   readonly router = inject(Router);
   readonly statusFilter = signal<string>('');
+  readonly hasLoaded = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'technical_label', label: 'Technical Label' },
+    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
     { key: 'status', label: 'Status', type: 'status-badge' },
-    { key: 'created_at', label: 'Created' },
+    { key: 'created_at', label: 'Created', sortable: true },
   ];
 
   ngOnInit(): void {

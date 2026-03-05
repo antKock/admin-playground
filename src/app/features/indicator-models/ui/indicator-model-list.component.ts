@@ -95,11 +95,10 @@ export class IndicatorModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'technical_label', label: 'Technical Label' },
+    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
     { key: 'type_display', label: 'Type', type: 'status-badge' },
-    { key: 'unit', label: 'Unit' },
-    { key: 'created_at', label: 'Created', type: 'date' },
+    { key: 'unit', label: 'Unit', sortable: true },
+    { key: 'created_at', label: 'Created', type: 'date', sortable: true },
   ];
 
   ngOnInit(): void {

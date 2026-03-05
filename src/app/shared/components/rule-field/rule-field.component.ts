@@ -1,4 +1,22 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  signal,
+  computed,
+  ElementRef,
+  viewChild,
+  AfterViewInit,
+  OnDestroy,
+  effect,
+} from '@angular/core';
+import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { json } from '@codemirror/lang-json';
+import { bracketMatching } from '@codemirror/language';
+import { indentWithTab } from '@codemirror/commands';
+import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
+import { translateJsonLogicToProse } from '../../utils/jsonlogic-prose';
 
 function extractVariables(jsonLogicStr: string): string[] {
   if (!jsonLogicStr || jsonLogicStr === 'true' || jsonLogicStr === 'false') return [];
@@ -23,6 +41,79 @@ function extractVariables(jsonLogicStr: string): string[] {
   }
 }
 
+/** Custom JSON linter for CodeMirror 6 */
+function jsonLinter(): (view: EditorView) => Diagnostic[] {
+  return (view: EditorView): Diagnostic[] => {
+    const doc = view.state.doc.toString();
+    const trimmed = doc.trim();
+    if (!trimmed) return [];
+    try {
+      JSON.parse(trimmed);
+      return [];
+    } catch (e) {
+      const msg = e instanceof SyntaxError ? e.message : 'Invalid JSON';
+      // Try to extract position from error message (e.g., "at position 5")
+      const posMatch = msg.match(/position\s+(\d+)/i);
+      let from = 0;
+      let to = doc.length;
+      if (posMatch) {
+        from = Math.min(parseInt(posMatch[1], 10), doc.length);
+        to = Math.min(from + 1, doc.length);
+      }
+      return [{ from, to, severity: 'error', message: msg }];
+    }
+  };
+}
+
+/** Custom CM6 theme matching the app's design tokens */
+const ruleFieldTheme = EditorView.theme({
+  '&': {
+    fontSize: '13px',
+    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+    minHeight: '60px',
+    border: '1px solid var(--color-stroke-standard)',
+    borderRadius: '6px',
+    background: 'var(--color-surface-base)',
+  },
+  '&.cm-focused': {
+    outline: 'none',
+    borderColor: 'var(--color-brand, #1400cc)',
+    boxShadow: '0 0 0 3px rgba(20, 0, 204, 0.08)',
+  },
+  '.cm-content': {
+    padding: '8px',
+    caretColor: 'var(--color-text-primary)',
+    color: 'var(--color-text-primary)',
+    minHeight: '52px',
+  },
+  '.cm-gutters': {
+    background: 'var(--color-surface-muted)',
+    borderRight: '1px solid var(--color-stroke-standard)',
+    borderRadius: '6px 0 0 6px',
+    color: 'var(--color-text-tertiary)',
+  },
+  '.cm-activeLine': {
+    background: 'rgba(20, 0, 204, 0.03)',
+  },
+  '.cm-selectionBackground, ::selection': {
+    background: 'rgba(20, 0, 204, 0.08) !important',
+  },
+  '.cm-cursor': {
+    borderLeftColor: 'var(--color-brand, #1400cc)',
+  },
+  '.ͼc': {
+    // JSON string tokens
+    color: 'var(--color-brand, #1400cc)',
+  },
+  '.cm-lintRange-error': {
+    backgroundImage: 'none',
+    textDecoration: 'underline wavy var(--color-text-error, #dc2626)',
+  },
+  '.cm-diagnostic-error': {
+    borderLeftColor: 'var(--color-text-error, #dc2626)',
+  },
+});
+
 @Component({
   selector: 'app-rule-field',
   template: `
@@ -35,16 +126,14 @@ function extractVariables(jsonLogicStr: string): string[] {
           <em>{{ variablesLabel() }}</em>
         </div>
       }
-      <textarea
-        [class.error]="hasError()"
-        [placeholder]="placeholder()"
-        [value]="value()"
-        [rows]="3"
-        (input)="onInput($event)"
-        (blur)="onBlur()"
-      ></textarea>
-      @if (hasError()) {
-        <div class="rule-hint" style="color: var(--color-text-error, #dc2626);">Invalid JSON syntax</div>
+      @if (proseTranslation()) {
+        <div class="rule-prose">
+          <em>{{ proseTranslation() }}</em>
+        </div>
+      }
+      <div class="cm-host" #editorHost></div>
+      @if (errorMessage()) {
+        <div class="rule-hint error-hint">{{ errorMessage() }}</div>
       }
     </div>
   `,
@@ -84,37 +173,34 @@ function extractVariables(jsonLogicStr: string): string[] {
       color: var(--color-text-primary);
       font-style: italic;
     }
-    textarea {
-      width: 100%;
-      min-height: 60px;
-      padding: 8px;
-      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    .rule-prose {
       font-size: 13px;
-      line-height: 1.5;
-      border: 1px solid var(--color-stroke-standard);
+      color: var(--color-text-secondary);
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      background: var(--color-surface-subtle);
       border-radius: 6px;
-      resize: vertical;
+      border-left: 3px solid var(--color-brand, #1400cc);
+      line-height: 1.6;
+    }
+    .rule-prose em {
       color: var(--color-text-primary);
-      background: var(--color-surface-base);
-      box-sizing: border-box;
+      font-style: italic;
     }
-    textarea:focus {
-      outline: none;
-      border-color: var(--color-brand, #1400cc);
-      box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
-    }
-    textarea.error {
-      border-color: var(--color-text-error, #dc2626);
-      color: var(--color-text-error, #dc2626);
+    .cm-host {
+      width: 100%;
     }
     .rule-hint {
       font-size: 11px;
       color: var(--color-text-tertiary);
       margin-top: 4px;
     }
+    .error-hint {
+      color: var(--color-text-error, #dc2626);
+    }
   `],
 })
-export class RuleFieldComponent {
+export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly value = input('');
   readonly label = input('JSONLogic Rule');
   readonly placeholder = input('{"==": [{"var": "field_name"}, "value"]}');
@@ -123,7 +209,11 @@ export class RuleFieldComponent {
   readonly validChange = output<boolean>();
 
   readonly hasError = signal(false);
-  private localValue = '';
+  readonly errorMessage = signal('');
+
+  private editorHost = viewChild.required<ElementRef<HTMLElement>>('editorHost');
+  private editorView: EditorView | null = null;
+  private suppressEmit = false;
 
   readonly variablesLabel = computed(() => {
     const vars = extractVariables(this.value());
@@ -132,32 +222,80 @@ export class RuleFieldComponent {
       : '';
   });
 
-  onInput(event: Event): void {
-    const val = (event.target as HTMLTextAreaElement).value;
-    this.localValue = val;
-    this.valueChange.emit(val);
-    if (this.hasError()) {
-      this.validate(val);
-    }
+  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value()));
+
+  constructor() {
+    // Sync external value changes into the editor and validate
+    effect(() => {
+      const newVal = this.value();
+      if (this.editorView) {
+        const currentDoc = this.editorView.state.doc.toString();
+        if (newVal !== currentDoc) {
+          this.suppressEmit = true;
+          this.editorView.dispatch({
+            changes: { from: 0, to: currentDoc.length, insert: newVal },
+          });
+          this.suppressEmit = false;
+          this.validateJson(newVal);
+        }
+      }
+    });
   }
 
-  onBlur(): void {
-    this.validate(this.localValue || this.value());
+  ngAfterViewInit(): void {
+    const jsonLint = linter(jsonLinter(), { delay: 300 });
+
+    const updateListener = EditorView.updateListener.of((update) => {
+      if (update.docChanged && !this.suppressEmit) {
+        const val = update.state.doc.toString();
+        this.valueChange.emit(val);
+        this.validateJson(val);
+      }
+    });
+
+    const startState = EditorState.create({
+      doc: this.value(),
+      extensions: [
+        json(),
+        bracketMatching(),
+        keymap.of([indentWithTab]),
+        jsonLint,
+        lintGutter(),
+        ruleFieldTheme,
+        cmPlaceholder(this.placeholder()),
+        updateListener,
+        EditorView.lineWrapping,
+      ],
+    });
+
+    this.editorView = new EditorView({
+      state: startState,
+      parent: this.editorHost().nativeElement,
+    });
   }
 
-  private validate(val: string): void {
+  ngOnDestroy(): void {
+    this.editorView?.destroy();
+    this.editorView = null;
+  }
+
+  private validateJson(val: string): void {
     const trimmed = val.trim();
     if (!trimmed) {
       this.hasError.set(false);
+      this.errorMessage.set('');
       this.validChange.emit(true);
       return;
     }
     try {
       JSON.parse(trimmed);
       this.hasError.set(false);
+      this.errorMessage.set('');
       this.validChange.emit(true);
-    } catch {
+    } catch (e) {
+      const msg = e instanceof SyntaxError ? e.message : 'Invalid JSON syntax';
       this.hasError.set(true);
+      this.errorMessage.set(msg);
       this.validChange.emit(false);
     }
   }

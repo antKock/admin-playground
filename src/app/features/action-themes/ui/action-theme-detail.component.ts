@@ -1,16 +1,18 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -28,27 +30,21 @@ import { ActionThemeFacade } from '../action-theme.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
+          <app-breadcrumb [items]="[{ label: 'Action Themes', route: '/action-themes' }, { label: 'Error' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="router.navigate(['/action-themes'])"
-          >
-            &larr; Back to list
-          </button>
         </div>
       } @else if (theme()) {
+        <app-breadcrumb [items]="breadcrumbs()" />
         <div class="flex items-center justify-between mb-6">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/action-themes'])"
-            >
-              &larr; Back to list
-            </button>
             <div class="flex items-center gap-3">
               <h1 class="text-2xl font-bold text-text-primary">{{ theme()!.name }}</h1>
               <app-status-badge [status]="theme()!.status" />
             </div>
+            @if (theme()!.technical_label) {
+              <p class="text-sm font-mono text-text-tertiary mt-1">{{ theme()!.technical_label }}</p>
+            }
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(theme()!.updated_at) }} · ID: {{ theme()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @if (theme()!.status === 'draft') {
@@ -111,21 +107,27 @@ import { ActionThemeFacade } from '../action-theme.facade';
     </div>
   `,
 })
-export class ActionThemeDetailComponent implements OnInit {
+export class ActionThemeDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionThemeFacade);
   readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
 
-  // Lifecycle buttons are status-gated in the template: draft→Publish, published→Disable, disabled→Activate.
-  // Each button disables on its own isPending OR anyMutationPending to prevent concurrent mutations.
   readonly theme = this.facade.selectedItem;
   readonly skeletonFields = Array(6).fill(0);
 
   private get themeId(): string {
     return this.route.snapshot.paramMap.get('id')!;
   }
+
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const t = this.theme();
+    return [
+      { label: 'Action Themes', route: '/action-themes' },
+      { label: t?.name ?? '...' },
+    ];
+  });
 
   readonly fields = computed<MetadataField[]>(() => {
     const t = this.theme();
@@ -137,13 +139,21 @@ export class ActionThemeDetailComponent implements OnInit {
       { label: 'Status', value: t.status, type: 'text' as const },
       { label: 'Icon', value: t.icon ?? '—', type: 'text' as const },
       { label: 'Color', value: t.color ?? '—', type: 'text' as const },
-      { label: 'Created', value: t.created_at, type: 'text' as const },
-      { label: 'Updated', value: t.updated_at, type: 'text' as const },
+      { label: 'Created', value: t.created_at, type: 'date' as const },
+      { label: 'Updated', value: t.updated_at, type: 'date' as const },
     ];
   });
 
   ngOnInit(): void {
     this.facade.select(this.themeId);
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   onPublish(): void {

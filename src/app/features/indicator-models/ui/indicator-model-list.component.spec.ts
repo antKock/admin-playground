@@ -25,7 +25,7 @@ describe('IndicatorModelListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns.map(c => c.key)).toEqual([
-      'name', 'technical_label', 'type_display', 'unit', 'created_at',
+      'name', 'type_display', 'unit', 'created_at',
     ]);
   });
 

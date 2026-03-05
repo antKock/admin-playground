@@ -1,17 +1,19 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import { AgentFacade } from '../agent.facade';
 import { AgentStatus } from '@domains/agents/agent.models';
 
 @Component({
   selector: 'app-agent-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -29,27 +31,18 @@ import { AgentStatus } from '@domains/agents/agent.models';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
+          <app-breadcrumb [items]="[{ label: 'Agents', route: '/agents' }, { label: 'Error' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="router.navigate(['/agents'])"
-          >
-            &larr; Back to list
-          </button>
         </div>
       } @else if (agent()) {
+        <app-breadcrumb [items]="breadcrumbs()" />
         <div class="flex items-center justify-between mb-6">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/agents'])"
-            >
-              &larr; Back to list
-            </button>
             <div class="flex items-center gap-3">
               <h1 class="text-2xl font-bold text-text-primary">{{ displayName() }}</h1>
               <app-status-badge [status]="agent()!.status" />
             </div>
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(agent()!.updated_at) }} · ID: {{ agent()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @for (transition of allowedTransitions(); track transition.status) {
@@ -84,7 +77,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
     </div>
   `,
 })
-export class AgentDetailComponent implements OnInit {
+export class AgentDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(AgentFacade);
@@ -106,6 +99,11 @@ export class AgentDetailComponent implements OnInit {
     (this.agent()?.next_possible_statuses ?? []).filter(t => t.is_allowed),
   );
 
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => [
+    { label: 'Agents', route: '/agents' },
+    { label: this.displayName() || '...' },
+  ]);
+
   readonly fields = computed<MetadataField[]>(() => {
     const a = this.agent();
     if (!a) return [];
@@ -118,8 +116,8 @@ export class AgentDetailComponent implements OnInit {
       { label: 'Community', value: a.community?.name ?? '—', type: 'linked' as const, linkedRoute: `/communities/${a.community_id}` },
       { label: 'Public Comment', value: a.public_comment ?? '—', type: 'text' as const },
       { label: 'Internal Comment', value: a.internal_comment ?? '—', type: 'text' as const },
-      { label: 'Created', value: a.created_at, type: 'text' as const },
-      { label: 'Updated', value: a.updated_at, type: 'text' as const },
+      { label: 'Created', value: a.created_at, type: 'date' as const },
+      { label: 'Updated', value: a.updated_at, type: 'date' as const },
     ];
   });
 
@@ -128,6 +126,14 @@ export class AgentDetailComponent implements OnInit {
     if (id) {
       this.facade.select(id);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   private readonly agentTypeLabels: Record<string, string> = {

@@ -18,6 +18,9 @@ import { LucideAngularModule, LucideIconData } from 'lucide-angular';
         <button
           type="button"
           class="toggle"
+          role="switch"
+          [attr.aria-checked]="enabled()"
+          [attr.aria-label]="label()"
           [class.on]="enabled()"
           (click)="toggle.emit(!enabled())"
         >

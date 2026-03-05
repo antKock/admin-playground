@@ -1,21 +1,29 @@
-import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
+import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createActionModelForm } from '@domains/action-models/forms/action-model.form';
 import { ActionModelFacade } from '../action-model.facade';
 
 @Component({
   selector: 'app-action-model-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      <button
-        class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-        (click)="goBack()"
-      >
-        &larr; Back
-      </button>
+      @if (isEditMode) {
+        <app-breadcrumb [items]="[
+          { label: 'Action Models', route: '/action-models' },
+          { label: facade.selectedItem()?.name ?? '...', route: '/action-models/' + editId },
+          { label: 'Edit' }
+        ]" />
+      } @else {
+        <app-breadcrumb [items]="[
+          { label: 'Action Models', route: '/action-models' },
+          { label: 'New Action Model' }
+        ]" />
+      }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
         {{ isEditMode ? 'Edit Action Model' : 'Create Action Model' }}
       </h1>
@@ -114,7 +122,7 @@ import { ActionModelFacade } from '../action-model.facade';
     </div>
   `,
 })
-export class ActionModelFormComponent implements OnInit {
+export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -122,7 +130,7 @@ export class ActionModelFormComponent implements OnInit {
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
-  private editId: string | null = null;
+  editId: string | null = null;
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionModelForm(this.fb);
 
@@ -174,6 +182,23 @@ export class ActionModelFormComponent implements OnInit {
       await this.facade.update(this.editId, data);
     } else {
       await this.facade.create(data);
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.form.dirty && !this.form.invalid) {
+        this.onSubmit();
+      }
+    }
+    if (event.key === 'Escape') {
+      this.goBack();
     }
   }
 

@@ -97,10 +97,10 @@ export class ActionModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'funding_program_name', label: 'Funding Program' },
-    { key: 'action_theme_name', label: 'Action Theme' },
-    { key: 'created_at', label: 'Created' },
+    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    { key: 'funding_program_name', label: 'Funding Program', sortable: true },
+    { key: 'action_theme_name', label: 'Action Theme', sortable: true },
+    { key: 'created_at', label: 'Created', sortable: true },
   ];
 
   ngOnInit(): void {

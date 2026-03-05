@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { unsavedChangesGuard } from '@shared/guards/unsaved-changes.guard';
 import { FundingProgramsPage } from './funding-programs.page';
 import { FundingProgramListComponent } from '@features/funding-programs/ui/funding-program-list.component';
 import { FundingProgramDetailComponent } from '@features/funding-programs/ui/funding-program-detail.component';
@@ -11,9 +12,9 @@ export const fundingProgramsRoutes: Routes = [
     component: FundingProgramsPage,
     children: [
       { path: '', component: FundingProgramListComponent },
-      { path: 'new', component: FundingProgramFormComponent },
+      { path: 'new', component: FundingProgramFormComponent, canDeactivate: [unsavedChangesGuard] },
       { path: ':id', component: FundingProgramDetailComponent },
-      { path: ':id/edit', component: FundingProgramFormComponent },
+      { path: ':id/edit', component: FundingProgramFormComponent, canDeactivate: [unsavedChangesGuard] },
     ],
   },
 ];

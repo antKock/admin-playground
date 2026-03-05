@@ -1,15 +1,17 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import { FundingProgramFacade } from '../funding-program.facade';
 
 @Component({
   selector: 'app-funding-program-detail',
-  imports: [MetadataGridComponent, ApiInspectorComponent],
+  imports: [MetadataGridComponent, ApiInspectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -27,24 +29,15 @@ import { FundingProgramFacade } from '../funding-program.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
+          <app-breadcrumb [items]="[{ label: 'Funding Programs', route: '/funding-programs' }, { label: 'Error' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="router.navigate(['/funding-programs'])"
-          >
-            &larr; Back to list
-          </button>
         </div>
       } @else if (program()) {
+        <app-breadcrumb [items]="breadcrumbs()" />
         <div class="flex items-center justify-between mb-6">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/funding-programs'])"
-            >
-              &larr; Back to list
-            </button>
             <h1 class="text-2xl font-bold text-text-primary">{{ program()!.name }}</h1>
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(program()!.updated_at) }} · ID: {{ program()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -69,7 +62,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
     </div>
   `,
 })
-export class FundingProgramDetailComponent implements OnInit {
+export class FundingProgramDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(FundingProgramFacade);
@@ -80,6 +73,14 @@ export class FundingProgramDetailComponent implements OnInit {
 
   readonly skeletonFields = Array(6).fill(0);
 
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const p = this.program();
+    return [
+      { label: 'Funding Programs', route: '/funding-programs' },
+      { label: p?.name ?? '...' },
+    ];
+  });
+
   readonly fields = computed<MetadataField[]>(() => {
     const p = this.program();
     if (!p) return [];
@@ -88,10 +89,10 @@ export class FundingProgramDetailComponent implements OnInit {
       { label: 'Description', value: p.description ?? '—', type: 'text' as const },
       { label: 'Budget', value: p.budget != null ? `${p.budget}` : '—', type: 'text' as const },
       { label: 'Active', value: p.is_active ? 'Yes' : 'No', type: 'text' as const },
-      { label: 'Start Date', value: p.start_date ?? '—', type: 'text' as const },
-      { label: 'End Date', value: p.end_date ?? '—', type: 'text' as const },
-      { label: 'Created', value: p.created_at, type: 'text' as const },
-      { label: 'Updated', value: p.updated_at, type: 'text' as const },
+      { label: 'Start Date', value: p.start_date ?? '—', type: 'date' as const },
+      { label: 'End Date', value: p.end_date ?? '—', type: 'date' as const },
+      { label: 'Created', value: p.created_at, type: 'date' as const },
+      { label: 'Updated', value: p.updated_at, type: 'date' as const },
     ];
   });
 
@@ -100,6 +101,14 @@ export class FundingProgramDetailComponent implements OnInit {
     if (id) {
       this.facade.select(id);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   async onDelete(): Promise<void> {

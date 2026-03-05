@@ -84,12 +84,12 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: v2 - Ergonomics & UX Refinement
-  epic-5: backlog
-  5-1-jsonlogic-editor-with-syntax-highlighting: backlog
-  5-2-jsonlogic-rule-to-prose-translation: backlog
-  5-3-deep-link-urls-for-detail-pages: backlog
-  5-4-daily-use-ergonomics-ux-polish: backlog
-  5-5-datatable-sorting-and-row-interactions: backlog
-  5-6-detail-page-header-and-navigation-polish: backlog
-  5-7-accessibility-and-cross-cutting-consistency: backlog
+  epic-5: in-progress
+  5-1-jsonlogic-editor-with-syntax-highlighting: review
+  5-2-jsonlogic-rule-to-prose-translation: review
+  5-3-deep-link-urls-for-detail-pages: review
+  5-4-daily-use-ergonomics-ux-polish: review
+  5-5-datatable-sorting-and-row-interactions: review
+  5-6-detail-page-header-and-navigation-polish: review
+  5-7-accessibility-and-cross-cutting-consistency: review
   epic-5-retrospective: optional

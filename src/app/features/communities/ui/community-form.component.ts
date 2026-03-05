@@ -1,21 +1,29 @@
-import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
+import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createCommunityForm } from '@domains/communities/forms/community.form';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      <button
-        class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-        (click)="goBack()"
-      >
-        &larr; Back
-      </button>
+      @if (isEditMode) {
+        <app-breadcrumb [items]="[
+          { label: 'Communities', route: '/communities' },
+          { label: itemName() ?? '...', route: '/communities/' + editId },
+          { label: 'Edit' }
+        ]" />
+      } @else {
+        <app-breadcrumb [items]="[
+          { label: 'Communities', route: '/communities' },
+          { label: 'New Community' }
+        ]" />
+      }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
         {{ isEditMode ? 'Edit Community' : 'Create Community' }}
       </h1>
@@ -87,7 +95,7 @@ import { CommunityFacade } from '../community.facade';
     </div>
   `,
 })
-export class CommunityFormComponent implements OnInit {
+export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -95,7 +103,8 @@ export class CommunityFormComponent implements OnInit {
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
-  private editId: string | null = null;
+  editId: string | null = null;
+  readonly itemName = computed(() => this.facade.selectedItem()?.name);
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createCommunityForm(this.fb);
 
@@ -144,6 +153,23 @@ export class CommunityFormComponent implements OnInit {
       this.facade.update(this.editId, raw);
     } else {
       this.facade.create(raw);
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.form.dirty && !this.form.invalid) {
+        this.onSubmit();
+      }
+    }
+    if (event.key === 'Escape') {
+      this.goBack();
     }
   }
 

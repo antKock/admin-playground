@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -19,7 +19,7 @@ import { CommunityFacade } from '../community.facade';
         </button>
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           <p class="text-text-secondary mb-4">No communities found.</p>
           <button
@@ -45,13 +45,22 @@ import { CommunityFacade } from '../community.facade';
 export class CommunityListComponent implements OnInit {
   readonly facade = inject(CommunityFacade);
   readonly router = inject(Router);
+  readonly hasLoaded = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: 'Name', sortable: true },
     { key: 'siret', label: 'SIRET' },
     { key: 'public_comment', label: 'Public Comment' },
-    { key: 'created_at', label: 'Created' },
-    { key: 'updated_at', label: 'Updated' },
+    { key: 'created_at', label: 'Created', sortable: true },
+    { key: 'updated_at', label: 'Updated', sortable: true },
   ];
 
   ngOnInit(): void {

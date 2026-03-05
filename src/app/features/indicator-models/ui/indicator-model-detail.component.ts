@@ -3,13 +3,16 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-detail',
-  imports: [MetadataGridComponent, RouterLink, ApiInspectorComponent],
+  imports: [MetadataGridComponent, RouterLink, ApiInspectorComponent, BreadcrumbComponent, SectionAnchorsComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -26,15 +29,14 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           </div>
         </div>
       } @else if (model()) {
-        <div class="flex items-center justify-between mb-6">
+        <app-breadcrumb [items]="breadcrumbs()" />
+        <div class="flex items-center justify-between mb-2">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/indicator-models'])"
-            >
-              &larr; Back to list
-            </button>
             <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
+            @if (model()!.technical_label) {
+              <p class="text-sm font-mono text-text-tertiary mt-1">{{ model()!.technical_label }}</p>
+            }
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -52,9 +54,13 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           </div>
         </div>
 
-        <app-metadata-grid [fields]="fields()" />
+        <app-section-anchors [sections]="sectionDefs()" class="mb-6 block" />
 
-        <section class="mt-8">
+        <div id="section-metadata">
+          <app-metadata-grid [fields]="fields()" />
+        </div>
+
+        <section id="section-usage" class="mt-8">
           <h2 class="text-lg font-semibold text-text-primary mb-3">
             Used in {{ facade.usageCount() }} model{{ facade.usageCount() !== 1 ? 's' : '' }}
           </h2>
@@ -75,16 +81,13 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           }
         </section>
 
-        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+        <div id="section-api-inspector">
+          <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+        </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <button
-            class="text-sm text-text-secondary hover:text-text-primary mb-4 inline-flex items-center gap-1"
-            (click)="router.navigate(['/indicator-models'])"
-          >
-            &larr; Back to list
-          </button>
-          <p class="text-status-invalid font-medium mb-2">Failed to load indicator model</p>
+          <app-breadcrumb [items]="[{ label: 'Indicator Models', route: '/indicator-models' }, { label: 'Error' }]" />
+          <p class="text-error font-medium mb-2">Failed to load indicator model</p>
           <p class="text-text-secondary text-sm">{{ facade.detailError() }}</p>
         </div>
       }
@@ -101,6 +104,20 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
   readonly model = this.facade.selectedItem;
 
   readonly skeletonFields = Array(7).fill(0);
+
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const m = this.model();
+    return [
+      { label: 'Indicator Models', route: '/indicator-models' },
+      { label: m?.name ?? '...' },
+    ];
+  });
+
+  readonly sectionDefs = computed<SectionDef[]>(() => [
+    { label: 'Metadata', targetId: 'section-metadata' },
+    { label: 'Usage', targetId: 'section-usage', count: this.facade.usageCount() },
+    { label: 'API Inspector', targetId: 'section-api-inspector' },
+  ]);
 
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
@@ -125,6 +142,10 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.clearSelection();
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   async onDelete(): Promise<void> {

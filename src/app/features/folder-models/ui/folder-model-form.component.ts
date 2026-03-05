@@ -1,6 +1,8 @@
-import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
+import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createFolderModelForm } from '@domains/folder-models/forms/folder-model.form';
 import { MultiSelectorComponent } from '@app/shared/components/multi-selector/multi-selector.component';
@@ -8,15 +10,21 @@ import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-form',
-  imports: [ReactiveFormsModule, MultiSelectorComponent],
+  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      <button
-        class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-        (click)="goBack()"
-      >
-        &larr; Back
-      </button>
+      @if (isEditMode) {
+        <app-breadcrumb [items]="[
+          { label: 'Folder Models', route: '/folder-models' },
+          { label: facade.selectedItem()?.name ?? '...', route: '/folder-models/' + editId },
+          { label: 'Edit' }
+        ]" />
+      } @else {
+        <app-breadcrumb [items]="[
+          { label: 'Folder Models', route: '/folder-models' },
+          { label: 'New Folder Model' }
+        ]" />
+      }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
         {{ isEditMode ? 'Edit Folder Model' : 'Create Folder Model' }}
       </h1>
@@ -80,7 +88,7 @@ import { FolderModelFacade } from '../folder-model.facade';
     </div>
   `,
 })
-export class FolderModelFormComponent implements OnInit {
+export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -88,7 +96,7 @@ export class FolderModelFormComponent implements OnInit {
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
-  private editId: string | null = null;
+  editId: string | null = null;
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createFolderModelForm(this.fb);
 
@@ -148,6 +156,23 @@ export class FolderModelFormComponent implements OnInit {
       await this.facade.update(this.editId, data);
     } else {
       await this.facade.create(data);
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.form.dirty && !this.form.invalid) {
+        this.onSubmit();
+      }
+    }
+    if (event.key === 'Escape') {
+      this.goBack();
     }
   }
 

@@ -1,16 +1,18 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import { CommunityFacade } from '../community.facade';
 import { CommunityUsersComponent } from './community-users.component';
 
 @Component({
   selector: 'app-community-detail',
-  imports: [MetadataGridComponent, CommunityUsersComponent, ApiInspectorComponent],
+  imports: [MetadataGridComponent, CommunityUsersComponent, ApiInspectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -28,24 +30,15 @@ import { CommunityUsersComponent } from './community-users.component';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
+          <app-breadcrumb [items]="[{ label: 'Communities', route: '/communities' }, { label: 'Error' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="router.navigate(['/communities'])"
-          >
-            &larr; Back to list
-          </button>
         </div>
       } @else if (community()) {
+        <app-breadcrumb [items]="breadcrumbs()" />
         <div class="flex items-center justify-between mb-6">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/communities'])"
-            >
-              &larr; Back to list
-            </button>
             <h1 class="text-2xl font-bold text-text-primary">{{ community()!.name }}</h1>
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(community()!.updated_at) }} · ID: {{ community()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -72,7 +65,7 @@ import { CommunityUsersComponent } from './community-users.component';
     </div>
   `,
 })
-export class CommunityDetailComponent implements OnInit {
+export class CommunityDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(CommunityFacade);
@@ -83,6 +76,14 @@ export class CommunityDetailComponent implements OnInit {
 
   readonly skeletonFields = Array(6).fill(0);
 
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const c = this.community();
+    return [
+      { label: 'Communities', route: '/communities' },
+      { label: c?.name ?? '...' },
+    ];
+  });
+
   readonly fields = computed<MetadataField[]>(() => {
     const c = this.community();
     if (!c) return [];
@@ -91,8 +92,8 @@ export class CommunityDetailComponent implements OnInit {
       { label: 'SIRET', value: c.siret, type: 'mono' as const },
       { label: 'Public Comment', value: c.public_comment ?? '—', type: 'text' as const },
       { label: 'Internal Comment', value: c.internal_comment ?? '—', type: 'text' as const },
-      { label: 'Created', value: c.created_at, type: 'text' as const },
-      { label: 'Updated', value: c.updated_at, type: 'text' as const },
+      { label: 'Created', value: c.created_at, type: 'date' as const },
+      { label: 'Updated', value: c.updated_at, type: 'date' as const },
     ];
   });
 
@@ -102,6 +103,14 @@ export class CommunityDetailComponent implements OnInit {
       this.facade.select(id);
       this.facade.loadUsers();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   async onDelete(): Promise<void> {

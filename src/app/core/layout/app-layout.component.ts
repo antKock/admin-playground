@@ -17,18 +17,21 @@ interface NavItem {
   styleUrl: './app-layout.component.css',
 })
 export class AppLayoutComponent {
-  private authService = inject(AuthService);
+  readonly authService = inject(AuthService);
 
   readonly LogOut = LogOut;
 
-  readonly navItems: NavItem[] = [
+  readonly configItems: NavItem[] = [
     { label: 'Funding Programs', route: '/funding-programs', icon: Landmark },
     { label: 'Action Themes', route: '/action-themes', icon: Tags },
     { label: 'Action Models', route: '/action-models', icon: FileText },
     { label: 'Folder Models', route: '/folder-models', icon: FolderOpen },
+    { label: 'Indicator Models', route: '/indicator-models', icon: BarChart3 },
+  ];
+
+  readonly adminItems: NavItem[] = [
     { label: 'Communities', route: '/communities', icon: Users },
     { label: 'Agents', route: '/agents', icon: UserCog },
-    { label: 'Indicator Models', route: '/indicator-models', icon: BarChart3 },
   ];
 
   onLogout(): void {

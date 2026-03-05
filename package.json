@@ -20,7 +20,12 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lint": "^6.9.5",
+    "@codemirror/state": "^6.5.4",
+    "@codemirror/view": "^6.39.16",
     "@ngrx/signals": "^21.0.1",
+    "codemirror": "^6.0.2",
     "lucide-angular": "^0.576.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

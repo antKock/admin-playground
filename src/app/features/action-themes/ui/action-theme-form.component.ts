@@ -1,21 +1,29 @@
-import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
+import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { createActionThemeForm } from '@domains/action-themes/forms/action-theme.form';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      <button
-        class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-        (click)="goBack()"
-      >
-        &larr; Back
-      </button>
+      @if (isEditMode) {
+        <app-breadcrumb [items]="[
+          { label: 'Action Themes', route: '/action-themes' },
+          { label: itemName() ?? '...', route: '/action-themes/' + editId },
+          { label: 'Edit' }
+        ]" />
+      } @else {
+        <app-breadcrumb [items]="[
+          { label: 'Action Themes', route: '/action-themes' },
+          { label: 'New Action Theme' }
+        ]" />
+      }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
         {{ isEditMode ? 'Edit Action Theme' : 'Create Action Theme' }}
       </h1>
@@ -96,7 +104,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
     </div>
   `,
 })
-export class ActionThemeFormComponent implements OnInit {
+export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -104,8 +112,8 @@ export class ActionThemeFormComponent implements OnInit {
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
-  private editId: string | null = null;
-  // Derived from facade mutation signals — no local state to manage or clean up.
+  editId: string | null = null;
+  readonly itemName = computed(() => this.facade.selectedItem()?.name);
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionThemeForm(this.fb);
 
@@ -157,6 +165,23 @@ export class ActionThemeFormComponent implements OnInit {
       this.facade.update(this.editId, data);
     } else {
       this.facade.create({ ...data, status: 'draft' });
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.form.dirty && !this.form.invalid) {
+        this.onSubmit();
+      }
+    }
+    if (event.key === 'Escape') {
+      this.goBack();
     }
   }
 

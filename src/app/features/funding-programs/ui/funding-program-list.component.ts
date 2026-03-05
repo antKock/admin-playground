@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
@@ -40,7 +40,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
         }
       </div>
 
-      @if (!facade.isLoading() && facade.items().length === 0) {
+      @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (activeFilter()) {
             <p class="text-text-secondary mb-4">No funding programs match your filters.</p>
@@ -77,11 +77,20 @@ export class FundingProgramListComponent implements OnInit {
   readonly facade = inject(FundingProgramFacade);
   readonly router = inject(Router);
   readonly activeFilter = signal<string>('');
+  readonly hasLoaded = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this.facade.isLoading()) {
+        this.hasLoaded.set(true);
+      }
+    });
+  }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: 'Name', sortable: true },
     { key: 'description', label: 'Description' },
-    { key: 'created_at', label: 'Created' },
+    { key: 'created_at', label: 'Created', sortable: true },
   ];
 
   ngOnInit(): void {

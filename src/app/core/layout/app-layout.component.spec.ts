@@ -32,6 +32,25 @@ describe('AppLayoutComponent', () => {
     expect(navItems.length).toBe(7);
   });
 
+  it('should render section labels for Configuration and Administration', async () => {
+    const fixture = TestBed.createComponent(AppLayoutComponent);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const labels = compiled.querySelectorAll('.nav-section-label');
+    expect(labels.length).toBe(2);
+    expect(labels[0].textContent).toContain('Configuration');
+    expect(labels[1].textContent).toContain('Administration');
+  });
+
+  it('should render user avatar in header', async () => {
+    const fixture = TestBed.createComponent(AppLayoutComponent);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const avatar = compiled.querySelector('.user-avatar');
+    expect(avatar).toBeTruthy();
+  });
+
   it('should render sidebar with navigation landmark', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();

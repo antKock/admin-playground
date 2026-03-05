@@ -1,21 +1,29 @@
-import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
+import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createAgentForm } from '@domains/agents/forms/agent.form';
 import { AgentFacade } from '../agent.facade';
 
 @Component({
   selector: 'app-agent-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      <button
-        class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-        (click)="goBack()"
-      >
-        &larr; Back
-      </button>
+      @if (isEditMode) {
+        <app-breadcrumb [items]="[
+          { label: 'Agents', route: '/agents' },
+          { label: agentDisplayName() || '...', route: '/agents/' + editId },
+          { label: 'Edit' }
+        ]" />
+      } @else {
+        <app-breadcrumb [items]="[
+          { label: 'Agents', route: '/agents' },
+          { label: 'New Agent' }
+        ]" />
+      }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
         {{ isEditMode ? 'Edit Agent' : 'Create Agent' }}
       </h1>
@@ -155,7 +163,7 @@ import { AgentFacade } from '../agent.facade';
     </div>
   `,
 })
-export class AgentFormComponent implements OnInit {
+export class AgentFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -163,7 +171,12 @@ export class AgentFormComponent implements OnInit {
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
-  private editId: string | null = null;
+  editId: string | null = null;
+  readonly agentDisplayName = computed(() => {
+    const a = this.facade.selectedItem();
+    if (!a) return '';
+    return [a.first_name, a.last_name].filter(Boolean).join(' ') || '—';
+  });
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createAgentForm(this.fb);
 
@@ -220,6 +233,23 @@ export class AgentFormComponent implements OnInit {
       this.facade.update(this.editId, raw);
     } else {
       this.facade.create(raw);
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.form.dirty && !this.form.invalid) {
+        this.onSubmit();
+      }
+    }
+    if (event.key === 'Escape') {
+      this.goBack();
     }
   }
 

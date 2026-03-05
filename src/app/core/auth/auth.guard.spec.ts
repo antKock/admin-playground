@@ -28,6 +28,18 @@ describe('authGuard', () => {
     expect(result).not.toBe(true);
   });
 
+  it('should include returnUrl query param when redirecting to login', () => {
+    const mockRoute = {} as Parameters<typeof authGuard>[0];
+    const mockState = { url: '/action-models/abc123' } as Parameters<typeof authGuard>[1];
+
+    const result = TestBed.runInInjectionContext(() => authGuard(mockRoute, mockState));
+
+    // UrlTree should contain returnUrl query param
+    expect(result).not.toBe(true);
+    expect(String(result)).toContain('returnUrl');
+    expect(String(result)).toContain('action-models');
+  });
+
   it('should allow navigation when authenticated', () => {
     localStorage.setItem('laureat_admin_jwt', 'test-token');
     TestBed.resetTestingModule();

@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { LucideAngularModule, ArrowUpRight } from 'lucide-angular';
+import { formatDateFr } from '@app/shared/utils/format-date';
 
 export interface MetadataField {
   label: string;
@@ -57,9 +58,6 @@ export class MetadataGridComponent {
   readonly ArrowUpRight = ArrowUpRight;
 
   formatDate(value: string): string {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return value;
-    return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
+    return formatDateFr(value);
   }
 }

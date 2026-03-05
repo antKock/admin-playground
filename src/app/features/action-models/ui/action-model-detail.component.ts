@@ -1,11 +1,14 @@
-import { Component, inject, OnInit, computed, signal, effect, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, signal, effect, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { formatDateFr } from '@app/shared/utils/format-date';
 import {
   IndicatorPickerComponent,
   IndicatorOption,
@@ -27,6 +30,8 @@ import { ActionModelFacade } from '../action-model.facade';
     IndicatorCardComponent,
     SaveBarComponent,
     ApiInspectorComponent,
+    BreadcrumbComponent,
+    SectionAnchorsComponent,
     CdkDropList,
     CdkDrag,
   ],
@@ -47,24 +52,15 @@ import { ActionModelFacade } from '../action-model.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
+          <app-breadcrumb [items]="[{ label: 'Action Models', route: '/action-models' }, { label: 'Error' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="router.navigate(['/action-models'])"
-          >
-            &larr; Back to list
-          </button>
         </div>
       } @else if (model()) {
-        <div class="flex items-center justify-between mb-6">
+        <app-breadcrumb [items]="breadcrumbs()" />
+        <div class="flex items-center justify-between mb-2">
           <div>
-            <button
-              class="text-sm text-text-secondary hover:text-text-primary mb-2 inline-flex items-center gap-1"
-              (click)="router.navigate(['/action-models'])"
-            >
-              &larr; Back to list
-            </button>
             <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
+            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -82,11 +78,15 @@ import { ActionModelFacade } from '../action-model.facade';
           </div>
         </div>
 
-        <app-metadata-grid [fields]="fields()" />
+        <app-section-anchors [sections]="sectionDefs()" class="mb-6 block" />
+
+        <div id="section-metadata">
+          <app-metadata-grid [fields]="fields()" />
+        </div>
 
         <!-- Indicators Section -->
         <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
-        <div class="mt-6">
+        <div id="section-indicators" class="mt-6">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
             <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicators</h2>
             <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attached</span>
@@ -122,7 +122,9 @@ import { ActionModelFacade } from '../action-model.facade';
           />
         </div>
 
-        <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+        <div id="section-api-inspector">
+          <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+        </div>
       }
     </div>
 
@@ -134,7 +136,7 @@ import { ActionModelFacade } from '../action-model.facade';
     />
   `,
 })
-export class ActionModelDetailComponent implements OnInit {
+export class ActionModelDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionModelFacade);
@@ -145,6 +147,20 @@ export class ActionModelDetailComponent implements OnInit {
 
   readonly skeletonFields = Array(6).fill(0);
 
+  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
+    const m = this.model();
+    return [
+      { label: 'Action Models', route: '/action-models' },
+      { label: m?.name ?? '...' },
+    ];
+  });
+
+  readonly sectionDefs = computed<SectionDef[]>(() => [
+    { label: 'Metadata', targetId: 'section-metadata' },
+    { label: 'Indicators', targetId: 'section-indicators', count: this.indicatorCards().length },
+    { label: 'API Inspector', targetId: 'section-api-inspector' },
+  ]);
+
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
@@ -153,8 +169,8 @@ export class ActionModelDetailComponent implements OnInit {
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
       { label: 'Funding Program', value: m.funding_program?.name ?? '—', type: 'text' as const },
       { label: 'Action Theme', value: m.action_theme?.name ?? '—', type: 'text' as const },
-      { label: 'Created', value: m.created_at, type: 'text' as const },
-      { label: 'Updated', value: m.updated_at, type: 'text' as const },
+      { label: 'Created', value: m.created_at, type: 'date' as const },
+      { label: 'Updated', value: m.updated_at, type: 'date' as const },
     ];
   });
 
@@ -216,6 +232,10 @@ export class ActionModelDetailComponent implements OnInit {
       this.facade.select(id);
       this.facade.loadIndicators();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -300,6 +320,10 @@ export class ActionModelDetailComponent implements OnInit {
 
     const ids = cards.map((c) => c.id);
     this.facade.reorderIndicators(m.id, ids);
+  }
+
+  formatDate(value: string | null | undefined): string {
+    return formatDateFr(value);
   }
 
   private ruleState(value: string, defaultVal: string): ParamState {

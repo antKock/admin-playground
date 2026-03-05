@@ -3,7 +3,27 @@
     <thead>
       <tr>
         @for (col of columns(); track col.key) {
-          <th [style.width]="col.width">{{ col.label }}</th>
+          <th
+            [style.width]="col.width"
+            [class.sortable]="col.sortable"
+            (click)="onSortClick(col)"
+          >
+            {{ col.label }}
+            @if (col.sortable) {
+              <span class="sort-indicator">
+                @if (sortColumn() === col.key && sortDirection() === 'asc') {
+                  ▲
+                } @else if (sortColumn() === col.key && sortDirection() === 'desc') {
+                  ▼
+                } @else {
+                  ⇅
+                }
+              </span>
+            }
+          </th>
+        }
+        @if (actions().length > 0) {
+          <th class="actions-header"></th>
         }
       </tr>
     </thead>
@@ -16,10 +36,13 @@
                 <div class="skeleton-cell"></div>
               </td>
             }
+            @if (actions().length > 0) {
+              <td></td>
+            }
           </tr>
         }
       } @else {
-        @for (row of data(); track $index) {
+        @for (row of sortedData(); track $index) {
           <tr
             class="data-row"
             tabindex="0"
@@ -32,9 +55,36 @@
                   <app-status-badge [status]="'' + getCellValue(row, col.key)" />
                 } @else if (col.type === 'date') {
                   {{ formatDate(getCellValue(row, col.key)) }}
+                } @else if (col.type === 'dual-line') {
+                  <div class="dual-line-primary">{{ getCellValue(row, col.key) }}</div>
+                  @if (col.secondaryKey) {
+                    <div class="dual-line-secondary">{{ getCellValue(row, col.secondaryKey) }}</div>
+                  }
+                } @else if (col.type === 'link') {
+                  <a class="cell-link" (click)="onLinkClick($event, col, row)">{{ getCellValue(row, col.key) }}</a>
                 } @else {
                   {{ getCellValue(row, col.key) }}
                 }
+              </td>
+            }
+            @if (actions().length > 0) {
+              <td class="actions-cell">
+                <div class="row-actions">
+                  @for (action of actions(); track action.handler) {
+                    <button
+                      class="action-btn"
+                      [class.danger]="action.variant === 'danger'"
+                      [title]="action.label"
+                      (click)="onActionClick($event, action, row)"
+                    >
+                      @if (action.icon) {
+                        <lucide-icon [img]="action.icon" [size]="14" />
+                      } @else {
+                        {{ action.label }}
+                      }
+                    </button>
+                  }
+                </div>
               </td>
             }
           </tr>
