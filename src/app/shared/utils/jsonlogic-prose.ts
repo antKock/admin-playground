@@ -3,6 +3,8 @@
  * Returns null if the input is invalid, un-translatable, or too deeply nested.
  */
 
+export type ProseMode = 'condition' | 'value';
+
 const OPERATOR_NAMES: Record<string, string> = {
   '==': 'contient',
   '===': '=',
@@ -48,7 +50,7 @@ function resolveVar(node: Record<string, unknown>): string | null {
   return null;
 }
 
-function resolveOperand(node: unknown, depth: number, topLevel = false): string | null {
+function resolveOperand(node: unknown, depth: number, topLevel = false, mode: ProseMode = 'condition'): string | null {
   if (depth > MAX_DEPTH) return null;
 
   if (node === null || node === undefined) return bold('null');
@@ -66,7 +68,7 @@ function resolveOperand(node: unknown, depth: number, topLevel = false): string 
       return resolveVar(obj);
     }
     // Nested operation — translate recursively
-    return translateNode(obj, depth + 1, topLevel);
+    return translateNode(obj, depth + 1, topLevel, mode);
   }
 
   return null;
@@ -117,7 +119,7 @@ function tryNegate(innerNode: unknown, depth: number, topLevel: boolean): string
   return null;
 }
 
-function translateNode(node: unknown, depth: number, topLevel = false): string | null {
+function translateNode(node: unknown, depth: number, topLevel = false, mode: ProseMode = 'condition'): string | null {
   if (depth > MAX_DEPTH) return null;
   if (!node || typeof node !== 'object' || Array.isArray(node)) return null;
 
@@ -202,21 +204,26 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
   if (operator === 'if' && Array.isArray(args) && args.length >= 3) {
     const chunks: string[] = [];
     let i = 0;
+    const useValueBullets = mode === 'value' && topLevel;
     while (i + 1 < args.length) {
       const cond = resolveOperand(args[i], depth);
       const val = resolveOperand(args[i + 1], depth);
       if (cond === null || val === null) return null;
-      const prefix = chunks.length === 0 ? 'Si' : 'sinon si';
-      chunks.push(`${prefix} ${cond} alors ${val}`);
+      if (useValueBullets) {
+        chunks.push(`• Si ${cond} ⇒ ${val}`);
+      } else {
+        const prefix = chunks.length === 0 ? 'Si' : 'sinon si';
+        chunks.push(`${prefix} ${cond} alors ${val}`);
+      }
       i += 2;
     }
     // Remaining single arg = default else
     if (i < args.length) {
       const fallback = resolveOperand(args[i], depth);
       if (fallback === null) return null;
-      chunks.push(`sinon ${fallback}`);
+      chunks.push(useValueBullets ? `• Sinon ⇒ ${fallback}` : `sinon ${fallback}`);
     }
-    return chunks.join(' ');
+    return useValueBullets ? chunks.join('\n') : chunks.join(' ');
   }
 
   // in operator
@@ -337,12 +344,12 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
   return null;
 }
 
-export function translateJsonLogicToProse(jsonString: string): string | null {
+export function translateJsonLogicToProse(jsonString: string, mode: ProseMode = 'condition'): string | null {
   if (!jsonString || jsonString === 'true' || jsonString === 'false') return null;
   try {
     const parsed = JSON.parse(jsonString);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
-    return translateNode(parsed, 0, true);
+    return translateNode(parsed, 0, true, mode);
   } catch {
     return null;
   }

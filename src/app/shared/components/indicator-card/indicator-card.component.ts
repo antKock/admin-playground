@@ -133,15 +133,11 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
               (toggle)="onDefaultValueToggle($event)"
             />
             @if (params().default_value_rule != null) {
-              <div class="default-value-container">
-                <input
-                  type="text"
-                  class="default-value-field"
-                  [value]="params().default_value_rule ?? ''"
-                  placeholder="Enter default value..."
-                  (input)="onDefaultValueChange($event)"
-                />
-              </div>
+              <app-rule-field
+                mode="value"
+                [value]="params().default_value_rule ?? ''"
+                (valueChange)="onDefaultValueInput($event)"
+              />
             }
           </div>
 
@@ -291,31 +287,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
       padding-bottom: 0;
     }
 
-    .default-value-container {
-      width: 100%;
-      margin-top: 12px;
-      padding: 12px;
-      background: var(--color-surface-base);
-      border: 1px solid var(--color-stroke-brand, #1400cc33);
-      border-radius: 8px;
-    }
-    .default-value-field {
-      width: 100%;
-      padding: 8px 12px;
-      background: var(--color-surface-base);
-      border: 1px solid var(--color-stroke-standard);
-      border-radius: 6px;
-      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-      font-size: 13px;
-      color: var(--color-text-primary);
-      box-sizing: border-box;
-    }
-    .default-value-field:focus {
-      outline: none;
-      border-color: var(--color-brand, #1400cc);
-      box-shadow: 0 0 0 3px rgba(20, 0, 204, 0.08);
-    }
-  `],
+`],
 })
 export class IndicatorCardComponent {
   readonly indicator = input.required<IndicatorCardData>();
@@ -396,8 +368,7 @@ export class IndicatorCardComponent {
     }
   }
 
-  onDefaultValueChange(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+  onDefaultValueInput(value: string): void {
     this.emitParams({ default_value_rule: value || '' });
   }
 

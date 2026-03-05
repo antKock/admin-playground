@@ -34,7 +34,7 @@ import { json } from '@codemirror/lang-json';
 import { bracketMatching } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
-import { translateJsonLogicToProse } from '../../utils/jsonlogic-prose';
+import { translateJsonLogicToProse, type ProseMode } from '../../utils/jsonlogic-prose';
 import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 
 /** Custom JSON + JSONLogic linter for CodeMirror 6 */
@@ -222,6 +222,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly value = input('');
   readonly label = input('JSONLogic Rule');
   readonly placeholder = input('');
+  readonly mode = input<ProseMode>('condition');
 
   readonly valueChange = output<string>();
   readonly validChange = output<boolean>();
@@ -233,19 +234,25 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   private editorView: EditorView | null = null;
   private suppressEmit = false;
 
-  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value()));
+  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value(), this.mode()));
 
   readonly proseParts = computed(() => {
     const prose = this.proseTranslation();
     if (!prose) return null;
+    const isValue = this.mode() === 'value';
     const lines = prose.split('\n');
     if (lines.length > 1) {
       return {
-        prefix: "Le paramètre est activé si au moins une de ces conditions est vraie :",
+        prefix: isValue
+          ? "La valeur par défaut est celle correspondant à la première condition vérifiée :"
+          : "Le paramètre est activé si au moins une de ces conditions est vraie :",
         branches: lines.map((l) => l.replace(/^• /, '')),
       };
     }
-    return { prefix: `Le paramètre est activé si ${prose}`, branches: null };
+    const singlePrefix = isValue
+      ? `La valeur par défaut est : ${prose}`
+      : `Le paramètre est activé si ${prose}`;
+    return { prefix: singlePrefix, branches: null };
   });
 
   constructor() {

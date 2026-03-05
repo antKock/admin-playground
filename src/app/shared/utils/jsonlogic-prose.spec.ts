@@ -199,4 +199,29 @@ describe('translateJsonLogicToProse', () => {
     const rule = '{"missing_some": [1, ["a", "b", "c"]]}';
     expect(translateJsonLogicToProse(rule)).toBe(`au moins ${b('1')} champ(s) manquant(s) parmi ${b("['a', 'b', 'c']")}`);
   });
+
+  // Value mode (ProseMode = 'value')
+  it('renders chained if/then/else as bullet list in value mode', () => {
+    const rule = '{"if": [{"==": [{"var": "type"}, "logement"]}, 5000, {"==": [{"var": "type"}, "vehicule"]}, 3000, 1000]}';
+    expect(translateJsonLogicToProse(rule, 'value')).toBe(
+      `• Si ${b('type')} contient ${b("'logement'")} ⇒ ${b('5000')}\n• Si ${b('type')} contient ${b("'vehicule'")} ⇒ ${b('3000')}\n• Sinon ⇒ ${b('1000')}`
+    );
+  });
+
+  it('renders simple if/then/else as bullets in value mode', () => {
+    const rule = '{"if": [{"==": [{"var": "x"}, 1]}, "yes", "no"]}';
+    expect(translateJsonLogicToProse(rule, 'value')).toBe(
+      `• Si ${b('x')} contient ${b('1')} ⇒ ${b("'yes'")}\n• Sinon ⇒ ${b("'no'")}`
+    );
+  });
+
+  it('renders non-if rules the same in value mode', () => {
+    const rule = '{"*": [{"var": "surface"}, 12]}';
+    expect(translateJsonLogicToProse(rule, 'value')).toBe(`${b('surface')} × ${b('12')}`);
+  });
+
+  it('keeps inline if format in condition mode (default)', () => {
+    const rule = '{"if": [{"==": [{"var": "x"}, 1]}, "yes", "no"]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`Si ${b('x')} contient ${b('1')} alors ${b("'yes'")} sinon ${b("'no'")}`);
+  });
 });
