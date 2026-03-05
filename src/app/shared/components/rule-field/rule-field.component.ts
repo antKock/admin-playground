@@ -87,12 +87,12 @@ function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
       return [{ from, to, severity: 'error', message: msg }];
     }
 
-    // JSON is valid — now validate JSONLogic structure
+    // JSON is valid — now validate JSONLogic structure (warnings, not blocking)
     const logicErrors = validateJsonLogic(trimmed);
     return logicErrors.map((err) => ({
       from: 0,
       to: doc.length,
-      severity: 'error' as const,
+      severity: 'warning' as const,
       message: err.message,
     }));
   };
@@ -144,12 +144,19 @@ const ruleFieldTheme = EditorView.theme({
   '.cm-diagnostic-error': {
     borderLeftColor: 'var(--color-text-error, #dc2626)',
   },
+  '.cm-lintRange-warning': {
+    backgroundImage: 'none',
+    textDecoration: 'underline wavy var(--color-status-warning, #d97706)',
+  },
+  '.cm-diagnostic-warning': {
+    borderLeftColor: 'var(--color-status-warning, #d97706)',
+  },
 });
 
 @Component({
   selector: 'app-rule-field',
   template: `
-    <div class="rule-field">
+    <div class="rule-field" [class.valid]="isValidJsonLogic()">
       <div class="rule-field-header">
         <span class="rule-field-label">{{ label() }}</span>
       </div>
@@ -160,12 +167,12 @@ const ruleFieldTheme = EditorView.theme({
       }
       @if (proseTranslation()) {
         <div class="rule-prose">
-          <em>{{ proseTranslation() }}</em>
+          <em>Le paramètre est activé si {{ proseTranslation() }}</em>
         </div>
       }
       <div class="cm-host" #editorHost></div>
       @if (errorMessage()) {
-        <div class="rule-hint error-hint">{{ errorMessage() }}</div>
+        <div class="rule-hint" [class.error-hint]="hasError()" [class.warning-hint]="!hasError()">{{ errorMessage() }}</div>
       }
     </div>
   `,
@@ -177,6 +184,9 @@ const ruleFieldTheme = EditorView.theme({
       background: var(--color-surface-base);
       border: 1px solid var(--color-stroke-brand, #1400cc33);
       border-radius: 8px;
+    }
+    .rule-field.valid {
+      border-color: var(--color-status-success, #16a34a);
     }
     .rule-field-header {
       display: flex;
@@ -230,6 +240,9 @@ const ruleFieldTheme = EditorView.theme({
     .error-hint {
       color: var(--color-text-error, #dc2626);
     }
+    .warning-hint {
+      color: var(--color-status-warning, #d97706);
+    }
   `],
 })
 export class RuleFieldComponent implements AfterViewInit, OnDestroy {
@@ -255,6 +268,17 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   });
 
   readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value()));
+
+  readonly isValidJsonLogic = computed(() => {
+    const val = this.value().trim();
+    if (!val) return false;
+    try {
+      JSON.parse(val);
+    } catch {
+      return false;
+    }
+    return validateJsonLogic(val).length === 0;
+  });
 
   constructor() {
     // Sync external value changes into the editor and validate
@@ -328,12 +352,12 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       this.validChange.emit(false);
       return;
     }
-    // JSON is valid — check JSONLogic structure
+    // JSON is valid — check JSONLogic structure (non-blocking, informational only)
     const logicErrors = validateJsonLogic(trimmed);
     if (logicErrors.length > 0) {
-      this.hasError.set(true);
+      this.hasError.set(false);
       this.errorMessage.set(logicErrors[0].message);
-      this.validChange.emit(false);
+      this.validChange.emit(true);
     } else {
       this.hasError.set(false);
       this.errorMessage.set('');
