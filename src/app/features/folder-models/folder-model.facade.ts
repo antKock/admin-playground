@@ -25,6 +25,7 @@ export class FolderModelFacade {
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
   readonly hasMore = this.featureStore.hasMore;
   readonly error = this.featureStore.error;
+  readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
 
   // Cross-domain FP signals (projected through feature store)

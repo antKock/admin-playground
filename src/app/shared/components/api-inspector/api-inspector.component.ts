@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, OnDestroy, input, signal } from '@angular/core';
 
 @Component({
   selector: 'app-api-inspector',
@@ -54,12 +54,20 @@ import { Component, input, signal } from '@angular/core';
     </div>
   `,
 })
-export class ApiInspectorComponent {
+export class ApiInspectorComponent implements OnDestroy {
   readonly requestUrl = input<string | null>(null);
   readonly responseBody = input<unknown>(null);
 
   readonly isOpen = signal(false);
   readonly copyLabel = signal('Copy');
+
+  private copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnDestroy(): void {
+    if (this.copyTimer) {
+      clearTimeout(this.copyTimer);
+    }
+  }
 
   formattedBody(): string {
     const body = this.responseBody();
@@ -67,9 +75,14 @@ export class ApiInspectorComponent {
     return JSON.stringify(body, null, 2);
   }
 
-  copyResponse(): void {
-    navigator.clipboard.writeText(this.formattedBody());
-    this.copyLabel.set('Copied!');
-    setTimeout(() => this.copyLabel.set('Copy'), 2000);
+  async copyResponse(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.formattedBody());
+      this.copyLabel.set('Copied!');
+    } catch {
+      this.copyLabel.set('Failed');
+    }
+    if (this.copyTimer) clearTimeout(this.copyTimer);
+    this.copyTimer = setTimeout(() => this.copyLabel.set('Copy'), 2000);
   }
 }

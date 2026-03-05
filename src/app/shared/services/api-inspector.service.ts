@@ -2,16 +2,19 @@ import { Injectable, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class ApiInspectorService {
-  readonly lastRequestUrl = signal<string | null>(null);
-  readonly lastResponseBody = signal<unknown>(null);
+  private readonly _lastRequestUrl = signal<string | null>(null);
+  private readonly _lastResponseBody = signal<unknown>(null);
+
+  readonly lastRequestUrl = this._lastRequestUrl.asReadonly();
+  readonly lastResponseBody = this._lastResponseBody.asReadonly();
 
   capture(url: string, body: unknown): void {
-    this.lastRequestUrl.set(url);
-    this.lastResponseBody.set(body);
+    this._lastRequestUrl.set(url);
+    this._lastResponseBody.set(body);
   }
 
   clear(): void {
-    this.lastRequestUrl.set(null);
-    this.lastResponseBody.set(null);
+    this._lastRequestUrl.set(null);
+    this._lastResponseBody.set(null);
   }
 }

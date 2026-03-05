@@ -96,7 +96,7 @@ describe('ApiInspectorComponent', () => {
     expect(copyButton).toBeTruthy();
   });
 
-  it('should show "Copied!" after clicking copy', () => {
+  it('should show "Copied!" after clicking copy', async () => {
     vi.useFakeTimers();
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -108,9 +108,34 @@ describe('ApiInspectorComponent', () => {
     const buttons = getPanel().querySelectorAll('button');
     const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copy'))!;
     copyButton.click();
+    await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
 
     expect(copyButton.textContent).toContain('Copied!');
+
+    vi.advanceTimersByTime(2000);
+    fixture.detectChanges();
+    expect(copyButton.textContent).toContain('Copy');
+
+    vi.useRealTimers();
+  });
+
+  it('should show "Failed" when clipboard write fails', async () => {
+    vi.useFakeTimers();
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    });
+    host.responseBody.set({ data: 'test' });
+    fixture.detectChanges();
+    openPanel();
+
+    const buttons = getPanel().querySelectorAll('button');
+    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copy'))!;
+    copyButton.click();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    expect(copyButton.textContent).toContain('Failed');
 
     vi.advanceTimersByTime(2000);
     fixture.detectChanges();

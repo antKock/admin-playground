@@ -34,9 +34,29 @@ describe('AgentListComponent', () => {
     expect(statusCol?.type).toBe('status-badge');
   });
 
-  it('should call facade.load on init', () => {
+  it('should call facade.load on init with empty filters', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.ngOnInit();
-    expect(loadSpy).toHaveBeenCalled();
+    expect(loadSpy).toHaveBeenCalledWith({});
+  });
+
+  it('should start with empty status filter', () => {
+    expect(component.statusFilter()).toBe('');
+  });
+
+  it('should pass status filter to facade.load on filter change', () => {
+    const loadSpy = vi.spyOn(component.facade, 'load');
+    const event = { target: { value: 'draft' } } as unknown as Event;
+    component.onStatusFilterChange(event);
+    expect(component.statusFilter()).toBe('draft');
+    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft' });
+  });
+
+  it('should clear filter and reload with empty filters', () => {
+    component.statusFilter.set('completed');
+    const loadSpy = vi.spyOn(component.facade, 'load');
+    component.clearFilters();
+    expect(component.statusFilter()).toBe('');
+    expect(loadSpy).toHaveBeenCalledWith({});
   });
 });

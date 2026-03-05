@@ -25,6 +25,16 @@ import { FolderModelFacade } from '../folder-model.facade';
             }
           </div>
         </div>
+      } @else if (facade.detailError()) {
+        <div class="text-center py-16">
+          <p class="text-error mb-4">{{ facade.detailError() }}</p>
+          <button
+            class="text-sm text-text-link hover:text-text-link-hover"
+            (click)="router.navigate(['/folder-models'])"
+          >
+            &larr; Back to list
+          </button>
+        </div>
       } @else if (model()) {
         <div class="flex items-center justify-between mb-6">
           <div>

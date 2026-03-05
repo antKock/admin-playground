@@ -30,6 +30,7 @@ export class ActionModelFacade {
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
   readonly hasMore = this.featureStore.hasMore;
   readonly error = this.featureStore.error;
+  readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
 
   // Cross-domain signals for FP/AT dropdowns (projected through feature store)
