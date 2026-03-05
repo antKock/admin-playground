@@ -89,6 +89,10 @@ import { LucideAngularModule, LucideIconData } from 'lucide-angular';
     .toggle.on .toggle-knob {
       transform: translateX(20px);
     }
+    .toggle:focus-visible {
+      outline: 2px solid var(--color-brand, #1400cc);
+      outline-offset: 2px;
+    }
   `],
 })
 export class ToggleRowComponent {

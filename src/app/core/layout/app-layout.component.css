@@ -75,6 +75,11 @@
   background-color: var(--color-surface-table-row-hover);
 }
 
+.nav-item:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
 .nav-item-active {
   border-left-color: var(--color-brand);
   background-color: var(--color-surface-active);

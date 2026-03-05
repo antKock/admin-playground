@@ -17,8 +17,10 @@ interface NavItem {
   styleUrl: './app-layout.component.css',
 })
 export class AppLayoutComponent {
-  readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthService);
 
+  readonly userName = this.authService.userName;
+  readonly userInitials = this.authService.userInitials;
   readonly LogOut = LogOut;
 
   readonly configItems: NavItem[] = [

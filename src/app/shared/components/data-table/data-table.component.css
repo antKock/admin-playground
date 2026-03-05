@@ -91,8 +91,16 @@ td {
   cursor: pointer;
 }
 
-.cell-link:hover {
+.cell-link:hover,
+.cell-link:focus-visible {
   text-decoration: underline;
+  outline: none;
+}
+
+.cell-link:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Row actions */
@@ -108,7 +116,8 @@ td {
   transition: opacity 0.2s;
 }
 
-.data-row:hover .row-actions {
+.data-row:hover .row-actions,
+.data-row:focus-within .row-actions {
   opacity: 1;
 }
 
@@ -135,7 +144,7 @@ td {
 .action-btn.danger:hover {
   color: var(--color-text-error, #dc2626);
   border-color: var(--color-text-error, #dc2626);
-  background: #fef2f2;
+  background: var(--color-surface-error, #fef2f2);
 }
 
 /* Skeleton rows */

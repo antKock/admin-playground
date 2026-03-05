@@ -16,8 +16,12 @@ const OPERATOR_NAMES: Record<string, string> = {
 
 const MAX_DEPTH = 3;
 
+function escapeQuotes(s: string): string {
+  return s.replace(/'/g, "\\'");
+}
+
 function formatValue(val: unknown): string {
-  if (typeof val === 'string') return `'${val}'`;
+  if (typeof val === 'string') return `'${escapeQuotes(val)}'`;
   if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   if (val === null) return 'null';
   return String(val);
@@ -27,7 +31,7 @@ function resolveOperand(node: unknown, depth: number): string | null {
   if (depth > MAX_DEPTH) return null;
 
   if (node === null || node === undefined) return 'null';
-  if (typeof node === 'string') return `'${node}'`;
+  if (typeof node === 'string') return `'${escapeQuotes(node)}'`;
   if (typeof node === 'number' || typeof node === 'boolean') return String(node);
 
   if (Array.isArray(node)) {

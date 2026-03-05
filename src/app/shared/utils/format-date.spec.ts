@@ -4,6 +4,7 @@ describe('formatDateFr', () => {
   it('should format a valid ISO date string in fr-FR locale', () => {
     const result = formatDateFr('2024-06-15T10:00:00Z');
     expect(result).toMatch(/15/);
+    expect(result).toMatch(/juin/);
     expect(result).toMatch(/2024/);
   });
 

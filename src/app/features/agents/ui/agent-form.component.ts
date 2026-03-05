@@ -237,20 +237,25 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
   }
 
   hasUnsavedChanges(): boolean {
-    return this.form.dirty;
+    return this.form.dirty && !this.submitting();
   }
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
       event.preventDefault();
-      if (this.form.dirty && !this.form.invalid) {
+      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
         this.onSubmit();
       }
     }
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !this.isFormControlActive()) {
       this.goBack();
     }
+  }
+
+  private isFormControlActive(): boolean {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

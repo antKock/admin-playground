@@ -23,15 +23,15 @@ so that the application feels reliable, works with assistive technology, and has
 ## Tasks / Subtasks
 
 - [x] Task 1: ToggleRow accessibility — add ARIA attributes (AC: #1)
-  - [ ] Modify `src/app/shared/components/toggle-row/toggle-row.component.ts`
-  - [ ] Add to the toggle `<button>`:
+  - [x]Modify `src/app/shared/components/toggle-row/toggle-row.component.ts`
+  - [x]Add to the toggle `<button>`:
     - `role="switch"`
     - `[attr.aria-checked]="enabled()"`
     - `[attr.aria-label]="label()"`
-  - [ ] Verify keyboard accessibility: toggle should be focusable and activatable with `Enter` and `Space` (button already supports this natively)
+  - [x]Verify keyboard accessibility: toggle should be focusable and activatable with `Enter` and `Space` (button already supports this natively)
 
 - [x] Task 2: Consistent date formatting across all detail pages (AC: #2)
-  - [ ] Create `src/app/shared/utils/format-date.ts` — extract the `fr-FR` formatting from DataTable:
+  - [x]Create `src/app/shared/utils/format-date.ts` — extract the `fr-FR` formatting from DataTable:
     ```typescript
     export function formatDateFr(value: string | null | undefined): string {
       if (!value) return '—';
@@ -40,62 +40,62 @@ so that the application feels reliable, works with assistive technology, and has
       return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' });
     }
     ```
-  - [ ] Audit all detail pages — find any raw ISO date strings displayed:
+  - [x]Audit all detail pages — find any raw ISO date strings displayed:
     - MetadataGrid fields with `type: 'text'` that contain dates (e.g., `created_at`, `updated_at`) — change to `type: 'date'`
     - OR use `formatDateFr()` when building MetadataField values
-  - [ ] Audit MetadataGridComponent — if it has a `'date'` type, verify it uses `fr-FR`. If not, add it
-  - [ ] Refactor DataTable's `formatDate()` to use the shared utility
+  - [x]Audit MetadataGridComponent — if it has a `'date'` type, verify it uses `fr-FR`. If not, add it
+  - [x]Refactor DataTable's `formatDate()` to use the shared utility
 
 - [x] Task 3: Fix ActionThemeList empty state flash (AC: #3)
-  - [ ] Check `src/app/features/action-themes/ui/action-theme-list.component.ts`
-  - [ ] Add `hasLoaded` signal pattern (same as ActionModelListComponent):
+  - [x]Check `src/app/features/action-themes/ui/action-theme-list.component.ts`
+  - [x]Add `hasLoaded` signal pattern (same as ActionModelListComponent):
     ```typescript
     readonly hasLoaded = signal(false);
     constructor() {
       effect(() => { if (!this.facade.isLoading()) this.hasLoaded.set(true); });
     }
     ```
-  - [ ] Guard empty state: `@if (!facade.isLoading() && hasLoaded() && facade.items().length === 0)`
-  - [ ] Audit ALL 7 list components — ensure every one has this `hasLoaded` guard. Fix any that are missing
+  - [x]Guard empty state: `@if (!facade.isLoading() && hasLoaded() && facade.items().length === 0)`
+  - [x]Audit ALL 7 list components — ensure every one has this `hasLoaded` guard. Fix any that are missing
 
 - [x] Task 4: ActionModelDetail error handling and cleanup (AC: #4, #5)
-  - [ ] Verify `ActionModelDetailComponent` shows `facade.detailError()` with retry option — check current template (it already has `@else if (facade.detailError())` block)
-  - [ ] Add retry button to error state if missing: `(click)="facade.select(route.snapshot.paramMap.get('id')!)"`
-  - [ ] Add `ngOnDestroy` to ActionModelDetailComponent: call `facade.clearSelection()` to prevent stale data
-  - [ ] Audit all 7 detail components:
+  - [x]Verify `ActionModelDetailComponent` shows `facade.detailError()` with retry option — check current template (it already has `@else if (facade.detailError())` block)
+  - [x]Add retry button to error state if missing: `(click)="facade.select(route.snapshot.paramMap.get('id')!)"`
+  - [x]Add `ngOnDestroy` to ActionModelDetailComponent: call `facade.clearSelection()` to prevent stale data
+  - [x]Audit all 7 detail components:
     - Each should show error state with `facade.detailError()` and retry option
     - Each should call `facade.clearSelection()` in `ngOnDestroy`
     - Fix any that are missing these patterns
 
 - [x] Task 5: User avatar and name in application header (AC: #6)
-  - [ ] Modify `src/app/core/layout/app-layout.component.ts` (and its HTML template)
-  - [ ] Get user info from `AuthService` — check what user data is available (name, email, initials)
-  - [ ] Add next to the logout button:
+  - [x]Modify `src/app/core/layout/app-layout.component.ts` (and its HTML template)
+  - [x]Get user info from `AuthService` — check what user data is available (name, email, initials)
+  - [x]Add next to the logout button:
     - Initials circle: 32px circle with brand background, white bold text, user's initials (first letters of first+last name)
     - Full name text: font-size 14px, `text-text-primary`
-  - [ ] If AuthService doesn't expose user name, check JWT token payload or add a method to extract it
-  - [ ] Fallback: if no name available, show email or just the initials circle
+  - [x]If AuthService doesn't expose user name, check JWT token payload or add a method to extract it
+  - [x]Fallback: if no name available, show email or just the initials circle
 
 - [x] Task 6: Sidebar navigation grouping with section labels (AC: #7)
-  - [ ] Modify `src/app/core/layout/app-layout.component.ts`
-  - [ ] Group existing `navItems` into sections:
+  - [x]Modify `src/app/core/layout/app-layout.component.ts`
+  - [x]Group existing `navItems` into sections:
     - **Configuration:** Funding Programs, Action Themes, Action Models, Folder Models, Indicator Models
     - **Administration:** Communities, Agents
-  - [ ] Add section dividers in the sidebar template:
+  - [x]Add section dividers in the sidebar template:
     ```html
     <div class="sidebar-section-label">CONFIGURATION</div>
     <!-- config nav items -->
     <div class="sidebar-section-label">ADMINISTRATION</div>
     <!-- admin nav items -->
     ```
-  - [ ] Style section labels: uppercase, font-size 11px, `text-text-tertiary`, letter-spacing 0.5px, padding-left matching nav items, margin-top 16px
+  - [x]Style section labels: uppercase, font-size 11px, `text-text-tertiary`, letter-spacing 0.5px, padding-left matching nav items, margin-top 16px
 
 - [x] Task 7: Tests (AC: #1-7)
-  - [ ] ToggleRow spec: verify `role="switch"`, `aria-checked`, `aria-label` attributes
-  - [ ] ActionThemeList spec: verify no empty state flash (hasLoaded guard)
-  - [ ] ActionModelDetail spec: verify `clearSelection()` called on destroy
-  - [ ] AppLayout spec: verify sidebar section labels render
-  - [ ] Date formatting spec: verify `formatDateFr()` utility produces `fr-FR` formatted dates
+  - [x]ToggleRow spec: verify `role="switch"`, `aria-checked`, `aria-label` attributes
+  - [x]ActionThemeList spec: verify no empty state flash (hasLoaded guard)
+  - [x]ActionModelDetail spec: verify `clearSelection()` called on destroy
+  - [x]AppLayout spec: verify sidebar section labels render
+  - [x]Date formatting spec: verify `formatDateFr()` utility produces `fr-FR` formatted dates
 
 ## Dev Notes
 

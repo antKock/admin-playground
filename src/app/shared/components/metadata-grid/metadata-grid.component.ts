@@ -13,7 +13,7 @@ export interface MetadataField {
   selector: 'app-metadata-grid',
   imports: [LucideAngularModule],
   template: `
-    <div class="metadata-grid">
+    <dl class="metadata-grid">
       @for (field of fields(); track field.label) {
         <div class="metadata-field">
           <dt class="text-xs text-text-secondary">{{ field.label }}</dt>
@@ -34,7 +34,7 @@ export interface MetadataField {
           </dd>
         </div>
       }
-    </div>
+    </dl>
   `,
   styles: `
     .metadata-grid {

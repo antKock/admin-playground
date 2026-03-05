@@ -187,6 +187,6 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
 
     if (!confirmed) return;
 
-    this.facade.delete(a.id);
+    await this.facade.delete(a.id);
   }
 }

@@ -27,7 +27,8 @@ function extractVariables(jsonLogicStr: string): string[] {
       if (obj && typeof obj === 'object') {
         if ('var' in (obj as Record<string, unknown>)) {
           const v = (obj as Record<string, unknown>)['var'];
-          if (typeof v === 'string') vars.push(v);
+          if (typeof v === 'string' && v !== '') vars.push(v);
+          if (typeof v === 'number') vars.push(String(v));
         }
         for (const val of Object.values(obj as Record<string, unknown>)) {
           walk(val);
@@ -57,7 +58,9 @@ function jsonLinter(): (view: EditorView) => Diagnostic[] {
       let from = 0;
       let to = doc.length;
       if (posMatch) {
-        from = Math.min(parseInt(posMatch[1], 10), doc.length);
+        // Offset by leading whitespace since JSON.parse position is relative to trimmed string
+        const leadingWhitespace = doc.length - doc.trimStart().length;
+        from = Math.min(parseInt(posMatch[1], 10) + leadingWhitespace, doc.length);
         to = Math.min(from + 1, doc.length);
       }
       return [{ from, to, severity: 'error', message: msg }];
@@ -101,8 +104,9 @@ const ruleFieldTheme = EditorView.theme({
   '.cm-cursor': {
     borderLeftColor: 'var(--color-brand, #1400cc)',
   },
+  // JSON string token highlighting — uses CM6 internal generated class.
+  // If this breaks after a CM upgrade, replace with syntaxHighlighting(HighlightStyle.define(...))
   '.ͼc': {
-    // JSON string tokens
     color: 'var(--color-brand, #1400cc)',
   },
   '.cm-lintRange-error': {

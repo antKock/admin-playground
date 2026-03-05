@@ -11,25 +11,41 @@ export interface BreadcrumbItem {
   imports: [RouterLink],
   template: `
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      @for (item of items(); track $index; let last = $last) {
-        @if (item.route && !last) {
-          <a [routerLink]="item.route" class="breadcrumb-link">{{ item.label }}</a>
-        } @else {
-          <span class="breadcrumb-current">{{ item.label }}</span>
+      <ol class="breadcrumb-list">
+        @for (item of items(); track $index; let last = $last) {
+          <li>
+            @if (item.route && !last) {
+              <a [routerLink]="item.route" class="breadcrumb-link">{{ item.label }}</a>
+            } @else {
+              <span class="breadcrumb-current" [attr.aria-current]="last ? 'page' : null">{{ item.label }}</span>
+            }
+            @if (!last) {
+              <span class="breadcrumb-separator" aria-hidden="true">&rsaquo;</span>
+            }
+          </li>
         }
-        @if (!last) {
-          <span class="breadcrumb-separator" aria-hidden="true">&rsaquo;</span>
-        }
-      }
+      </ol>
     </nav>
   `,
   styles: `
     .breadcrumb {
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .breadcrumb-list {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 13px;
-      margin-bottom: 12px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .breadcrumb-link {

@@ -124,6 +124,6 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
 
     if (!confirmed) return;
 
-    this.facade.delete(p.id);
+    await this.facade.delete(p.id);
   }
 }

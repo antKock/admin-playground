@@ -126,6 +126,6 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
 
     if (!confirmed) return;
 
-    this.facade.delete(c.id);
+    await this.facade.delete(c.id);
   }
 }

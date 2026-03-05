@@ -6,11 +6,12 @@
           <th
             [style.width]="col.width"
             [class.sortable]="col.sortable"
+            [attr.aria-sort]="col.sortable ? (sortColumn() === col.key ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none') : null"
             (click)="onSortClick(col)"
           >
             {{ col.label }}
             @if (col.sortable) {
-              <span class="sort-indicator">
+              <span class="sort-indicator" aria-hidden="true">
                 @if (sortColumn() === col.key && sortDirection() === 'asc') {
                   ▲
                 } @else if (sortColumn() === col.key && sortDirection() === 'desc') {
@@ -42,7 +43,7 @@
           </tr>
         }
       } @else {
-        @for (row of sortedData(); track $index) {
+        @for (row of sortedData(); track (row['id'] ?? $index)) {
           <tr
             class="data-row"
             tabindex="0"
@@ -61,7 +62,7 @@
                     <div class="dual-line-secondary">{{ getCellValue(row, col.secondaryKey) }}</div>
                   }
                 } @else if (col.type === 'link') {
-                  <a class="cell-link" (click)="onLinkClick($event, col, row)">{{ getCellValue(row, col.key) }}</a>
+                  <a class="cell-link" tabindex="0" role="link" (click)="onLinkClick($event, col, row)" (keydown.enter)="onLinkClick($event, col, row)">{{ getCellValue(row, col.key) }}</a>
                 } @else {
                   {{ getCellValue(row, col.key) }}
                 }

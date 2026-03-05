@@ -185,6 +185,6 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
 
     if (!confirmed) return;
 
-    this.facade.delete(t.id);
+    await this.facade.delete(t.id);
   }
 }
