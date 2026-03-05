@@ -86,7 +86,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                 }),
                 catchError((err) => {
                   patch(store, {
-                    error: err?.message ?? 'Failed to load items',
+                    error: err?.message ?? 'Échec du chargement',
                     isLoading: false,
                   });
                   return EMPTY;
@@ -114,7 +114,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                 }),
                 catchError((err) => {
                   patch(store, {
-                    error: err?.message ?? 'Failed to load more items',
+                    error: err?.message ?? 'Échec du chargement',
                     isLoading: false,
                   });
                   return EMPTY;
@@ -156,7 +156,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                 }),
                 catchError((err) => {
                   patch(store, {
-                    error: err?.message ?? 'Failed to refresh items',
+                    error: err?.message ?? 'Échec du chargement',
                     isLoading: false,
                   });
                   return EMPTY;

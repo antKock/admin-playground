@@ -109,7 +109,7 @@ describe('CommunityFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Community created');
+      expect(successSpy).toHaveBeenCalledWith('Communauté créée');
     });
   });
 
@@ -122,7 +122,7 @@ describe('CommunityFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Community updated');
+      expect(successSpy).toHaveBeenCalledWith('Communauté mise à jour');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('communities'));
@@ -139,7 +139,7 @@ describe('CommunityFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Community deleted');
+      expect(successSpy).toHaveBeenCalledWith('Communauté supprimée');
     });
   });
 
@@ -180,7 +180,7 @@ describe('CommunityFacade', () => {
 
       await assignPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('User assigned to Community');
+      expect(successSpy).toHaveBeenCalledWith('Utilisateur assigné à la communauté');
 
       // After success, it reloads users
       const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
@@ -210,7 +210,7 @@ describe('CommunityFacade', () => {
 
       await removePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('User removed from Community');
+      expect(successSpy).toHaveBeenCalledWith('Utilisateur retiré de la communauté');
 
       // After success, it reloads users
       const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');

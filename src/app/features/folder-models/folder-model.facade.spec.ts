@@ -123,7 +123,7 @@ describe('FolderModelFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Folder Model created');
+      expect(successSpy).toHaveBeenCalledWith('Modèle de dossier créé');
     });
   });
 
@@ -136,7 +136,7 @@ describe('FolderModelFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Folder Model updated');
+      expect(successSpy).toHaveBeenCalledWith('Modèle de dossier mis à jour');
 
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('folder-models'));
       refreshReq.flush(mockPaginatedResponse);
@@ -152,7 +152,7 @@ describe('FolderModelFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Folder Model deleted');
+      expect(successSpy).toHaveBeenCalledWith('Modèle de dossier supprimé');
     });
   });
 

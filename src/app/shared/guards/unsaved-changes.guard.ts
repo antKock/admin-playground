@@ -14,9 +14,9 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = async (co
 
   const confirmDialog = inject(ConfirmDialogService);
   return confirmDialog.confirm({
-    title: 'Unsaved Changes',
-    message: 'You have unsaved changes. Are you sure you want to leave this page?',
-    confirmLabel: 'Discard Changes',
+    title: 'Modifications non enregistrées',
+    message: 'Vous avez des modifications non enregistrées. Êtes-vous sûr de vouloir quitter cette page ?',
+    confirmLabel: 'Abandonner les modifications',
     confirmVariant: 'danger',
   });
 };

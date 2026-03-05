@@ -137,7 +137,7 @@ describe('ActionModelFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Model created');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action créé');
     });
   });
 
@@ -150,7 +150,7 @@ describe('ActionModelFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Model updated');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action mis à jour');
 
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models'));
       refreshReq.flush(mockPaginatedResponse);
@@ -166,7 +166,7 @@ describe('ActionModelFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Model deleted');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action supprimé');
     });
   });
 

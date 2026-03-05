@@ -118,7 +118,7 @@ describe('IndicatorModelFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Indicator Model created');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur créé');
     });
   });
 
@@ -131,7 +131,7 @@ describe('IndicatorModelFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Indicator Model updated');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur mis à jour');
 
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('indicator-models'));
       refreshReq.flush(mockPaginatedResponse);
@@ -147,7 +147,7 @@ describe('IndicatorModelFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Indicator Model deleted');
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur supprimé');
     });
   });
 

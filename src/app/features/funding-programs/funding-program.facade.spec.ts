@@ -112,7 +112,7 @@ describe('FundingProgramFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Funding Program created');
+      expect(successSpy).toHaveBeenCalledWith('Programme de financement créé');
     });
   });
 
@@ -125,7 +125,7 @@ describe('FundingProgramFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Funding Program updated');
+      expect(successSpy).toHaveBeenCalledWith('Programme de financement mis à jour');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('funding-programs'));
@@ -142,7 +142,7 @@ describe('FundingProgramFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Funding Program deleted');
+      expect(successSpy).toHaveBeenCalledWith('Programme de financement supprimé');
     });
   });
 

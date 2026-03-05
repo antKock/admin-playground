@@ -73,7 +73,7 @@ export const CommunityDomainStore = signalStore(
           loadCommunity(store._http, id).pipe(
             tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
+              patch(store, { detailError: err?.message ?? 'Échec du chargement', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),
@@ -90,7 +90,7 @@ export const CommunityDomainStore = signalStore(
           loadAllUsers(store._http).pipe(
             tap((users) => patch(store, { allUsers: users, isLoadingUsers: false })),
             catchError((err) => {
-              patch(store, { isLoadingUsers: false, usersError: err?.message ?? 'Failed to load users' });
+              patch(store, { isLoadingUsers: false, usersError: err?.message ?? 'Échec du chargement des utilisateurs' });
               return EMPTY;
             }),
           ),

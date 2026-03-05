@@ -63,7 +63,7 @@ export class ActionThemeFacade {
   async create(data: ActionThemeCreate): Promise<void> {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
-      this.toast.success('Action Theme created');
+      this.toast.success('Thème d\'action créé');
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -73,7 +73,7 @@ export class ActionThemeFacade {
   async update(id: string, data: ActionThemeUpdate): Promise<void> {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
-      this.toast.success('Action Theme updated');
+      this.toast.success('Thème d\'action mis à jour');
       this.domainStore.load(undefined);
       this.router.navigate(['/action-themes', id]);
     } else if (result.status === 'error') {
@@ -84,7 +84,7 @@ export class ActionThemeFacade {
   async delete(id: string): Promise<void> {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Theme deleted');
+      this.toast.success('Thème d\'action supprimé');
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -95,41 +95,41 @@ export class ActionThemeFacade {
   async publish(id: string): Promise<void> {
     const result = await this.domainStore.publishMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Theme published');
+      this.toast.success('Thème d\'action publié');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Cannot publish Action Theme');
+      this.handleMutationError(result.error, 'Impossible de publier le thème d\'action');
     }
   }
 
   async disable(id: string): Promise<void> {
     const result = await this.domainStore.disableMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Theme disabled');
+      this.toast.success('Thème d\'action désactivé');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Cannot disable Action Theme');
+      this.handleMutationError(result.error, 'Impossible de désactiver le thème d\'action');
     }
   }
 
   async activate(id: string): Promise<void> {
     const result = await this.domainStore.activateMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Theme activated');
+      this.toast.success('Thème d\'action activé');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Cannot activate Action Theme');
+      this.handleMutationError(result.error, 'Impossible d\'activer le thème d\'action');
     }
   }
 
   async duplicate(id: string): Promise<void> {
     const result = await this.domainStore.duplicateMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Theme duplicated');
+      this.toast.success('Thème d\'action dupliqué');
       const duplicated = result.value as ActionTheme;
       this.router.navigate(['/action-themes', duplicated.id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Duplication failed');
+      this.handleMutationError(result.error, 'Échec de la duplication');
     }
   }
 
@@ -137,13 +137,13 @@ export class ActionThemeFacade {
   private handleMutationError(error: unknown, prefix?: string): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'linked to other resources';
-      this.toast.error(`Cannot delete — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
+      this.toast.error(`Suppression impossible — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Please fix the validation errors');
+      this.toast.error('Veuillez corriger les erreurs de validation');
     } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'An error occurred';
-      const text = typeof message === 'string' ? message : 'An error occurred';
+      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
+      const text = typeof message === 'string' ? message : 'Une erreur est survenue';
       this.toast.error(prefix ? `${prefix} — ${text}` : text);
     }
   }

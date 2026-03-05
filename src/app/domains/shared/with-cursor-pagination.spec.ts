@@ -222,7 +222,7 @@ describe('withCursorPagination', () => {
 
       store.load(undefined);
 
-      expect(store.error()).toBe('Failed to load items');
+      expect(store.error()).toBe('Échec du chargement');
     });
   });
 

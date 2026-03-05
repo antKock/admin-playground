@@ -75,7 +75,7 @@ export class CommunityFacade {
   async create(data: CommunityCreate): Promise<void> {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
-      this.toast.success('Community created');
+      this.toast.success('Communauté créée');
       this.router.navigate(['/communities']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -85,7 +85,7 @@ export class CommunityFacade {
   async update(id: string, data: CommunityUpdate): Promise<void> {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
-      this.toast.success('Community updated');
+      this.toast.success('Communauté mise à jour');
       this.domainStore.load(undefined);
       this.router.navigate(['/communities', id]);
     } else if (result.status === 'error') {
@@ -96,7 +96,7 @@ export class CommunityFacade {
   async delete(id: string): Promise<void> {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Community deleted');
+      this.toast.success('Communauté supprimée');
       this.router.navigate(['/communities']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -106,7 +106,7 @@ export class CommunityFacade {
   async assignUser(communityId: string, userId: string): Promise<void> {
     const result = await this.domainStore.assignUserMutation({ communityId, userId });
     if (result.status === 'success') {
-      this.toast.success('User assigned to Community');
+      this.toast.success('Utilisateur assigné à la communauté');
       this.domainStore.loadUsers();
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -116,7 +116,7 @@ export class CommunityFacade {
   async removeUser(communityId: string, userId: string): Promise<void> {
     const result = await this.domainStore.removeUserMutation({ communityId, userId });
     if (result.status === 'success') {
-      this.toast.success('User removed from Community');
+      this.toast.success('Utilisateur retiré de la communauté');
       this.domainStore.loadUsers();
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -127,13 +127,13 @@ export class CommunityFacade {
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'This community is linked to other resources';
-      this.toast.error(`Conflict — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
+      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Please fix the validation errors');
+      this.toast.error('Veuillez corriger les erreurs de validation');
     } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'An error occurred';
-      this.toast.error(typeof message === 'string' ? message : 'An error occurred');
+      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
+      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
     }
   }
 }

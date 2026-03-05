@@ -54,7 +54,7 @@ export class FundingProgramFacade {
   async create(data: FundingProgramCreate): Promise<void> {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
-      this.toast.success('Funding Program created');
+      this.toast.success('Programme de financement créé');
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -64,7 +64,7 @@ export class FundingProgramFacade {
   async update(id: string, data: FundingProgramUpdate): Promise<void> {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
-      this.toast.success('Funding Program updated');
+      this.toast.success('Programme de financement mis à jour');
       this.domainStore.load(undefined);
       this.router.navigate(['/funding-programs', id]);
     } else if (result.status === 'error') {
@@ -75,7 +75,7 @@ export class FundingProgramFacade {
   async delete(id: string): Promise<void> {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Funding Program deleted');
+      this.toast.success('Programme de financement supprimé');
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -86,13 +86,13 @@ export class FundingProgramFacade {
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'This program is linked to other resources';
-      this.toast.error(`Cannot delete — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
+      this.toast.error(`Suppression impossible — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Please fix the validation errors');
+      this.toast.error('Veuillez corriger les erreurs de validation');
     } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'An error occurred';
-      this.toast.error(typeof message === 'string' ? message : 'An error occurred');
+      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
+      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
     }
   }
 }

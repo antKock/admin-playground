@@ -117,7 +117,7 @@ describe('AgentFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Agent created');
+      expect(successSpy).toHaveBeenCalledWith('Agent créé');
     });
   });
 
@@ -130,7 +130,7 @@ describe('AgentFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Agent updated');
+      expect(successSpy).toHaveBeenCalledWith('Agent mis à jour');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('agents'));
@@ -147,7 +147,7 @@ describe('AgentFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Agent deleted');
+      expect(successSpy).toHaveBeenCalledWith('Agent supprimé');
     });
   });
 
@@ -194,7 +194,7 @@ describe('AgentFacade', () => {
 
       await changePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Agent status changed to completed');
+      expect(successSpy).toHaveBeenCalledWith('Statut de l\'agent changé en completed');
 
       // After success, it reloads the detail
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('agents/agent-1'));

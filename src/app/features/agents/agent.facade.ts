@@ -65,7 +65,7 @@ export class AgentFacade {
   async create(data: AgentCreate): Promise<void> {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
-      this.toast.success('Agent created');
+      this.toast.success('Agent créé');
       this.router.navigate(['/agents']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -75,7 +75,7 @@ export class AgentFacade {
   async update(id: string, data: AgentUpdate): Promise<void> {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
-      this.toast.success('Agent updated');
+      this.toast.success('Agent mis à jour');
       this.domainStore.load(undefined);
       this.router.navigate(['/agents', id]);
     } else if (result.status === 'error') {
@@ -86,7 +86,7 @@ export class AgentFacade {
   async delete(id: string): Promise<void> {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Agent deleted');
+      this.toast.success('Agent supprimé');
       this.router.navigate(['/agents']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -96,7 +96,7 @@ export class AgentFacade {
   async changeStatus(id: string, newStatus: AgentStatus): Promise<void> {
     const result = await this.domainStore.changeStatusMutation({ id, status: newStatus });
     if (result.status === 'success') {
-      this.toast.success(`Agent status changed to ${newStatus}`);
+      this.toast.success(`Statut de l'agent changé en ${newStatus}`);
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -107,13 +107,13 @@ export class AgentFacade {
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'This agent is linked to other resources';
-      this.toast.error(`Conflict — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
+      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Please fix the validation errors');
+      this.toast.error('Veuillez corriger les erreurs de validation');
     } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'An error occurred';
-      this.toast.error(typeof message === 'string' ? message : 'An error occurred');
+      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
+      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
     }
   }
 }

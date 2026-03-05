@@ -148,7 +148,7 @@ export class ActionModelFacade {
             try {
               JSON.parse(trimmed);
             } catch {
-              this.toast.error('Fix JSON errors before saving');
+              this.toast.error('Corrigez les erreurs JSON avant d\'enregistrer');
               return;
             }
           }
@@ -175,7 +175,7 @@ export class ActionModelFacade {
       data: { indicator_model_associations: associations },
     });
     if (result.status === 'success') {
-      this.toast.success('Parameters saved');
+      this.toast.success('Paramètres enregistrés');
       this._paramEdits.set(new Map());
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
@@ -215,7 +215,7 @@ export class ActionModelFacade {
   async create(data: ActionModelCreate): Promise<void> {
     const result = await this.domainStore.createMutation(data);
     if (result.status === 'success') {
-      this.toast.success('Action Model created');
+      this.toast.success('Modèle d\'action créé');
       this.router.navigate(['/action-models']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -225,7 +225,7 @@ export class ActionModelFacade {
   async update(id: string, data: ActionModelUpdate): Promise<void> {
     const result = await this.domainStore.updateMutation({ id, data });
     if (result.status === 'success') {
-      this.toast.success('Action Model updated');
+      this.toast.success('Modèle d\'action mis à jour');
       this.domainStore.refresh(undefined);
       this.router.navigate(['/action-models', id]);
     } else if (result.status === 'error') {
@@ -236,7 +236,7 @@ export class ActionModelFacade {
   async delete(id: string): Promise<void> {
     const result = await this.domainStore.deleteMutation(id);
     if (result.status === 'success') {
-      this.toast.success('Action Model deleted');
+      this.toast.success('Modèle d\'action supprimé');
       this.router.navigate(['/action-models']);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -246,7 +246,7 @@ export class ActionModelFacade {
   async attachIndicator(actionModelId: string, indicatorModelId: string): Promise<void> {
     const current = this.attachedIndicators();
     if (current.some((im) => im.id === indicatorModelId)) {
-      this.toast.error('Indicator is already attached');
+      this.toast.error('L\'indicateur est déjà attaché');
       return;
     }
     const associations: IndicatorModelAssociationInput[] = [
@@ -274,7 +274,7 @@ export class ActionModelFacade {
       data: { indicator_model_associations: associations },
     });
     if (result.status === 'success') {
-      this.toast.success('Indicator attached');
+      this.toast.success('Indicateur attaché');
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -299,7 +299,7 @@ export class ActionModelFacade {
       data: { indicator_model_associations: associations },
     });
     if (result.status === 'success') {
-      this.toast.success('Indicator detached');
+      this.toast.success('Indicateur retiré');
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
       this.handleMutationError(result.error);
@@ -338,13 +338,13 @@ export class ActionModelFacade {
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'This resource is linked to other resources';
-      this.toast.error(`Conflict — ${typeof reason === 'string' ? reason : 'linked to other resources'}`);
+      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
+      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
     } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Please fix the validation errors');
+      this.toast.error('Veuillez corriger les erreurs de validation');
     } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'An error occurred';
-      this.toast.error(typeof message === 'string' ? message : 'An error occurred');
+      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
+      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
     }
   }
 }

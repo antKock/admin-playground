@@ -93,7 +93,7 @@ export class ActionModelListComponent implements OnInit {
       filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.name })),
     },
     { key: 'action_theme_name', label: 'Thème d\'action', sortable: true, type: 'link', linkRoute: '/action-themes', linkIdKey: 'action_theme_id' },
-    { key: 'created_at', label: 'Créé le', sortable: true },
+    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
   ]);
 
   ngOnInit(): void {

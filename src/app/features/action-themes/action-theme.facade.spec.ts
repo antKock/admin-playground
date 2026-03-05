@@ -113,7 +113,7 @@ describe('ActionThemeFacade', () => {
 
       await createPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme created');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action créé');
     });
   });
 
@@ -126,7 +126,7 @@ describe('ActionThemeFacade', () => {
 
       await updatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme updated');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action mis à jour');
 
       // After success, it triggers a list refresh
       const refreshReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes'));
@@ -143,7 +143,7 @@ describe('ActionThemeFacade', () => {
 
       await deletePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme deleted');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action supprimé');
     });
   });
 
@@ -156,7 +156,7 @@ describe('ActionThemeFacade', () => {
 
       await publishPromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme published');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action publié');
 
       // After success, it reloads the detail
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
@@ -173,7 +173,7 @@ describe('ActionThemeFacade', () => {
 
       await disablePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme disabled');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action désactivé');
 
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
       detailReq.flush({ ...mockActionTheme, status: 'disabled' });
@@ -189,7 +189,7 @@ describe('ActionThemeFacade', () => {
 
       await activatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme activated');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action activé');
 
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-themes/at-1'));
       detailReq.flush({ ...mockActionTheme, status: 'published' });
@@ -205,7 +205,7 @@ describe('ActionThemeFacade', () => {
 
       await duplicatePromise;
 
-      expect(successSpy).toHaveBeenCalledWith('Action Theme duplicated');
+      expect(successSpy).toHaveBeenCalledWith('Thème d\'action dupliqué');
     });
   });
 

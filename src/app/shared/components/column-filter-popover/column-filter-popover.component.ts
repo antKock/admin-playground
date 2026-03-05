@@ -147,12 +147,19 @@ export class ColumnFilterPopoverComponent implements OnDestroy {
   readonly searchTerm = signal('');
   private readonly el = inject(ElementRef);
   private outsideClickHandler = this.handleOutsideClick.bind(this);
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    setTimeout(() => document.addEventListener('click', this.outsideClickHandler));
+    this.timeoutId = setTimeout(() => {
+      this.timeoutId = null;
+      document.addEventListener('click', this.outsideClickHandler);
+    });
   }
 
   ngOnDestroy(): void {
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+    }
     document.removeEventListener('click', this.outsideClickHandler);
   }
 

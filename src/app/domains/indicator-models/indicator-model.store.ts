@@ -63,7 +63,7 @@ export const IndicatorModelDomainStore = signalStore(
           loadIndicatorModel(store._http, id).pipe(
             tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
+              patch(store, { detailError: err?.message ?? 'Échec du chargement', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),
@@ -80,7 +80,7 @@ export const IndicatorModelDomainStore = signalStore(
           loadUsageByIndicatorModel(store._http, indicatorModelId).pipe(
             tap((models) => patch(store, { usedInActionModels: models, isLoadingUsage: false })),
             catchError((err) => {
-              patch(store, { isLoadingUsage: false, usageError: err?.message ?? 'Failed to load usage' });
+              patch(store, { isLoadingUsage: false, usageError: err?.message ?? 'Échec du chargement de l\'utilisation' });
               return EMPTY;
             }),
           ),

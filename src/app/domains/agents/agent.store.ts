@@ -65,7 +65,7 @@ export const AgentDomainStore = signalStore(
           loadAgent(store._http, id).pipe(
             tap((item) => patch(store, { selectedItem: item, isLoadingDetail: false, detailError: null })),
             catchError((err) => {
-              patch(store, { detailError: err?.message ?? 'Failed to load item', isLoadingDetail: false, selectedItem: null });
+              patch(store, { detailError: err?.message ?? 'Échec du chargement', isLoadingDetail: false, selectedItem: null });
               return EMPTY;
             }),
           ),
