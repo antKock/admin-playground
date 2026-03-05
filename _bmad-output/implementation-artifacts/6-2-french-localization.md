@@ -1,6 +1,6 @@
 # Story 6.2: French Localization of All UI Copy
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -21,14 +21,14 @@ As an admin user working in a French-speaking context, I want all UI labels, but
 
 ## Tasks
 
-- [ ] Task 1: Translate all 7 list component templates — page titles, button labels, empty states, filter labels, column headers (AC: #1, #2, #3, #7)
-- [ ] Task 2: Translate all 7 detail component templates — page headers, action buttons, section titles, metadata labels (AC: #1, #5, #6, #9)
-- [ ] Task 3: Translate all form components (create/edit) — form labels, placeholders, submit buttons, validation messages (AC: #1)
-- [ ] Task 4: Translate confirmation dialog calls — delete confirmations, status change confirmations (AC: #4)
-- [ ] Task 5: Translate shared components — breadcrumb labels, save-bar, API inspector section title, error states (AC: #6, #8, #9)
-- [ ] Task 6: Translate indicator-specific UI — indicator card labels, picker placeholder, param labels (already partially in French) (AC: #9)
-- [ ] Task 7: Update unit tests to match new French strings in assertions
-- [ ] Task 8: Visual review pass — ensure no truncation or layout issues from longer French strings
+- [x] Task 1: Translate all 7 list component templates — page titles, button labels, empty states, filter labels, column headers (AC: #1, #2, #3, #7)
+- [x] Task 2: Translate all 7 detail component templates — page headers, action buttons, section titles, metadata labels (AC: #1, #5, #6, #9)
+- [x] Task 3: Translate all form components (create/edit) — form labels, placeholders, submit buttons, validation messages (AC: #1)
+- [x] Task 4: Translate confirmation dialog calls — delete confirmations, status change confirmations (AC: #4)
+- [x] Task 5: Translate shared components — breadcrumb labels, save-bar, API inspector section title, error states (AC: #6, #8, #9)
+- [x] Task 6: Translate indicator-specific UI — indicator card labels, picker placeholder, param labels (already partially in French) (AC: #9)
+- [x] Task 7: Update unit tests to match new French strings in assertions
+- [x] Task 8: Visual review pass — ensure no truncation or layout issues from longer French strings
 
 ## Dev Notes
 

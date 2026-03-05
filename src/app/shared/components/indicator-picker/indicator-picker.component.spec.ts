@@ -28,7 +28,7 @@ describe('IndicatorPickerComponent', () => {
 
   it('should show attach CTA when closed', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Attach an indicator');
+    expect(fixture.nativeElement.textContent).toContain('Attacher un indicateur');
   });
 
   it('should open picker on CTA click', () => {
@@ -38,7 +38,7 @@ describe('IndicatorPickerComponent', () => {
     fixture.detectChanges();
 
     expect(component.isOpen()).toBe(true);
-    expect(fixture.nativeElement.querySelector('input[placeholder="Search indicators by name or technical name..."]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('input[placeholder="Rechercher des indicateurs par nom ou label technique..."]')).toBeTruthy();
   });
 
   it('should filter options by search term', () => {

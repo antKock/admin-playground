@@ -28,14 +28,14 @@ describe('SaveBarComponent', () => {
   it('should render when count > 0', () => {
     fixture.componentRef.setInput('count', 3);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('3 unsaved changes');
+    expect(fixture.nativeElement.textContent).toContain('3 modifications non enregistrées');
   });
 
   it('should show singular when count is 1', () => {
     fixture.componentRef.setInput('count', 1);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('1 unsaved change');
-    expect(fixture.nativeElement.textContent).not.toContain('changes');
+    expect(fixture.nativeElement.textContent).toContain('1 modification non enregistrée');
+    expect(fixture.nativeElement.textContent).not.toContain('modifications');
   });
 
   it('should emit save event on save click', () => {

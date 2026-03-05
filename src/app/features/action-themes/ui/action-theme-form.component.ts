@@ -12,25 +12,14 @@ import { ActionThemeFacade } from '../action-theme.facade';
   imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      @if (isEditMode) {
-        <app-breadcrumb [items]="[
-          { label: 'Action Themes', route: '/action-themes' },
-          { label: itemName() ?? '...', route: '/action-themes/' + editId },
-          { label: 'Edit' }
-        ]" />
-      } @else {
-        <app-breadcrumb [items]="[
-          { label: 'Action Themes', route: '/action-themes' },
-          { label: 'New Action Theme' }
-        ]" />
-      }
+      <app-breadcrumb [items]="formBreadcrumbs()" />
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Action Theme' : 'Create Action Theme' }}
+        {{ formTitle }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -38,12 +27,12 @@ import { ActionThemeFacade } from '../action-theme.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
         <div>
-          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Technical Label *</label>
+          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Label technique *</label>
           <input
             id="technical_label"
             formControlName="technical_label"
@@ -51,7 +40,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
             [class.border-error]="showError('technical_label')"
           />
           @if (showError('technical_label')) {
-            <p class="mt-1 text-sm text-error">Technical label is required.</p>
+            <p class="mt-1 text-sm text-error">Le label technique est obligatoire.</p>
           }
         </div>
 
@@ -67,7 +56,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="icon" class="block text-sm font-medium text-text-primary mb-1">Icon</label>
+            <label for="icon" class="block text-sm font-medium text-text-primary mb-1">Icône</label>
             <input
               id="icon"
               formControlName="icon"
@@ -75,7 +64,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
             />
           </div>
           <div>
-            <label for="color" class="block text-sm font-medium text-text-primary mb-1">Color</label>
+            <label for="color" class="block text-sm font-medium text-text-primary mb-1">Couleur</label>
             <input
               id="color"
               formControlName="color"
@@ -90,14 +79,14 @@ import { ActionThemeFacade } from '../action-theme.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>
@@ -114,6 +103,24 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
   isEditMode = false;
   editId: string | null = null;
   readonly itemName = computed(() => this.facade.selectedItem()?.name);
+
+  get formTitle(): string {
+    return this.isEditMode ? 'Modifier le thème d\'action' : 'Créer un thème d\'action';
+  }
+
+  readonly formBreadcrumbs = computed(() => {
+    if (this.isEditMode) {
+      return [
+        { label: 'Thèmes d\'action', route: '/action-themes' },
+        { label: this.itemName() ?? '...', route: '/action-themes/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: 'Thèmes d\'action', route: '/action-themes' },
+      { label: 'Nouveau thème d\'action' },
+    ];
+  });
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionThemeForm(this.fb);
 

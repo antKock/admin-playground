@@ -11,12 +11,12 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Indicator Models</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Modèles d'indicateur</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/indicator-models/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'indicateur
         </button>
       </div>
 
@@ -27,16 +27,16 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           [value]="typeFilter() || ''"
           (change)="onTypeFilterChange($event)"
         >
-          <option value="">All Types</option>
-          <option value="text">Text</option>
-          <option value="number">Number</option>
+          <option value="">Tous les types</option>
+          <option value="text">Texte</option>
+          <option value="number">Nombre</option>
         </select>
         @if (typeFilter()) {
           <button
             class="text-sm text-text-link hover:text-text-link-hover"
             (click)="clearFilters()"
           >
-            Clear filters
+            Effacer les filtres
           </button>
         }
       </div>
@@ -44,20 +44,20 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (typeFilter()) {
-            <p class="text-text-secondary mb-4">No indicator models match your filters.</p>
+            <p class="text-text-secondary mb-4">Aucun modèle d'indicateur ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No indicator models found.</p>
+            <p class="text-text-secondary mb-4">Aucun modèle d'indicateur trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/indicator-models/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'indicateur
             </button>
           }
         </div>
@@ -98,10 +98,10 @@ export class IndicatorModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
     { key: 'type_display', label: 'Type', type: 'status-badge' },
-    { key: 'unit', label: 'Unit', sortable: true },
-    { key: 'created_at', label: 'Created', type: 'date', sortable: true },
+    { key: 'unit', label: 'Unité', sortable: true },
+    { key: 'created_at', label: 'Créé le', type: 'date', sortable: true },
   ];
 
   ngOnInit(): void {

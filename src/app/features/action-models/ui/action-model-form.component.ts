@@ -2,7 +2,7 @@ import { Component, inject, OnInit, computed, effect, ElementRef, HostListener }
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createActionModelForm } from '@domains/action-models/forms/action-model.form';
 import { ActionModelFacade } from '../action-model.facade';
@@ -13,24 +13,17 @@ import { ActionModelFacade } from '../action-model.facade';
   template: `
     <div class="p-6 max-w-2xl">
       @if (isEditMode) {
-        <app-breadcrumb [items]="[
-          { label: 'Action Models', route: '/action-models' },
-          { label: facade.selectedItem()?.name ?? '...', route: '/action-models/' + editId },
-          { label: 'Edit' }
-        ]" />
+        <app-breadcrumb [items]="editBreadcrumbs()" />
       } @else {
-        <app-breadcrumb [items]="[
-          { label: 'Action Models', route: '/action-models' },
-          { label: 'New Action Model' }
-        ]" />
+        <app-breadcrumb [items]="createBreadcrumbs" />
       }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Action Model' : 'Create Action Model' }}
+        {{ heading() }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -38,7 +31,7 @@ import { ActionModelFacade } from '../action-model.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
@@ -53,7 +46,7 @@ import { ActionModelFacade } from '../action-model.facade';
         </div>
 
         <div>
-          <label for="funding_program_id" class="block text-sm font-medium text-text-primary mb-1">Funding Program *</label>
+          <label for="funding_program_id" class="block text-sm font-medium text-text-primary mb-1">Programme de financement *</label>
           <select
             id="funding_program_id"
             formControlName="funding_program_id"
@@ -62,23 +55,23 @@ import { ActionModelFacade } from '../action-model.facade';
             [disabled]="facade.fpLoading()"
           >
             @if (facade.fpLoading()) {
-              <option value="" disabled>Loading...</option>
+              <option value="" disabled>Chargement...</option>
             } @else if (facade.fpOptions().length === 0) {
-              <option value="" disabled>No Funding Programs available</option>
+              <option value="" disabled>Aucun programme de financement disponible</option>
             } @else {
-              <option value="" disabled>Select a Funding Program</option>
+              <option value="" disabled>Sélectionner un programme de financement</option>
               @for (fp of facade.fpOptions(); track fp.id) {
                 <option [value]="fp.id">{{ fp.name }}</option>
               }
             }
           </select>
           @if (showError('funding_program_id')) {
-            <p class="mt-1 text-sm text-error">Funding Program is required.</p>
+            <p class="mt-1 text-sm text-error">Le programme de financement est obligatoire.</p>
           }
         </div>
 
         <div>
-          <label for="action_theme_id" class="block text-sm font-medium text-text-primary mb-1">Action Theme *</label>
+          <label for="action_theme_id" class="block text-sm font-medium text-text-primary mb-1">Thème d'action *</label>
           <select
             id="action_theme_id"
             formControlName="action_theme_id"
@@ -87,18 +80,18 @@ import { ActionModelFacade } from '../action-model.facade';
             [disabled]="facade.atLoading()"
           >
             @if (facade.atLoading()) {
-              <option value="" disabled>Loading...</option>
+              <option value="" disabled>Chargement...</option>
             } @else if (facade.atOptions().length === 0) {
-              <option value="" disabled>No Action Themes available</option>
+              <option value="" disabled>Aucun thème d'action disponible</option>
             } @else {
-              <option value="" disabled>Select an Action Theme</option>
+              <option value="" disabled>Sélectionner un thème d'action</option>
               @for (at of facade.atOptions(); track at.id) {
                 <option [value]="at.id">{{ at.name }}</option>
               }
             }
           </select>
           @if (showError('action_theme_id')) {
-            <p class="mt-1 text-sm text-error">Action Theme is required.</p>
+            <p class="mt-1 text-sm text-error">Le thème d'action est obligatoire.</p>
           }
         </div>
 
@@ -108,14 +101,14 @@ import { ActionModelFacade } from '../action-model.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>
@@ -133,6 +126,21 @@ export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
   editId: string | null = null;
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionModelForm(this.fb);
+
+  readonly heading = computed(() =>
+    this.isEditMode ? 'Modifier le mod\u00e8le d\'action' : 'Cr\u00e9er un mod\u00e8le d\'action',
+  );
+
+  readonly editBreadcrumbs = computed<BreadcrumbItem[]>(() => [
+    { label: 'Mod\u00e8les d\'action', route: '/action-models' },
+    { label: this.facade.selectedItem()?.name ?? '...', route: '/action-models/' + this.editId },
+    { label: 'Modifier' },
+  ]);
+
+  readonly createBreadcrumbs: BreadcrumbItem[] = [
+    { label: 'Mod\u00e8les d\'action', route: '/action-models' },
+    { label: 'Nouveau mod\u00e8le d\'action' },
+  ];
 
   // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;

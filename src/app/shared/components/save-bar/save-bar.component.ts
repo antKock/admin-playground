@@ -8,7 +8,7 @@ import { Component, input, output } from '@angular/core';
         class="fixed bottom-0 left-60 right-0 bg-surface-base border-t border-border px-6 py-3 flex items-center justify-between shadow-lg z-40"
       >
         <div class="flex items-center gap-2 text-amber-600">
-          <span class="text-sm font-medium">{{ count() }} unsaved change{{ count() > 1 ? 's' : '' }}</span>
+          <span class="text-sm font-medium">{{ count() }} modification{{ count() > 1 ? 's' : '' }} non enregistrée{{ count() > 1 ? 's' : '' }}</span>
         </div>
         <div class="flex gap-3">
           <button
@@ -16,14 +16,14 @@ import { Component, input, output } from '@angular/core';
             [disabled]="saving()"
             (click)="discard.emit()"
           >
-            Discard
+            Abandonner
           </button>
           <button
             class="px-4 py-2 text-sm bg-brand text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
             [disabled]="saving()"
             (click)="save.emit()"
           >
-            {{ saving() ? 'Saving...' : 'Save' }}
+            {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
           </button>
         </div>
       </div>

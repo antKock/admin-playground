@@ -12,66 +12,45 @@ import { ActionModelFacade } from '../action-model.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Action Models</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Modèles d'action</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/action-models/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Model
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'action
         </button>
-      </div>
-
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="fpFilter()"
-          [value]="fpFilter() || ''"
-          (change)="onFpFilterChange($event)"
-        >
-          <option value="">All Funding Programs</option>
-          @for (fp of facade.fpOptions(); track fp.id) {
-            <option [value]="fp.id">{{ fp.name }}</option>
-          }
-        </select>
-        @if (fpFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Clear filters
-          </button>
-        }
       </div>
 
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
-          @if (fpFilter()) {
-            <p class="text-text-secondary mb-4">No action models match your filters.</p>
+          @if (hasActiveFilters()) {
+            <p class="text-text-secondary mb-4">Aucun modèle d'action ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No action models found.</p>
+            <p class="text-text-secondary mb-4">Aucun modèle d'action trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/action-models/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Model
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle d'action
             </button>
           }
         </div>
       } @else {
         <app-data-table
-          [columns]="columns"
+          [columns]="columns()"
           [data]="rows()"
           [isLoading]="facade.isLoading()"
           [hasMore]="facade.hasMore()"
           (rowClick)="onRowClick($event)"
           (linkClick)="onLinkClick($event)"
           (loadMore)="onLoadMore()"
+          (filterChange)="onFilterChange($event)"
         />
       }
     </div>
@@ -81,8 +60,7 @@ export class ActionModelListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(ActionModelFacade);
   readonly router = inject(Router);
-  readonly fpFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
 
   readonly rows = computed(() =>
@@ -101,12 +79,22 @@ export class ActionModelListComponent implements OnInit {
     });
   }
 
-  readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
-    { key: 'funding_program_name', label: 'Funding Program', sortable: true, type: 'link', linkRoute: '/funding-programs', linkIdKey: 'funding_program_id' },
-    { key: 'action_theme_name', label: 'Action Theme', sortable: true, type: 'link', linkRoute: '/action-themes', linkIdKey: 'action_theme_id' },
-    { key: 'created_at', label: 'Created', sortable: true },
-  ];
+  readonly columns = computed<ColumnDef[]>(() => [
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    {
+      key: 'funding_program_name',
+      label: 'Programme de financement',
+      sortable: true,
+      type: 'link',
+      linkRoute: '/funding-programs',
+      linkIdKey: 'funding_program_id',
+      filterable: true,
+      filterKey: 'funding_program_id',
+      filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.name })),
+    },
+    { key: 'action_theme_name', label: 'Thème d\'action', sortable: true, type: 'link', linkRoute: '/action-themes', linkIdKey: 'action_theme_id' },
+    { key: 'created_at', label: 'Créé le', sortable: true },
+  ]);
 
   ngOnInit(): void {
     this.facade.loadAssociationData();
@@ -125,22 +113,33 @@ export class ActionModelListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onFpFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.fpFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.fpFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const fp = this.fpFilter();
-    if (fp) {
-      filters['funding_program_id'] = fp;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

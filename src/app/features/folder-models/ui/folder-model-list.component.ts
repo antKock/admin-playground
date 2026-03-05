@@ -11,12 +11,12 @@ import { FolderModelFacade } from '../folder-model.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Folder Models</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Modèles de dossier</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/folder-models/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Folder Model
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle de dossier
         </button>
       </div>
 
@@ -27,7 +27,7 @@ import { FolderModelFacade } from '../folder-model.facade';
           [value]="fpFilter() || ''"
           (change)="onFpFilterChange($event)"
         >
-          <option value="">All Funding Programs</option>
+          <option value="">Tous les programmes de financement</option>
           @for (fp of facade.fpOptions(); track fp.id) {
             <option [value]="fp.id">{{ fp.label }}</option>
           }
@@ -37,7 +37,7 @@ import { FolderModelFacade } from '../folder-model.facade';
             class="text-sm text-text-link hover:text-text-link-hover"
             (click)="clearFilters()"
           >
-            Clear filters
+            Effacer les filtres
           </button>
         }
       </div>
@@ -45,20 +45,20 @@ import { FolderModelFacade } from '../folder-model.facade';
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (fpFilter()) {
-            <p class="text-text-secondary mb-4">No folder models match your filters.</p>
+            <p class="text-text-secondary mb-4">Aucun modèle de dossier ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No folder models found.</p>
+            <p class="text-text-secondary mb-4">Aucun modèle de dossier trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/folder-models/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Folder Model
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle de dossier
             </button>
           }
         </div>
@@ -92,10 +92,10 @@ export class FolderModelListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true },
     { key: 'description', label: 'Description' },
-    { key: 'funding_programs_display', label: 'Funding Programs' },
-    { key: 'created_at', label: 'Created', sortable: true },
+    { key: 'funding_programs_display', label: 'Programmes de financement' },
+    { key: 'created_at', label: 'Créé le', sortable: true },
   ];
 
   readonly rows = computed(() =>

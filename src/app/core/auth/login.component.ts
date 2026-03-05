@@ -22,26 +22,26 @@ import { AuthService } from './auth.service';
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           <div class="mb-4">
-            <label for="email" class="mb-1 block text-sm font-medium text-text-primary">Email</label>
+            <label for="email" class="mb-1 block text-sm font-medium text-text-primary">E-mail</label>
             <input
               id="email"
               type="email"
               formControlName="email"
               class="w-full rounded border border-stroke-standard px-3 py-2 text-sm text-text-primary focus:border-brand focus:outline-none"
-              placeholder="Email"
+              placeholder="E-mail"
             />
           </div>
 
           <div class="mb-6">
             <label for="password" class="mb-1 block text-sm font-medium text-text-primary"
-              >Password</label
+              >Mot de passe</label
             >
             <input
               id="password"
               type="password"
               formControlName="password"
               class="w-full rounded border border-stroke-standard px-3 py-2 text-sm text-text-primary focus:border-brand focus:outline-none"
-              placeholder="Password"
+              placeholder="Mot de passe"
             />
           </div>
 
@@ -50,7 +50,7 @@ import { AuthService } from './auth.service';
             [disabled]="loginForm.invalid || isSubmitting()"
             class="w-full rounded bg-surface-button-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-button-hover disabled:bg-surface-button-primary-disabled disabled:text-text-disabled"
           >
-            {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
+            {{ isSubmitting() ? 'Connexion...' : 'Se connecter' }}
           </button>
         </form>
       </div>
@@ -89,13 +89,13 @@ export class LoginComponent {
         this.loginForm.controls.password.reset();
 
         if (err.status === 401 || err.status === 403) {
-          this.errorMessage.set('Invalid email or password. Please try again.');
+          this.errorMessage.set('E-mail ou mot de passe invalide. Veuillez réessayer.');
         } else if (err.status === 422) {
-          this.errorMessage.set('Please enter a valid email address.');
+          this.errorMessage.set('Veuillez saisir une adresse e-mail valide.');
         } else if (err.status === 0) {
-          this.errorMessage.set('Unable to connect to the server. Please check your connection.');
+          this.errorMessage.set('Impossible de se connecter au serveur. Vérifiez votre connexion.');
         } else {
-          this.errorMessage.set('An unexpected error occurred. Please try again later.');
+          this.errorMessage.set('Une erreur inattendue est survenue. Veuillez réessayer plus tard.');
         }
       },
     });

@@ -12,25 +12,14 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
   imports: [ReactiveFormsModule, BreadcrumbComponent],
   template: `
     <div class="p-6 max-w-2xl">
-      @if (isEditMode) {
-        <app-breadcrumb [items]="[
-          { label: 'Indicator Models', route: '/indicator-models' },
-          { label: facade.selectedItem()?.name ?? '...', route: '/indicator-models/' + editId },
-          { label: 'Edit' }
-        ]" />
-      } @else {
-        <app-breadcrumb [items]="[
-          { label: 'Indicator Models', route: '/indicator-models' },
-          { label: 'New Indicator Model' }
-        ]" />
-      }
+      <app-breadcrumb [items]="formBreadcrumbs()" />
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Indicator Model' : 'Create Indicator Model' }}
+        {{ formTitle }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -38,12 +27,12 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
         <div>
-          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Technical Label *</label>
+          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Label technique *</label>
           <input
             id="technical_label"
             formControlName="technical_label"
@@ -51,7 +40,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             [class.border-error]="showError('technical_label')"
           />
           @if (showError('technical_label')) {
-            <p class="mt-1 text-sm text-error">Technical Label is required.</p>
+            <p class="mt-1 text-sm text-error">Le label technique est obligatoire.</p>
           }
         </div>
 
@@ -63,17 +52,17 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
             [class.border-error]="showError('type')"
           >
-            <option value="" disabled>Select a type</option>
-            <option value="text">Text</option>
-            <option value="number">Number</option>
+            <option value="" disabled>Sélectionner un type</option>
+            <option value="text">Texte</option>
+            <option value="number">Nombre</option>
           </select>
           @if (showError('type')) {
-            <p class="mt-1 text-sm text-error">Type is required.</p>
+            <p class="mt-1 text-sm text-error">Le type est obligatoire.</p>
           }
         </div>
 
         <div>
-          <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unit</label>
+          <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
           <input
             id="unit"
             formControlName="unit"
@@ -97,14 +86,14 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>
@@ -122,6 +111,29 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   editId: string | null = null;
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createIndicatorModelForm(this.fb);
+
+  private static readonly ENTITY_LABEL = 'Modèles d\'indicateur';
+  private static readonly EDIT_TITLE = 'Modifier le modèle d\'indicateur';
+  private static readonly CREATE_TITLE = 'Créer un modèle d\'indicateur';
+  private static readonly NEW_LABEL = 'Nouveau modèle d\'indicateur';
+
+  get formTitle(): string {
+    return this.isEditMode ? IndicatorModelFormComponent.EDIT_TITLE : IndicatorModelFormComponent.CREATE_TITLE;
+  }
+
+  readonly formBreadcrumbs = computed(() => {
+    if (this.isEditMode) {
+      return [
+        { label: IndicatorModelFormComponent.ENTITY_LABEL, route: '/indicator-models' },
+        { label: this.facade.selectedItem()?.name ?? '...', route: '/indicator-models/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: IndicatorModelFormComponent.ENTITY_LABEL, route: '/indicator-models' },
+      { label: IndicatorModelFormComponent.NEW_LABEL },
+    ];
+  });
 
   // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;

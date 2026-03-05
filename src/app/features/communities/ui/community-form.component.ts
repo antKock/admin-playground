@@ -14,23 +14,23 @@ import { CommunityFacade } from '../community.facade';
     <div class="p-6 max-w-2xl">
       @if (isEditMode) {
         <app-breadcrumb [items]="[
-          { label: 'Communities', route: '/communities' },
+          { label: 'Communautés', route: '/communities' },
           { label: itemName() ?? '...', route: '/communities/' + editId },
-          { label: 'Edit' }
+          { label: 'Modifier' }
         ]" />
       } @else {
         <app-breadcrumb [items]="[
-          { label: 'Communities', route: '/communities' },
-          { label: 'New Community' }
+          { label: 'Communautés', route: '/communities' },
+          { label: 'Nouvelle communauté' }
         ]" />
       }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Community' : 'Create Community' }}
+        {{ isEditMode ? 'Modifier la communauté' : 'Créer une communauté' }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -38,7 +38,7 @@ import { CommunityFacade } from '../community.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
@@ -51,12 +51,12 @@ import { CommunityFacade } from '../community.facade';
             [class.border-error]="showError('siret')"
           />
           @if (showError('siret')) {
-            <p class="mt-1 text-sm text-error">SIRET must be exactly 14 digits.</p>
+            <p class="mt-1 text-sm text-error">Le SIRET doit contenir exactement 14 chiffres.</p>
           }
         </div>
 
         <div>
-          <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Public Comment</label>
+          <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire public</label>
           <textarea
             id="public_comment"
             formControlName="public_comment"
@@ -66,7 +66,7 @@ import { CommunityFacade } from '../community.facade';
         </div>
 
         <div>
-          <label for="internal_comment" class="block text-sm font-medium text-text-primary mb-1">Internal Comment</label>
+          <label for="internal_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire interne</label>
           <textarea
             id="internal_comment"
             formControlName="internal_comment"
@@ -81,14 +81,14 @@ import { CommunityFacade } from '../community.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>

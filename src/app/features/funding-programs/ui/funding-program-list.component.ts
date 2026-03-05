@@ -11,12 +11,12 @@ import { FundingProgramFacade } from '../funding-program.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Funding Programs</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Programmes de financement</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/funding-programs/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Funding Program
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un programme
         </button>
       </div>
 
@@ -27,16 +27,16 @@ import { FundingProgramFacade } from '../funding-program.facade';
           [value]="activeFilter() || ''"
           (change)="onActiveFilterChange($event)"
         >
-          <option value="">All Programs</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
+          <option value="">Tous les programmes</option>
+          <option value="true">Actif</option>
+          <option value="false">Inactif</option>
         </select>
         @if (activeFilter()) {
           <button
             class="text-sm text-text-link hover:text-text-link-hover"
             (click)="clearFilters()"
           >
-            Clear filters
+            Effacer les filtres
           </button>
         }
       </div>
@@ -44,20 +44,20 @@ import { FundingProgramFacade } from '../funding-program.facade';
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (activeFilter()) {
-            <p class="text-text-secondary mb-4">No funding programs match your filters.</p>
+            <p class="text-text-secondary mb-4">Aucun programme de financement ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No funding programs found.</p>
+            <p class="text-text-secondary mb-4">Aucun programme de financement trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/funding-programs/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Funding Program
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un programme
             </button>
           }
         </div>
@@ -91,9 +91,9 @@ export class FundingProgramListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true },
     { key: 'description', label: 'Description' },
-    { key: 'created_at', label: 'Created', sortable: true },
+    { key: 'created_at', label: 'Créé le', sortable: true },
   ];
 
   ngOnInit(): void {

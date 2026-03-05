@@ -83,8 +83,8 @@ describe('ConfirmDialogComponent', () => {
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('button');
     const buttonTexts = Array.from(buttons).map((b) => (b as HTMLButtonElement).textContent?.trim());
-    expect(buttonTexts).toContain('Cancel');
-    expect(buttonTexts).toContain('Confirm');
+    expect(buttonTexts).toContain('Annuler');
+    expect(buttonTexts).toContain('Confirmer');
     service.close(false);
   });
 

@@ -38,8 +38,8 @@ describe('AgentDetailComponent', () => {
   });
 
   it('should map agent type to human-readable label', () => {
-    expect(component.agentTypeLabel('energy_performance_advisor')).toBe('Energy Performance Advisor');
-    expect(component.agentTypeLabel('other')).toBe('Other');
+    expect(component.agentTypeLabel('energy_performance_advisor')).toBe('Conseiller en performance énergétique');
+    expect(component.agentTypeLabel('other')).toBe('Autre');
     expect(component.agentTypeLabel('unknown_type')).toBe('unknown_type');
   });
 

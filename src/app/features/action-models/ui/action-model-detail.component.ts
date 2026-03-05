@@ -52,7 +52,7 @@ import { ActionModelFacade } from '../action-model.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Action Models', route: '/action-models' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="errorBreadcrumbs" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (model()) {
@@ -60,20 +60,20 @@ import { ActionModelFacade } from '../action-model.facade';
         <div class="flex items-center justify-between mb-2">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/action-models', model()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -88,12 +88,12 @@ import { ActionModelFacade } from '../action-model.facade';
         <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
         <div id="section-indicators" class="mt-6">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-            <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicators</h2>
-            <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attached</span>
+            <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicateurs</h2>
+            <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attaché(s)</span>
           </div>
 
           @if (indicatorCards().length === 0) {
-            <p class="text-sm text-text-secondary mb-3">No indicators attached yet</p>
+            <p class="text-sm text-text-secondary mb-3">Aucun indicateur attaché</p>
           } @else {
             <div
               cdkDropList
@@ -147,30 +147,35 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
   readonly skeletonFields = Array(6).fill(0);
 
+  readonly errorBreadcrumbs: BreadcrumbItem[] = [
+    { label: 'Modèles d\'action', route: '/action-models' },
+    { label: 'Erreur' },
+  ];
+
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const m = this.model();
     return [
-      { label: 'Action Models', route: '/action-models' },
+      { label: 'Modèles d\'action', route: '/action-models' },
       { label: m?.name ?? '...' },
     ];
   });
 
   readonly sectionDefs = computed<SectionDef[]>(() => [
-    { label: 'Metadata', targetId: 'section-metadata' },
-    { label: 'Indicators', targetId: 'section-indicators', count: this.indicatorCards().length },
-    { label: 'API Inspector', targetId: 'section-api-inspector' },
+    { label: 'Métadonnées', targetId: 'section-metadata' },
+    { label: 'Indicateurs', targetId: 'section-indicators', count: this.indicatorCards().length },
+    { label: 'Inspecteur API', targetId: 'section-api-inspector' },
   ]);
 
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
     return [
-      { label: 'Name', value: m.name, type: 'text' as const },
+      { label: 'Nom', value: m.name, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
-      { label: 'Funding Program', value: m.funding_program?.name ?? '—', type: 'text' as const },
-      { label: 'Action Theme', value: m.action_theme?.name ?? '—', type: 'text' as const },
-      { label: 'Created', value: m.created_at, type: 'date' as const },
-      { label: 'Updated', value: m.updated_at, type: 'date' as const },
+      { label: 'Programme de financement', value: m.funding_program?.name ?? '—', type: 'text' as const },
+      { label: 'Thème d\'action', value: m.action_theme?.name ?? '—', type: 'text' as const },
+      { label: 'Créé le', value: m.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
     ];
   });
 
@@ -276,9 +281,9 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     if (!m) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Action Model',
-      message: `Are you sure you want to delete '${m.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer le modèle d\'action',
+      message: `Êtes-vous sûr de vouloir supprimer '${m.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 
@@ -299,9 +304,9 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
     const indicator = this.facade.attachedIndicators().find((im) => im.id === indicatorId);
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Remove Indicator',
-      message: `Are you sure you want to remove '${indicator?.name ?? 'this indicator'}'?`,
-      confirmLabel: 'Remove',
+      title: 'Retirer l\'indicateur',
+      message: `Êtes-vous sûr de vouloir retirer '${indicator?.name ?? 'cet indicateur'}' ?`,
+      confirmLabel: 'Retirer',
       confirmVariant: 'danger',
     });
 

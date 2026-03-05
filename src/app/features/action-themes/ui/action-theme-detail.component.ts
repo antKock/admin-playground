@@ -30,7 +30,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Action Themes', route: '/action-themes' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="errorBreadcrumbs" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (theme()) {
@@ -44,7 +44,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
             @if (theme()!.technical_label) {
               <p class="text-sm font-mono text-text-tertiary mt-1">{{ theme()!.technical_label }}</p>
             }
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(theme()!.updated_at) }} · ID: {{ theme()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(theme()!.updated_at) }} · ID: {{ theme()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @if (theme()!.status === 'draft') {
@@ -53,7 +53,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
                 (click)="onPublish()"
                 [disabled]="facade.publishIsPending() || facade.anyMutationPending()"
               >
-                {{ facade.publishIsPending() ? 'Publishing...' : 'Publish' }}
+                {{ facade.publishIsPending() ? 'Publication...' : 'Publier' }}
               </button>
             }
             @if (theme()!.status === 'published') {
@@ -62,7 +62,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
                 (click)="onDisable()"
                 [disabled]="facade.disableIsPending() || facade.anyMutationPending()"
               >
-                {{ facade.disableIsPending() ? 'Disabling...' : 'Disable' }}
+                {{ facade.disableIsPending() ? 'Désactivation...' : 'Désactiver' }}
               </button>
             }
             @if (theme()!.status === 'disabled') {
@@ -71,7 +71,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
                 (click)="onActivate()"
                 [disabled]="facade.activateIsPending() || facade.anyMutationPending()"
               >
-                {{ facade.activateIsPending() ? 'Activating...' : 'Activate' }}
+                {{ facade.activateIsPending() ? 'Activation...' : 'Activer' }}
               </button>
             }
             <button
@@ -79,14 +79,14 @@ import { ActionThemeFacade } from '../action-theme.facade';
               (click)="onDuplicate()"
               [disabled]="facade.duplicateIsPending() || facade.anyMutationPending()"
             >
-              {{ facade.duplicateIsPending() ? 'Duplicating...' : 'Duplicate' }}
+              {{ facade.duplicateIsPending() ? 'Duplication...' : 'Dupliquer' }}
             </button>
             @if (theme()!.status === 'draft') {
               <button
                 class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
                 (click)="router.navigate(['/action-themes', theme()!.id, 'edit'])"
               >
-                Edit
+                Modifier
               </button>
             }
             @if (theme()!.status === 'draft' || theme()!.status === 'disabled') {
@@ -94,7 +94,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
                 class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
                 (click)="onDelete()"
               >
-                Delete
+                Supprimer
               </button>
             }
           </div>
@@ -117,6 +117,11 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
   readonly theme = this.facade.selectedItem;
   readonly skeletonFields = Array(6).fill(0);
 
+  readonly errorBreadcrumbs: BreadcrumbItem[] = [
+    { label: 'Thèmes d\'action', route: '/action-themes' },
+    { label: 'Erreur' },
+  ];
+
   private get themeId(): string {
     return this.route.snapshot.paramMap.get('id')!;
   }
@@ -124,7 +129,7 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const t = this.theme();
     return [
-      { label: 'Action Themes', route: '/action-themes' },
+      { label: 'Thèmes d\'action', route: '/action-themes' },
       { label: t?.name ?? '...' },
     ];
   });
@@ -133,14 +138,14 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
     const t = this.theme();
     if (!t) return [];
     return [
-      { label: 'Name', value: t.name, type: 'text' as const },
-      { label: 'Technical Label', value: t.technical_label, type: 'mono' as const },
+      { label: 'Nom', value: t.name, type: 'text' as const },
+      { label: 'Label technique', value: t.technical_label, type: 'mono' as const },
       { label: 'Description', value: t.description ?? '—', type: 'text' as const },
-      { label: 'Status', value: t.status, type: 'text' as const },
-      { label: 'Icon', value: t.icon ?? '—', type: 'text' as const },
-      { label: 'Color', value: t.color ?? '—', type: 'text' as const },
-      { label: 'Created', value: t.created_at, type: 'date' as const },
-      { label: 'Updated', value: t.updated_at, type: 'date' as const },
+      { label: 'Statut', value: t.status, type: 'text' as const },
+      { label: 'Icône', value: t.icon ?? '—', type: 'text' as const },
+      { label: 'Couleur', value: t.color ?? '—', type: 'text' as const },
+      { label: 'Créé le', value: t.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: t.updated_at, type: 'date' as const },
     ];
   });
 
@@ -178,9 +183,9 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
     if (!t) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Action Theme',
-      message: `Are you sure you want to delete '${t.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer le thème d\'action',
+      message: `Êtes-vous sûr de vouloir supprimer '${t.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

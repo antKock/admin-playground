@@ -11,23 +11,23 @@ import { CommunityFacade } from '../community.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Communities</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Communautés</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/communities/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Community
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer une communauté
         </button>
       </div>
 
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
-          <p class="text-text-secondary mb-4">No communities found.</p>
+          <p class="text-text-secondary mb-4">Aucune communauté trouvée.</p>
           <button
             class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
             (click)="router.navigate(['/communities/new'])"
           >
-            <lucide-icon [img]="PlusIcon" [size]="16" /> Create Community
+            <lucide-icon [img]="PlusIcon" [size]="16" /> Créer une communauté
           </button>
         </div>
       } @else {
@@ -59,11 +59,11 @@ export class CommunityListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true },
     { key: 'siret', label: 'SIRET' },
-    { key: 'public_comment', label: 'Public Comment' },
-    { key: 'created_at', label: 'Created', sortable: true },
-    { key: 'updated_at', label: 'Updated', sortable: true },
+    { key: 'public_comment', label: 'Commentaire public' },
+    { key: 'created_at', label: 'Créé le', sortable: true },
+    { key: 'updated_at', label: 'Mis à jour le', sortable: true },
   ];
 
   ngOnInit(): void {

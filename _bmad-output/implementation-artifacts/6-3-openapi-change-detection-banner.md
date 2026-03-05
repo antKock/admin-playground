@@ -1,6 +1,6 @@
 # Story 6.3: OpenAPI Change Detection Banner
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -22,15 +22,15 @@ As a developer using the admin dashboard, I want to be notified when the API's O
 
 ## Tasks
 
-- [ ] Task 1: Create `OpenApiWatcherService` — injectable service with `changes: Signal<OpenApiChange[] | null>` (AC: #1, #2, #3, #4, #5)
-- [ ] Task 2: Implement SHA-256 hashing via `crypto.subtle.digest()` for spec comparison (AC: #4)
-- [ ] Task 3: Implement lightweight diff logic — compare `paths` keys and `components.schemas` keys between stored and fetched specs (AC: #11)
-- [ ] Task 4: Create `OpenApiBannerComponent` — expandable amber banner with collapsed/expanded states (AC: #6, #7, #8)
-- [ ] Task 5: Implement dismiss logic — store dismissed hash in `localStorage`, don't show banner for same hash (AC: #9)
-- [ ] Task 6: Integrate banner into `AppComponent` shell — render above the router outlet / sidebar (AC: #6)
-- [ ] Task 7: Update `scripts/generate-api-types.sh` to also save baseline hash to `.openapi-baseline.sha256` and `localStorage`-compatible format (AC: #10)
-- [ ] Task 8: Trigger the watcher service on app init (use `APP_INITIALIZER` or `afterNextRender` in app component) (AC: #1, #2)
-- [ ] Task 9: Unit tests for `OpenApiWatcherService` (hash, diff, silent failure) and `OpenApiBannerComponent` (expand/collapse, dismiss)
+- [x] Task 1: Create `OpenApiWatcherService` — injectable service with `changes: Signal<OpenApiChange[] | null>` (AC: #1, #2, #3, #4, #5)
+- [x] Task 2: Implement SHA-256 hashing via `crypto.subtle.digest()` for spec comparison (AC: #4)
+- [x] Task 3: Implement lightweight diff logic — compare `paths` keys and `components.schemas` keys between stored and fetched specs (AC: #11)
+- [x] Task 4: Create `OpenApiBannerComponent` — expandable amber banner with collapsed/expanded states (AC: #6, #7, #8)
+- [x] Task 5: Implement dismiss logic — store dismissed hash in `localStorage`, don't show banner for same hash (AC: #9)
+- [x] Task 6: Integrate banner into `AppComponent` shell — render above the router outlet / sidebar (AC: #6)
+- [x] Task 7: Update `scripts/generate-api-types.sh` to also save baseline hash to `.openapi-baseline.sha256` and `localStorage`-compatible format (AC: #10)
+- [x] Task 8: Trigger the watcher service on app init (use `APP_INITIALIZER` or `afterNextRender` in app component) (AC: #1, #2)
+- [x] Task 9: Unit tests for `OpenApiWatcherService` (hash, diff, silent failure) and `OpenApiBannerComponent` (expand/collapse, dismiss)
 
 ## Dev Notes
 

@@ -30,7 +30,7 @@ import { CommunityUsersComponent } from './community-users.component';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Communities', route: '/communities' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="[{ label: 'Communautés', route: '/communities' }, { label: 'Erreur' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (community()) {
@@ -45,13 +45,13 @@ import { CommunityUsersComponent } from './community-users.component';
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/communities', community()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -79,7 +79,7 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const c = this.community();
     return [
-      { label: 'Communities', route: '/communities' },
+      { label: 'Communautés', route: '/communities' },
       { label: c?.name ?? '...' },
     ];
   });
@@ -88,12 +88,12 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
     const c = this.community();
     if (!c) return [];
     return [
-      { label: 'Name', value: c.name, type: 'text' as const },
+      { label: 'Nom', value: c.name, type: 'text' as const },
       { label: 'SIRET', value: c.siret, type: 'mono' as const },
-      { label: 'Public Comment', value: c.public_comment ?? '—', type: 'text' as const },
-      { label: 'Internal Comment', value: c.internal_comment ?? '—', type: 'text' as const },
-      { label: 'Created', value: c.created_at, type: 'date' as const },
-      { label: 'Updated', value: c.updated_at, type: 'date' as const },
+      { label: 'Commentaire public', value: c.public_comment ?? '—', type: 'text' as const },
+      { label: 'Commentaire interne', value: c.internal_comment ?? '—', type: 'text' as const },
+      { label: 'Créé le', value: c.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: c.updated_at, type: 'date' as const },
     ];
   });
 
@@ -119,9 +119,9 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
     if (!c) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Community?',
-      message: `Are you sure you want to delete '${c.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer la communauté ?',
+      message: `Êtes-vous sûr de vouloir supprimer '${c.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

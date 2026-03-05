@@ -29,7 +29,7 @@ import { FolderModelFacade } from '../folder-model.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Folder Models', route: '/folder-models' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="[{ label: 'Modèles de dossier', route: '/folder-models' }, { label: 'Erreur' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (model()) {
@@ -37,20 +37,20 @@ import { FolderModelFacade } from '../folder-model.facade';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/folder-models', model()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -76,7 +76,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const m = this.model();
     return [
-      { label: 'Folder Models', route: '/folder-models' },
+      { label: 'Modèles de dossier', route: '/folder-models' },
       { label: m?.name ?? '...' },
     ];
   });
@@ -84,13 +84,13 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
-    const fpNames = m.funding_programs?.map(fp => fp.name).join(', ') || 'None';
+    const fpNames = m.funding_programs?.map(fp => fp.name).join(', ') || 'Aucun';
     return [
-      { label: 'Name', value: m.name, type: 'text' as const },
+      { label: 'Nom', value: m.name, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
-      { label: 'Funding Programs', value: fpNames, type: 'text' as const },
-      { label: 'Created', value: m.created_at, type: 'date' as const },
-      { label: 'Updated', value: m.updated_at, type: 'date' as const },
+      { label: 'Programmes de financement', value: fpNames, type: 'text' as const },
+      { label: 'Créé le', value: m.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
     ];
   });
 
@@ -115,9 +115,9 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
     if (!m) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Folder Model',
-      message: `Are you sure you want to delete '${m.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer le modèle de dossier',
+      message: `Êtes-vous sûr de vouloir supprimer '${m.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

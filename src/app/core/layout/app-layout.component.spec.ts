@@ -64,7 +64,7 @@ describe('AppLayoutComponent', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const logoutBtn = compiled.querySelector('button');
-    expect(logoutBtn?.textContent).toContain('Logout');
+    expect(logoutBtn?.textContent).toContain('Déconnexion');
   });
 
   it('should render skip-to-content link', async () => {

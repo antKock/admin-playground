@@ -18,9 +18,9 @@ export interface SelectorOption {
         (click)="toggleOpen()"
       >
         @if (loading()) {
-          <span class="text-text-secondary">Loading...</span>
+          <span class="text-text-secondary">Chargement...</span>
         } @else if (selectedCount() > 0) {
-          <span>{{ selectedCount() }} selected</span>
+          <span>{{ selectedCount() }} sélectionné{{ selectedCount() > 1 ? 's' : '' }}</span>
         } @else {
           <span class="text-text-secondary">{{ placeholder() }}</span>
         }
@@ -32,7 +32,7 @@ export interface SelectorOption {
         >
           @if (options().length === 0) {
             <div class="px-3 py-4 text-sm text-text-secondary text-center">
-              No options available
+              Aucune option disponible
             </div>
           } @else {
             @for (option of options(); track option.id) {
@@ -80,7 +80,7 @@ export class MultiSelectorComponent {
   private readonly el = inject(ElementRef<HTMLElement>);
   readonly options = input.required<SelectorOption[]>();
   readonly selectedIds = input.required<string[]>();
-  readonly placeholder = input('Select...');
+  readonly placeholder = input('Sélectionner...');
   readonly loading = input(false);
   readonly hasError = input(false);
 

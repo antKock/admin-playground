@@ -16,22 +16,22 @@ import { AgentFacade } from '../agent.facade';
         <app-breadcrumb [items]="[
           { label: 'Agents', route: '/agents' },
           { label: agentDisplayName() || '...', route: '/agents/' + editId },
-          { label: 'Edit' }
+          { label: 'Modifier' }
         ]" />
       } @else {
         <app-breadcrumb [items]="[
           { label: 'Agents', route: '/agents' },
-          { label: 'New Agent' }
+          { label: 'Nouvel agent' }
         ]" />
       }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Agent' : 'Create Agent' }}
+        {{ formTitle }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="first_name" class="block text-sm font-medium text-text-primary mb-1">First Name</label>
+            <label for="first_name" class="block text-sm font-medium text-text-primary mb-1">Prénom</label>
             <input
               id="first_name"
               formControlName="first_name"
@@ -39,7 +39,7 @@ import { AgentFacade } from '../agent.facade';
             />
           </div>
           <div>
-            <label for="last_name" class="block text-sm font-medium text-text-primary mb-1">Last Name</label>
+            <label for="last_name" class="block text-sm font-medium text-text-primary mb-1">Nom de famille</label>
             <input
               id="last_name"
               formControlName="last_name"
@@ -50,7 +50,7 @@ import { AgentFacade } from '../agent.facade';
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-text-primary mb-1">Email</label>
+            <label for="email" class="block text-sm font-medium text-text-primary mb-1">E-mail</label>
             <input
               id="email"
               type="email"
@@ -59,11 +59,11 @@ import { AgentFacade } from '../agent.facade';
               [class.border-error]="showError('email')"
             />
             @if (showError('email')) {
-              <p class="mt-1 text-sm text-error">Please enter a valid email address.</p>
+              <p class="mt-1 text-sm text-error">Veuillez saisir une adresse e-mail valide.</p>
             }
           </div>
           <div>
-            <label for="phone" class="block text-sm font-medium text-text-primary mb-1">Phone</label>
+            <label for="phone" class="block text-sm font-medium text-text-primary mb-1">Téléphone</label>
             <input
               id="phone"
               formControlName="phone"
@@ -73,7 +73,7 @@ import { AgentFacade } from '../agent.facade';
         </div>
 
         <div>
-          <label for="position" class="block text-sm font-medium text-text-primary mb-1">Position</label>
+          <label for="position" class="block text-sm font-medium text-text-primary mb-1">Poste</label>
           <input
             id="position"
             formControlName="position"
@@ -83,26 +83,26 @@ import { AgentFacade } from '../agent.facade';
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="agent_type" class="block text-sm font-medium text-text-primary mb-1">Agent Type *</label>
+            <label for="agent_type" class="block text-sm font-medium text-text-primary mb-1">Type d'agent *</label>
             <select
               id="agent_type"
               formControlName="agent_type"
               class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
               [class.border-error]="showError('agent_type')"
             >
-              <option value="">Select agent type...</option>
-              <option value="energy_performance_advisor">Energy Performance Advisor</option>
-              <option value="other">Other</option>
+              <option value="">Sélectionner un type d'agent...</option>
+              <option value="energy_performance_advisor">Conseiller en performance énergétique</option>
+              <option value="other">Autre</option>
             </select>
             @if (showError('agent_type')) {
-              <p class="mt-1 text-sm text-error">Agent type is required.</p>
+              <p class="mt-1 text-sm text-error">Le type d'agent est obligatoire.</p>
             }
           </div>
           <div>
-            <label for="community_id" class="block text-sm font-medium text-text-primary mb-1">Community *</label>
+            <label for="community_id" class="block text-sm font-medium text-text-primary mb-1">Communauté *</label>
             @if (facade.communityLoading()) {
               <div class="w-full px-3 py-2 border border-border rounded-lg bg-surface-muted animate-pulse">
-                <span class="text-text-secondary text-sm">Loading communities...</span>
+                <span class="text-text-secondary text-sm">Chargement des communautés...</span>
               </div>
             } @else {
               <select
@@ -111,20 +111,20 @@ import { AgentFacade } from '../agent.facade';
                 class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
                 [class.border-error]="showError('community_id')"
               >
-                <option value="">Select community...</option>
+                <option value="">Sélectionner une communauté...</option>
                 @for (opt of facade.communityOptions(); track opt.id) {
                   <option [value]="opt.id">{{ opt.label }}</option>
                 }
               </select>
             }
             @if (showError('community_id')) {
-              <p class="mt-1 text-sm text-error">Community is required.</p>
+              <p class="mt-1 text-sm text-error">La communauté est obligatoire.</p>
             }
           </div>
         </div>
 
         <div>
-          <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Public Comment</label>
+          <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire public</label>
           <textarea
             id="public_comment"
             formControlName="public_comment"
@@ -134,7 +134,7 @@ import { AgentFacade } from '../agent.facade';
         </div>
 
         <div>
-          <label for="internal_comment" class="block text-sm font-medium text-text-primary mb-1">Internal Comment</label>
+          <label for="internal_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire interne</label>
           <textarea
             id="internal_comment"
             formControlName="internal_comment"
@@ -149,14 +149,14 @@ import { AgentFacade } from '../agent.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>
@@ -172,6 +172,11 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
 
   isEditMode = false;
   editId: string | null = null;
+
+  get formTitle(): string {
+    return this.isEditMode ? 'Modifier l\'agent' : 'Créer un agent';
+  }
+
   readonly agentDisplayName = computed(() => {
     const a = this.facade.selectedItem();
     if (!a) return '';

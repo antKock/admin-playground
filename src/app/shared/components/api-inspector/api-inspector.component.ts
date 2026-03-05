@@ -9,7 +9,7 @@ import { Component, OnDestroy, input, signal } from '@angular/core';
         class="w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left"
         (click)="isOpen.set(!isOpen())"
       >
-        <span class="text-sm font-medium text-text-secondary">API Inspector</span>
+        <span class="text-sm font-medium text-text-secondary">Inspecteur API</span>
         <svg
           class="w-4 h-4 text-text-secondary transition-transform"
           [class.rotate-180]="isOpen()"
@@ -25,11 +25,11 @@ import { Component, OnDestroy, input, signal } from '@angular/core';
       @if (isOpen()) {
         <div class="border-t border-border px-4 py-3 space-y-3">
           @if (requestUrl() === null && responseBody() === null) {
-            <p class="text-sm text-text-secondary">No API data captured yet</p>
+            <p class="text-sm text-text-secondary">Aucune donnée API capturée</p>
           } @else {
             @if (requestUrl()) {
               <div>
-                <p class="text-xs text-text-secondary mb-1">Request URL</p>
+                <p class="text-xs text-text-secondary mb-1">URL de la requête</p>
                 <p class="font-mono text-sm text-text-primary break-all">{{ requestUrl() }}</p>
               </div>
             }
@@ -37,7 +37,7 @@ import { Component, OnDestroy, input, signal } from '@angular/core';
             @if (responseBody() !== null) {
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <p class="text-xs text-text-secondary">Response Body</p>
+                  <p class="text-xs text-text-secondary">Corps de la réponse</p>
                   <button
                     class="text-xs px-2 py-1 rounded border border-border text-text-secondary hover:text-text-primary hover:bg-surface-muted transition-colors"
                     (click)="copyResponse()"
@@ -59,7 +59,7 @@ export class ApiInspectorComponent implements OnDestroy {
   readonly responseBody = input<unknown>(null);
 
   readonly isOpen = signal(false);
-  readonly copyLabel = signal('Copy');
+  readonly copyLabel = signal('Copier');
 
   private copyTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -78,11 +78,11 @@ export class ApiInspectorComponent implements OnDestroy {
   async copyResponse(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.formattedBody());
-      this.copyLabel.set('Copied!');
+      this.copyLabel.set('Copié !');
     } catch {
-      this.copyLabel.set('Failed');
+      this.copyLabel.set('Échec');
     }
     if (this.copyTimer) clearTimeout(this.copyTimer);
-    this.copyTimer = setTimeout(() => this.copyLabel.set('Copy'), 2000);
+    this.copyTimer = setTimeout(() => this.copyLabel.set('Copier'), 2000);
   }
 }

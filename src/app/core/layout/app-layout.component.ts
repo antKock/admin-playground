@@ -24,15 +24,15 @@ export class AppLayoutComponent {
   readonly LogOut = LogOut;
 
   readonly configItems: NavItem[] = [
-    { label: 'Funding Programs', route: '/funding-programs', icon: Landmark },
-    { label: 'Action Themes', route: '/action-themes', icon: Tags },
-    { label: 'Action Models', route: '/action-models', icon: FileText },
-    { label: 'Folder Models', route: '/folder-models', icon: FolderOpen },
-    { label: 'Indicator Models', route: '/indicator-models', icon: BarChart3 },
+    { label: 'Programmes de financement', route: '/funding-programs', icon: Landmark },
+    { label: 'Thèmes d\'action', route: '/action-themes', icon: Tags },
+    { label: 'Modèles d\'action', route: '/action-models', icon: FileText },
+    { label: 'Modèles de dossier', route: '/folder-models', icon: FolderOpen },
+    { label: 'Modèles d\'indicateur', route: '/indicator-models', icon: BarChart3 },
   ];
 
   readonly adminItems: NavItem[] = [
-    { label: 'Communities', route: '/communities', icon: Users },
+    { label: 'Communautés', route: '/communities', icon: Users },
     { label: 'Agents', route: '/agents', icon: UserCog },
   ];
 

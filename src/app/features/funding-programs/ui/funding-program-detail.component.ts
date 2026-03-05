@@ -29,7 +29,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Funding Programs', route: '/funding-programs' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="[{ label: 'Programmes de financement', route: '/funding-programs' }, { label: 'Erreur' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (program()) {
@@ -44,13 +44,13 @@ import { FundingProgramFacade } from '../funding-program.facade';
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/funding-programs', program()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -76,7 +76,7 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const p = this.program();
     return [
-      { label: 'Funding Programs', route: '/funding-programs' },
+      { label: 'Programmes de financement', route: '/funding-programs' },
       { label: p?.name ?? '...' },
     ];
   });
@@ -85,14 +85,14 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
     const p = this.program();
     if (!p) return [];
     return [
-      { label: 'Name', value: p.name, type: 'text' as const },
+      { label: 'Nom', value: p.name, type: 'text' as const },
       { label: 'Description', value: p.description ?? '—', type: 'text' as const },
       { label: 'Budget', value: p.budget != null ? `${p.budget}` : '—', type: 'text' as const },
-      { label: 'Active', value: p.is_active ? 'Yes' : 'No', type: 'text' as const },
-      { label: 'Start Date', value: p.start_date ?? '—', type: 'date' as const },
-      { label: 'End Date', value: p.end_date ?? '—', type: 'date' as const },
-      { label: 'Created', value: p.created_at, type: 'date' as const },
-      { label: 'Updated', value: p.updated_at, type: 'date' as const },
+      { label: 'Actif', value: p.is_active ? 'Oui' : 'Non', type: 'text' as const },
+      { label: 'Date de début', value: p.start_date ?? '—', type: 'date' as const },
+      { label: 'Date de fin', value: p.end_date ?? '—', type: 'date' as const },
+      { label: 'Créé le', value: p.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: p.updated_at, type: 'date' as const },
     ];
   });
 
@@ -117,9 +117,9 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
     if (!p) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Funding Program',
-      message: `Are you sure you want to delete '${p.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer le programme de financement',
+      message: `Êtes-vous sûr de vouloir supprimer '${p.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

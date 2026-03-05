@@ -66,7 +66,7 @@ describe('ApiInspectorComponent', () => {
   it('should show empty state when no data', () => {
     openPanel();
     const text = getPanel().textContent;
-    expect(text).toContain('No API data captured yet');
+    expect(text).toContain('Aucune donnée API capturée');
   });
 
   it('should display request URL', () => {
@@ -92,11 +92,11 @@ describe('ApiInspectorComponent', () => {
     fixture.detectChanges();
     openPanel();
     const buttons = getPanel().querySelectorAll('button');
-    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copy'));
+    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copier'));
     expect(copyButton).toBeTruthy();
   });
 
-  it('should show "Copied!" after clicking copy', async () => {
+  it('should show "Copié !" after clicking copy', async () => {
     vi.useFakeTimers();
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -106,21 +106,21 @@ describe('ApiInspectorComponent', () => {
     openPanel();
 
     const buttons = getPanel().querySelectorAll('button');
-    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copy'))!;
+    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copier'))!;
     copyButton.click();
     await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
 
-    expect(copyButton.textContent).toContain('Copied!');
+    expect(copyButton.textContent).toContain('Copié !');
 
     vi.advanceTimersByTime(2000);
     fixture.detectChanges();
-    expect(copyButton.textContent).toContain('Copy');
+    expect(copyButton.textContent).toContain('Copier');
 
     vi.useRealTimers();
   });
 
-  it('should show "Failed" when clipboard write fails', async () => {
+  it('should show "Échec" when clipboard write fails', async () => {
     vi.useFakeTimers();
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
@@ -130,16 +130,16 @@ describe('ApiInspectorComponent', () => {
     openPanel();
 
     const buttons = getPanel().querySelectorAll('button');
-    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copy'))!;
+    const copyButton = Array.from(buttons).find(b => b.textContent?.includes('Copier'))!;
     copyButton.click();
     await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
 
-    expect(copyButton.textContent).toContain('Failed');
+    expect(copyButton.textContent).toContain('Échec');
 
     vi.advanceTimersByTime(2000);
     fixture.detectChanges();
-    expect(copyButton.textContent).toContain('Copy');
+    expect(copyButton.textContent).toContain('Copier');
 
     vi.useRealTimers();
   });
@@ -151,8 +151,8 @@ describe('ApiInspectorComponent', () => {
     openPanel();
 
     const text = getPanel().textContent;
-    expect(text).toContain('Request URL');
-    expect(text).toContain('Response Body');
+    expect(text).toContain('URL de la requête');
+    expect(text).toContain('Corps de la réponse');
     expect(text).toContain('https://api.example.com/items');
   });
 });

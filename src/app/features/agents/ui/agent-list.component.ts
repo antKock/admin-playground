@@ -17,49 +17,27 @@ import { AgentFacade } from '../agent.facade';
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/agents/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Agent
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
         </button>
-      </div>
-
-      <div class="flex items-center gap-3 mb-4">
-        <select
-          class="px-3 py-2 border border-border rounded-lg bg-surface-base text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.bg-brand-light]="statusFilter()"
-          [value]="statusFilter() || ''"
-          (change)="onStatusFilterChange($event)"
-        >
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="completed">Completed</option>
-          <option value="deleted">Deleted</option>
-        </select>
-        @if (statusFilter()) {
-          <button
-            class="text-sm text-text-link hover:text-text-link-hover"
-            (click)="clearFilters()"
-          >
-            Clear filters
-          </button>
-        }
       </div>
 
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
-          @if (statusFilter()) {
-            <p class="text-text-secondary mb-4">No agents match your filters.</p>
+          @if (hasActiveFilters()) {
+            <p class="text-text-secondary mb-4">Aucun agent ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No agents found.</p>
+            <p class="text-text-secondary mb-4">Aucun agent trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/agents/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Agent
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
             </button>
           }
         </div>
@@ -72,6 +50,7 @@ import { AgentFacade } from '../agent.facade';
           (rowClick)="onRowClick($event)"
           (linkClick)="onLinkClick($event)"
           (loadMore)="onLoadMore()"
+          (filterChange)="onFilterChange($event)"
         />
       }
     </div>
@@ -81,8 +60,7 @@ export class AgentListComponent implements OnInit {
   protected readonly PlusIcon = Plus;
   readonly facade = inject(AgentFacade);
   readonly router = inject(Router);
-  readonly statusFilter = signal<string>('');
-  // Prevents empty-state flash on first render — stays false until the first load completes.
+  readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
 
   constructor() {
@@ -94,17 +72,28 @@ export class AgentListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'displayName', label: 'Name', sortable: true },
-    { key: 'email', label: 'Email', sortable: true },
-    { key: 'agent_type', label: 'Agent Type', sortable: true },
-    { key: 'status', label: 'Status', type: 'status-badge' },
-    { key: 'community_name', label: 'Community', sortable: true, type: 'link', linkRoute: '/communities', linkIdKey: 'community_id' },
-    { key: 'created_at', label: 'Created', sortable: true },
+    { key: 'displayName', label: 'Nom', sortable: true },
+    { key: 'email', label: 'E-mail', sortable: true },
+    { key: 'agent_type', label: 'Type d\'agent', sortable: true },
+    {
+      key: 'status',
+      label: 'Statut',
+      type: 'status-badge',
+      filterable: true,
+      filterKey: 'status',
+      filterOptions: [
+        { id: 'draft', label: 'Brouillon' },
+        { id: 'completed', label: 'Complété' },
+        { id: 'deleted', label: 'Supprimé' },
+      ],
+    },
+    { key: 'community_name', label: 'Communauté', sortable: true, type: 'link', linkRoute: '/communities', linkIdKey: 'community_id' },
+    { key: 'created_at', label: 'Créé le', sortable: true },
   ];
 
   private readonly agentTypeLabels: Record<string, string> = {
-    energy_performance_advisor: 'Energy Performance Advisor',
-    other: 'Other',
+    energy_performance_advisor: 'Conseiller en performance énergétique',
+    other: 'Autre',
   };
 
   readonly rows = computed(() =>
@@ -132,22 +121,33 @@ export class AgentListComponent implements OnInit {
     this.facade.loadMore();
   }
 
-  onStatusFilterChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.statusFilter.set(value);
+  onFilterChange(event: { key: string; values: string[] }): void {
+    const filters = { ...this.activeFilters() };
+    if (event.values.length === 0) {
+      delete filters[event.key];
+    } else {
+      filters[event.key] = event.values;
+    }
+    this.activeFilters.set(filters);
     this.facade.load(this.buildFilters());
   }
 
+  hasActiveFilters(): boolean {
+    return Object.keys(this.activeFilters()).length > 0;
+  }
+
   clearFilters(): void {
-    this.statusFilter.set('');
+    this.activeFilters.set({});
     this.facade.load(this.buildFilters());
   }
 
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    const status = this.statusFilter();
-    if (status) {
-      filters['status'] = status;
+    const active = this.activeFilters();
+    for (const [key, values] of Object.entries(active)) {
+      if (values.length > 0) {
+        filters[key] = values.join(',');
+      }
     }
     return filters;
   }

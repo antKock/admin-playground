@@ -27,7 +27,7 @@ import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.servic
               class="rounded border border-stroke-standard px-4 py-2 text-sm text-text-secondary hover:bg-surface-muted"
               (click)="dialogService.close(false)"
             >
-              Cancel
+              Annuler
             </button>
             <button
               class="rounded px-4 py-2 text-sm font-medium text-white"
@@ -36,7 +36,7 @@ import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.servic
               [class.bg-text-error]="dialog.confirmVariant === 'danger'"
               (click)="dialogService.close(true)"
             >
-              {{ dialog.confirmLabel || 'Confirm' }}
+              {{ dialog.confirmLabel || 'Confirmer' }}
             </button>
           </div>
         </div>

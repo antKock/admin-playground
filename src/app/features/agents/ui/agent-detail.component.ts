@@ -31,7 +31,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Agents', route: '/agents' }, { label: 'Error' }]" />
+          <app-breadcrumb [items]="[{ label: 'Agents', route: '/agents' }, { label: 'Erreur' }]" />
           <p class="text-error mb-4">{{ facade.detailError() }}</p>
         </div>
       } @else if (agent()) {
@@ -42,7 +42,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
               <h1 class="text-2xl font-bold text-text-primary">{{ displayName() }}</h1>
               <app-status-badge [status]="agent()!.status" />
             </div>
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(agent()!.updated_at) }} · ID: {{ agent()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(agent()!.updated_at) }} · ID: {{ agent()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @for (transition of allowedTransitions(); track transition.status) {
@@ -59,13 +59,13 @@ import { AgentStatus } from '@domains/agents/agent.models';
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/agents', agent()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -108,16 +108,16 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
     const a = this.agent();
     if (!a) return [];
     return [
-      { label: 'Name', value: this.displayName(), type: 'text' as const },
-      { label: 'Email', value: a.email ?? '—', type: 'text' as const },
-      { label: 'Phone', value: a.phone ?? '—', type: 'text' as const },
-      { label: 'Position', value: a.position ?? '—', type: 'text' as const },
-      { label: 'Agent Type', value: this.agentTypeLabel(a.agent_type), type: 'text' as const },
-      { label: 'Community', value: a.community?.name ?? '—', type: 'linked' as const, linkedRoute: `/communities/${a.community_id}` },
-      { label: 'Public Comment', value: a.public_comment ?? '—', type: 'text' as const },
-      { label: 'Internal Comment', value: a.internal_comment ?? '—', type: 'text' as const },
-      { label: 'Created', value: a.created_at, type: 'date' as const },
-      { label: 'Updated', value: a.updated_at, type: 'date' as const },
+      { label: 'Nom', value: this.displayName(), type: 'text' as const },
+      { label: 'E-mail', value: a.email ?? '—', type: 'text' as const },
+      { label: 'Téléphone', value: a.phone ?? '—', type: 'text' as const },
+      { label: 'Poste', value: a.position ?? '—', type: 'text' as const },
+      { label: 'Type d\'agent', value: this.agentTypeLabel(a.agent_type), type: 'text' as const },
+      { label: 'Communauté', value: a.community?.name ?? '—', type: 'linked' as const, linkedRoute: `/communities/${a.community_id}` },
+      { label: 'Commentaire public', value: a.public_comment ?? '—', type: 'text' as const },
+      { label: 'Commentaire interne', value: a.internal_comment ?? '—', type: 'text' as const },
+      { label: 'Créé le', value: a.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: a.updated_at, type: 'date' as const },
     ];
   });
 
@@ -138,8 +138,8 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
   }
 
   private readonly agentTypeLabels: Record<string, string> = {
-    energy_performance_advisor: 'Energy Performance Advisor',
-    other: 'Other',
+    energy_performance_advisor: 'Conseiller en performance énergétique',
+    other: 'Autre',
   };
 
   agentTypeLabel(type: string): string {
@@ -163,8 +163,8 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
     const name = this.displayName();
     const label = this.transitionLabel(newStatus);
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Change Agent Status',
-      message: `Change status of '${name}' to '${label}'?`,
+      title: 'Changer le statut de l\'agent',
+      message: `Changer le statut de '${name}' en '${label}' ?`,
       confirmLabel: label,
       confirmVariant: newStatus === 'deleted' ? 'danger' : 'primary',
     });
@@ -180,9 +180,9 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
 
     const name = this.displayName();
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Agent?',
-      message: `Are you sure you want to delete '${name}'? This will soft-delete the agent.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer l\'agent ?',
+      message: `Êtes-vous sûr de vouloir supprimer '${name}' ? L'agent sera supprimé (suppression douce).`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

@@ -36,20 +36,20 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
             @if (model()!.technical_label) {
               <p class="text-sm font-mono text-text-tertiary mt-1">{{ model()!.technical_label }}</p>
             }
-            <p class="text-xs text-text-tertiary mt-1">Updated {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
               (click)="router.navigate(['/indicator-models', model()!.id, 'edit'])"
             >
-              Edit
+              Modifier
             </button>
             <button
               class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
               (click)="onDelete()"
             >
-              Delete
+              Supprimer
             </button>
           </div>
         </div>
@@ -62,12 +62,12 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
 
         <section id="section-usage" class="mt-8">
           <h2 class="text-lg font-semibold text-text-primary mb-3">
-            Used in {{ facade.usageCount() }} model{{ facade.usageCount() !== 1 ? 's' : '' }}
+            Utilisé dans {{ facade.usageCount() }} modèle{{ facade.usageCount() !== 1 ? 's' : '' }}
           </h2>
           @if (facade.isLoadingUsage()) {
             <div class="animate-pulse h-4 bg-surface-muted rounded w-48"></div>
           } @else if (facade.usageCount() === 0) {
-            <p class="text-text-secondary text-sm">Not used in any Action Model yet.</p>
+            <p class="text-text-secondary text-sm">Non utilisé dans aucun modèle d'action.</p>
           } @else {
             <ul class="space-y-1">
               @for (am of facade.usedInModels(); track am.id) {
@@ -86,8 +86,8 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
         </div>
       } @else if (facade.detailError()) {
         <div class="text-center py-16">
-          <app-breadcrumb [items]="[{ label: 'Indicator Models', route: '/indicator-models' }, { label: 'Error' }]" />
-          <p class="text-error font-medium mb-2">Failed to load indicator model</p>
+          <app-breadcrumb [items]="errorBreadcrumbs" />
+          <p class="text-error font-medium mb-2">Échec du chargement du modèle d'indicateur</p>
           <p class="text-text-secondary text-sm">{{ facade.detailError() }}</p>
         </div>
       }
@@ -105,31 +105,36 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
 
   readonly skeletonFields = Array(7).fill(0);
 
+  readonly errorBreadcrumbs: BreadcrumbItem[] = [
+    { label: 'Modèles d\'indicateur', route: '/indicator-models' },
+    { label: 'Erreur' },
+  ];
+
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const m = this.model();
     return [
-      { label: 'Indicator Models', route: '/indicator-models' },
+      { label: 'Modèles d\'indicateur', route: '/indicator-models' },
       { label: m?.name ?? '...' },
     ];
   });
 
   readonly sectionDefs = computed<SectionDef[]>(() => [
-    { label: 'Metadata', targetId: 'section-metadata' },
-    { label: 'Usage', targetId: 'section-usage', count: this.facade.usageCount() },
-    { label: 'API Inspector', targetId: 'section-api-inspector' },
+    { label: 'Métadonnées', targetId: 'section-metadata' },
+    { label: 'Utilisation', targetId: 'section-usage', count: this.facade.usageCount() },
+    { label: 'Inspecteur API', targetId: 'section-api-inspector' },
   ]);
 
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
     return [
-      { label: 'Name', value: m.name, type: 'text' as const },
-      { label: 'Technical Label', value: m.technical_label, type: 'text' as const },
+      { label: 'Nom', value: m.name, type: 'text' as const },
+      { label: 'Label technique', value: m.technical_label, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
       { label: 'Type', value: m.type, type: 'text' as const },
-      { label: 'Unit', value: m.unit ?? '—', type: 'text' as const },
-      { label: 'Created', value: m.created_at, type: 'date' as const },
-      { label: 'Updated', value: m.updated_at, type: 'date' as const },
+      { label: 'Unité', value: m.unit ?? '—', type: 'text' as const },
+      { label: 'Créé le', value: m.created_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
     ];
   });
 
@@ -154,9 +159,9 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
     if (!m) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Delete Indicator Model',
-      message: `Are you sure you want to delete '${m.name}'? This action cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: 'Supprimer le modèle d\'indicateur',
+      message: `Êtes-vous sûr de vouloir supprimer '${m.name}' ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
       confirmVariant: 'danger',
     });
 

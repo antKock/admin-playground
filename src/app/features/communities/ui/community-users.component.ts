@@ -11,12 +11,12 @@ import { CommunityFacade } from '../community.facade';
   template: `
     <div class="mt-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold text-text-primary">Users</h2>
+        <h2 class="text-lg font-semibold text-text-primary">Utilisateurs</h2>
         <button
           class="px-3 py-1.5 text-sm bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="togglePicker()"
         >
-          {{ showPicker() ? 'Close' : '+ Assign User' }}
+          {{ showPicker() ? 'Fermer' : '+ Assigner un utilisateur' }}
         </button>
       </div>
 
@@ -25,14 +25,14 @@ import { CommunityFacade } from '../community.facade';
           <input
             type="text"
             class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand mb-3"
-            placeholder="Search users by name or email..."
+            placeholder="Rechercher des utilisateurs par nom ou e-mail..."
             [ngModel]="searchQuery()"
             (ngModelChange)="onSearch($event)"
           />
           @if (facade.isLoadingUsers()) {
-            <p class="text-sm text-text-secondary">Loading users...</p>
+            <p class="text-sm text-text-secondary">Chargement des utilisateurs...</p>
           } @else if (filteredUsers().length === 0) {
-            <p class="text-sm text-text-secondary">No users found.</p>
+            <p class="text-sm text-text-secondary">Aucun utilisateur trouvé.</p>
           } @else {
             <div class="max-h-48 overflow-y-auto space-y-1">
               @for (user of filteredUsers(); track user.id) {
@@ -44,7 +44,7 @@ import { CommunityFacade } from '../community.facade';
                     <span class="text-sm text-text-primary">{{ user.first_name }} {{ user.last_name }}</span>
                     <span class="text-xs text-text-secondary ml-2">{{ user.email }}</span>
                     @if (isAssigned(user)) {
-                      <span class="ml-2 text-xs px-1.5 py-0.5 bg-surface-muted rounded text-text-secondary">Already assigned</span>
+                      <span class="ml-2 text-xs px-1.5 py-0.5 bg-surface-muted rounded text-text-secondary">Déjà assigné</span>
                     }
                   </div>
                   @if (!isAssigned(user)) {
@@ -53,7 +53,7 @@ import { CommunityFacade } from '../community.facade';
                       [disabled]="facade.assignIsPending()"
                       (click)="onAssign(user)"
                     >
-                      Assign
+                      Assigner
                     </button>
                   }
                 </div>
@@ -64,7 +64,7 @@ import { CommunityFacade } from '../community.facade';
       }
 
       @if (assignedUsers().length === 0) {
-        <p class="text-sm text-text-secondary">No users assigned to this community.</p>
+        <p class="text-sm text-text-secondary">Aucun utilisateur assigné à cette communauté.</p>
       } @else {
         <div class="space-y-1">
           @for (user of assignedUsers(); track user.id) {
@@ -77,7 +77,7 @@ import { CommunityFacade } from '../community.facade';
                 class="text-text-secondary hover:text-status-invalid transition-colors disabled:opacity-50"
                 [disabled]="facade.removeIsPending()"
                 (click)="onRemove(user)"
-                title="Remove user"
+                title="Retirer l'utilisateur"
               >
                 &times;
               </button>
@@ -145,9 +145,9 @@ export class CommunityUsersComponent {
     if (!community) return;
 
     const confirmed = await this.confirmDialog.confirm({
-      title: 'Remove user?',
-      message: `This will remove <strong>${user.first_name} ${user.last_name}</strong> from this Community.`,
-      confirmLabel: 'Remove',
+      title: 'Retirer l\'utilisateur ?',
+      message: `Ceci retirera <strong>${user.first_name} ${user.last_name}</strong> de cette communauté.`,
+      confirmLabel: 'Retirer',
       confirmVariant: 'danger',
     });
 

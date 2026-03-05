@@ -34,29 +34,41 @@ describe('AgentListComponent', () => {
     expect(statusCol?.type).toBe('status-badge');
   });
 
+  it('should have status column marked as filterable', () => {
+    const statusCol = component.columns.find(c => c.key === 'status');
+    expect(statusCol?.filterable).toBe(true);
+    expect(statusCol?.filterKey).toBe('status');
+    expect(statusCol?.filterOptions?.length).toBe(3);
+  });
+
   it('should call facade.load on init with empty filters', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.ngOnInit();
     expect(loadSpy).toHaveBeenCalledWith({});
   });
 
-  it('should start with empty status filter', () => {
-    expect(component.statusFilter()).toBe('');
+  it('should start with no active filters', () => {
+    expect(component.hasActiveFilters()).toBe(false);
   });
 
-  it('should pass status filter to facade.load on filter change', () => {
+  it('should pass filter to facade.load on filterChange', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
-    const event = { target: { value: 'draft' } } as unknown as Event;
-    component.onStatusFilterChange(event);
-    expect(component.statusFilter()).toBe('draft');
+    component.onFilterChange({ key: 'status', values: ['draft'] });
+    expect(component.hasActiveFilters()).toBe(true);
     expect(loadSpy).toHaveBeenCalledWith({ status: 'draft' });
   });
 
-  it('should clear filter and reload with empty filters', () => {
-    component.statusFilter.set('completed');
+  it('should clear filters and reload with empty filters', () => {
+    component.onFilterChange({ key: 'status', values: ['completed'] });
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.clearFilters();
-    expect(component.statusFilter()).toBe('');
+    expect(component.hasActiveFilters()).toBe(false);
     expect(loadSpy).toHaveBeenCalledWith({});
+  });
+
+  it('should support multi-select filter values', () => {
+    const loadSpy = vi.spyOn(component.facade, 'load');
+    component.onFilterChange({ key: 'status', values: ['draft', 'completed'] });
+    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft,completed' });
   });
 });

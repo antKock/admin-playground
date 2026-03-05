@@ -1,8 +1,14 @@
 import { Component, ElementRef, input, output, AfterViewInit, OnDestroy, viewChild, signal, computed } from '@angular/core';
-import { LucideAngularModule, type LucideIconData } from 'lucide-angular';
+import { LucideAngularModule, ListFilter, type LucideIconData } from 'lucide-angular';
 
 import { StatusBadgeComponent } from '../status-badge/status-badge.component';
+import { ColumnFilterPopoverComponent } from '../column-filter-popover/column-filter-popover.component';
 import { formatDateFr } from '@app/shared/utils/format-date';
+
+export interface FilterOption {
+  id: string;
+  label: string;
+}
 
 export interface ColumnDef {
   key: string;
@@ -13,6 +19,9 @@ export interface ColumnDef {
   secondaryKey?: string;
   linkRoute?: string;
   linkIdKey?: string;
+  filterable?: boolean;
+  filterKey?: string;
+  filterOptions?: FilterOption[];
 }
 
 export interface RowAction {
@@ -26,9 +35,11 @@ export interface RowAction {
   selector: 'app-data-table',
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css',
-  imports: [StatusBadgeComponent, LucideAngularModule],
+  imports: [StatusBadgeComponent, LucideAngularModule, ColumnFilterPopoverComponent],
 })
 export class DataTableComponent implements AfterViewInit, OnDestroy {
+  protected readonly ListFilterIcon = ListFilter;
+
   readonly columns = input.required<ColumnDef[]>();
   readonly data = input.required<Record<string, unknown>[]>();
   readonly isLoading = input(false);
@@ -39,11 +50,14 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   readonly loadMore = output<void>();
   readonly actionClick = output<{ action: string; row: Record<string, unknown> }>();
   readonly linkClick = output<{ route: string; id: string }>();
+  readonly filterChange = output<{ key: string; values: string[] }>();
 
   readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
 
   readonly sortColumn = signal<string | null>(null);
   readonly sortDirection = signal<'asc' | 'desc' | null>(null);
+  readonly openFilterColumn = signal<string | null>(null);
+  readonly activeFilters = signal<Record<string, string[]>>({});
 
   readonly sortedData = computed(() => {
     const items = this.data();
@@ -79,6 +93,37 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+  }
+
+  onFilterIconClick(event: Event, col: ColumnDef): void {
+    event.stopPropagation();
+    const colKey = col.key;
+    this.openFilterColumn.set(this.openFilterColumn() === colKey ? null : colKey);
+  }
+
+  onFilterSelectionChange(col: ColumnDef, values: string[]): void {
+    const key = col.filterKey || col.key;
+    const filters = { ...this.activeFilters() };
+    if (values.length === 0) {
+      delete filters[col.key];
+    } else {
+      filters[col.key] = values;
+    }
+    this.activeFilters.set(filters);
+    this.filterChange.emit({ key, values });
+  }
+
+  getActiveFilterValues(colKey: string): string[] {
+    return this.activeFilters()[colKey] ?? [];
+  }
+
+  hasActiveFilter(colKey: string): boolean {
+    const values = this.activeFilters()[colKey];
+    return !!values && values.length > 0;
+  }
+
+  closeFilter(): void {
+    this.openFilterColumn.set(null);
   }
 
   onSortClick(col: ColumnDef): void {

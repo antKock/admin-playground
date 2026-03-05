@@ -15,23 +15,23 @@ import { FundingProgramFacade } from '../funding-program.facade';
     <div class="p-6 max-w-2xl">
       @if (isEditMode) {
         <app-breadcrumb [items]="[
-          { label: 'Funding Programs', route: '/funding-programs' },
+          { label: 'Programmes de financement', route: '/funding-programs' },
           { label: itemName() ?? '...', route: '/funding-programs/' + editId },
-          { label: 'Edit' }
+          { label: 'Modifier' }
         ]" />
       } @else {
         <app-breadcrumb [items]="[
-          { label: 'Funding Programs', route: '/funding-programs' },
-          { label: 'New Funding Program' }
+          { label: 'Programmes de financement', route: '/funding-programs' },
+          { label: 'Nouveau programme de financement' }
         ]" />
       }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Funding Program' : 'Create Funding Program' }}
+        {{ isEditMode ? 'Modifier le programme de financement' : 'Créer un programme de financement' }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -39,7 +39,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
@@ -67,14 +67,14 @@ import { FundingProgramFacade } from '../funding-program.facade';
             <label class="block text-sm font-medium text-text-primary mb-1">&nbsp;</label>
             <label class="inline-flex items-center gap-2 mt-2">
               <input type="checkbox" formControlName="is_active" class="rounded" />
-              <span class="text-sm text-text-primary">Active</span>
+              <span class="text-sm text-text-primary">Actif</span>
             </label>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="start_date" class="block text-sm font-medium text-text-primary mb-1">Start Date</label>
+            <label for="start_date" class="block text-sm font-medium text-text-primary mb-1">Date de début</label>
             <input
               id="start_date"
               type="date"
@@ -83,7 +83,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
             />
           </div>
           <div>
-            <label for="end_date" class="block text-sm font-medium text-text-primary mb-1">End Date</label>
+            <label for="end_date" class="block text-sm font-medium text-text-primary mb-1">Date de fin</label>
             <input
               id="end_date"
               type="date"
@@ -99,14 +99,14 @@ import { FundingProgramFacade } from '../funding-program.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>

@@ -17,7 +17,7 @@ export interface IndicatorOption {
     <!-- CTA Button -->
     <div class="add-indicator-cta" [class.open]="isOpen()" (click)="!isOpen() && open()">
       <lucide-icon [img]="PlusIcon" [size]="16" />
-      Attach an indicator
+      Attacher un indicateur
     </div>
 
     <!-- Picker Panel -->
@@ -28,7 +28,7 @@ export interface IndicatorOption {
           <input
             #searchInput
             type="text"
-            placeholder="Search indicators by name or technical name..."
+            placeholder="Rechercher des indicateurs par nom ou label technique..."
             (input)="onSearchInput($event)"
             (keydown.escape)="close()"
           />
@@ -44,7 +44,7 @@ export interface IndicatorOption {
                     <app-status-badge [status]="indicator.type" />
                   </span>
                 </div>
-                <div class="indicator-picker-item-right">Already attached</div>
+                <div class="indicator-picker-item-right">Déjà attaché</div>
               </div>
             } @else {
               <button class="indicator-picker-item" (click)="onAttach(indicator)">
@@ -55,19 +55,19 @@ export interface IndicatorOption {
                     <app-status-badge [status]="indicator.type" />
                   </span>
                 </div>
-                <div class="indicator-picker-item-right">+ Attach</div>
+                <div class="indicator-picker-item-right">+ Attacher</div>
               </button>
             }
           }
           @if (filtered().length === 0) {
             <div class="indicator-picker-item" style="justify-content: center; color: var(--color-text-secondary);">
-              No indicators found
+              Aucun indicateur trouvé
             </div>
           }
         </div>
         <div class="indicator-picker-footer">
           <span>{{ footerLabel() }}</span>
-          <span style="color: var(--color-text-disabled, #c4c4cc);">Esc to close</span>
+          <span style="color: var(--color-text-disabled, #c4c4cc);">Échap pour fermer</span>
         </div>
       </div>
     }
@@ -229,9 +229,9 @@ export class IndicatorPickerComponent implements OnDestroy {
     const term = this.searchTerm();
     const count = this.filtered().filter(o => !this.isAttached(o.id)).length;
     if (term) {
-      return `${count} result${count !== 1 ? 's' : ''} matching "${term}"`;
+      return `${count} résultat${count !== 1 ? 's' : ''} pour « ${term} »`;
     }
-    return `${count} indicator${count !== 1 ? 's' : ''} available`;
+    return `${count} indicateur${count !== 1 ? 's' : ''} disponible${count !== 1 ? 's' : ''}`;
   });
 
   ngOnDestroy(): void {

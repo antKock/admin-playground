@@ -1,6 +1,6 @@
 # Story 6.1: DataTable In-Column Multi-Select Filters
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -21,16 +21,16 @@ As an admin user, I want to filter table data using multi-select dropdowns embed
 
 ## Tasks
 
-- [ ] Task 1: Extend `ColumnDef` interface with `filterable?: boolean`, `filterKey?: string`, `filterOptions?: Signal<{ id: string; label: string }[]>` (AC: #1, #6)
-- [ ] Task 2: Create `ColumnFilterPopoverComponent` — standalone popover with checkbox list, optional search input, apply/clear buttons (AC: #2, #3, #4, #7)
-- [ ] Task 3: Add filter icon (lucide `Filter` or `ListFilter`) to `DataTable` header cells for filterable columns (AC: #1, #9)
-- [ ] Task 4: Add `filterChange` output to `DataTableComponent` emitting `{ key: string; values: string[] }` (AC: #6)
-- [ ] Task 5: Add active-filter visual indicator (filled icon or badge) on column headers with active filters (AC: #5)
-- [ ] Task 6: Update `action-model-list` — move funding program filter into column config, remove above-table `<select>` (AC: #8)
-- [ ] Task 7: Update `agent-list` — move status filter into column config, remove above-table `<select>` (AC: #8)
-- [ ] Task 8: Ensure filter state persists across `loadMore()` infinite scroll calls (AC: #10)
-- [ ] Task 9: Unit tests for `ColumnFilterPopoverComponent` and updated `DataTableComponent` filter logic
-- [ ] Task 10: Verify sort + filter coexistence — clicking sort vs filter icon are distinct actions (AC: #9)
+- [x] Task 1: Extend `ColumnDef` interface with `filterable?: boolean`, `filterKey?: string`, `filterOptions?: Signal<{ id: string; label: string }[]>` (AC: #1, #6)
+- [x] Task 2: Create `ColumnFilterPopoverComponent` — standalone popover with checkbox list, optional search input, apply/clear buttons (AC: #2, #3, #4, #7)
+- [x] Task 3: Add filter icon (lucide `Filter` or `ListFilter`) to `DataTable` header cells for filterable columns (AC: #1, #9)
+- [x] Task 4: Add `filterChange` output to `DataTableComponent` emitting `{ key: string; values: string[] }` (AC: #6)
+- [x] Task 5: Add active-filter visual indicator (filled icon or badge) on column headers with active filters (AC: #5)
+- [x] Task 6: Update `action-model-list` — move funding program filter into column config, remove above-table `<select>` (AC: #8)
+- [x] Task 7: Update `agent-list` — move status filter into column config, remove above-table `<select>` (AC: #8)
+- [x] Task 8: Ensure filter state persists across `loadMore()` infinite scroll calls (AC: #10)
+- [x] Task 9: Unit tests for `ColumnFilterPopoverComponent` and updated `DataTableComponent` filter logic
+- [x] Task 10: Verify sort + filter coexistence — clicking sort vs filter icon are distinct actions (AC: #9)
 
 ## Dev Notes
 

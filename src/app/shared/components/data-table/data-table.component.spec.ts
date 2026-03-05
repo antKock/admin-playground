@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 
-import { DataTableComponent, ColumnDef, RowAction } from './data-table.component';
+import { DataTableComponent, ColumnDef, RowAction, FilterOption } from './data-table.component';
 
 interface TestRow extends Record<string, unknown> {
   id: string;
@@ -22,6 +22,7 @@ interface TestRow extends Record<string, unknown> {
       (loadMore)="onLoadMore()"
       (actionClick)="onActionClick($event)"
       (linkClick)="onLinkClick($event)"
+      (filterChange)="onFilterChange($event)"
     />
   `,
 })
@@ -42,6 +43,7 @@ class TestHostComponent {
   loadMoreCalled = false;
   actionClicked: { action: string; row: Record<string, unknown> } | null = null;
   linkClicked: { route: string; id: string } | null = null;
+  filterChanged: { key: string; values: string[] } | null = null;
 
   onRowClick(row: Record<string, unknown>): void {
     this.clickedRow = row;
@@ -57,6 +59,10 @@ class TestHostComponent {
 
   onLinkClick(event: { route: string; id: string }): void {
     this.linkClicked = event;
+  }
+
+  onFilterChange(event: { key: string; values: string[] }): void {
+    this.filterChanged = event;
   }
 }
 
@@ -134,8 +140,8 @@ describe('DataTableComponent', () => {
   it('should sort ascending on first header click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameHeader = fixture.nativeElement.querySelectorAll('th')[1];
-    nameHeader.click();
+    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
+    nameLabel.click();
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -147,9 +153,9 @@ describe('DataTableComponent', () => {
   it('should sort descending on second header click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameHeader = fixture.nativeElement.querySelectorAll('th')[1];
-    nameHeader.click(); // asc
-    nameHeader.click(); // desc
+    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
+    nameLabel.click(); // asc
+    nameLabel.click(); // desc
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -160,10 +166,10 @@ describe('DataTableComponent', () => {
   it('should reset sort on third header click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameHeader = fixture.nativeElement.querySelectorAll('th')[1];
-    nameHeader.click(); // asc
-    nameHeader.click(); // desc
-    nameHeader.click(); // reset
+    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
+    nameLabel.click(); // asc
+    nameLabel.click(); // desc
+    nameLabel.click(); // reset
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -242,5 +248,129 @@ describe('DataTableComponent', () => {
     expect(fixture.componentInstance.actionClicked!.action).toBe('delete');
     // rowClick should NOT have been triggered due to stopPropagation
     expect(fixture.componentInstance.clickedRow).toBeNull();
+  });
+
+  // Filter tests
+  it('should render filter icon button for filterable columns', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'id', label: 'ID', sortable: true },
+      { key: 'name', label: 'Name', filterable: true, filterOptions: [{ id: '1', label: 'A' }] },
+    ];
+    fixture.detectChanges();
+    const filterBtns = fixture.nativeElement.querySelectorAll('.filter-icon-btn');
+    expect(filterBtns.length).toBe(1);
+  });
+
+  it('should not render filter icon for non-filterable columns', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+    const filterBtns = fixture.nativeElement.querySelectorAll('.filter-icon-btn');
+    expect(filterBtns.length).toBe(0);
+  });
+
+  it('should open filter popover on filter icon click', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'name', label: 'Name', filterable: true, filterOptions: [{ id: '1', label: 'A' }] },
+    ];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-column-filter-popover')).toBeNull();
+
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    filterBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-column-filter-popover')).toBeTruthy();
+  });
+
+  it('should close filter popover on second filter icon click', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'name', label: 'Name', filterable: true, filterOptions: [{ id: '1', label: 'A' }] },
+    ];
+    fixture.detectChanges();
+
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    filterBtn.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-column-filter-popover')).toBeTruthy();
+
+    filterBtn.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-column-filter-popover')).toBeNull();
+  });
+
+  it('should emit filterChange when filter selection changes', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'name', label: 'Name', filterable: true, filterKey: 'name_filter', filterOptions: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
+    ];
+    fixture.detectChanges();
+
+    // Open popover
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    filterBtn.click();
+    fixture.detectChanges();
+
+    // Click first checkbox
+    const checkbox = fixture.nativeElement.querySelector('app-column-filter-popover input[type="checkbox"]');
+    checkbox.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.filterChanged).toBeTruthy();
+    expect(fixture.componentInstance.filterChanged!.key).toBe('name_filter');
+    expect(fixture.componentInstance.filterChanged!.values).toEqual(['1']);
+  });
+
+  it('should show filter badge when filter is active', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'name', label: 'Name', filterable: true, filterKey: 'name_filter', filterOptions: [{ id: '1', label: 'A' }, { id: '2', label: 'B' }] },
+    ];
+    fixture.detectChanges();
+
+    // No badge initially
+    expect(fixture.nativeElement.querySelector('.filter-badge')).toBeNull();
+
+    // Open and select
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    filterBtn.click();
+    fixture.detectChanges();
+    const checkbox = fixture.nativeElement.querySelector('app-column-filter-popover input[type="checkbox"]');
+    checkbox.click();
+    fixture.detectChanges();
+
+    // Badge should appear
+    const badge = fixture.nativeElement.querySelector('.filter-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent).toContain('1');
+  });
+
+  it('should allow sorting and filtering to coexist independently', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.columns = [
+      { key: 'name', label: 'Name', sortable: true, filterable: true, filterOptions: [{ id: '1', label: 'A' }] },
+    ];
+    fixture.detectChanges();
+
+    // Sort should work via label click
+    const label = fixture.nativeElement.querySelector('.th-label');
+    label.click();
+    fixture.detectChanges();
+
+    const th = fixture.nativeElement.querySelector('th');
+    expect(th.getAttribute('aria-sort')).toBe('ascending');
+
+    // Filter icon should still be present and clickable
+    const filterBtn = fixture.nativeElement.querySelector('.filter-icon-btn');
+    expect(filterBtn).toBeTruthy();
+    filterBtn.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-column-filter-popover')).toBeTruthy();
+
+    // Sort should still be ascending
+    expect(th.getAttribute('aria-sort')).toBe('ascending');
   });
 });

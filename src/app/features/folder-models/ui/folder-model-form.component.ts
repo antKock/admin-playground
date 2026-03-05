@@ -15,23 +15,23 @@ import { FolderModelFacade } from '../folder-model.facade';
     <div class="p-6 max-w-2xl">
       @if (isEditMode) {
         <app-breadcrumb [items]="[
-          { label: 'Folder Models', route: '/folder-models' },
+          { label: 'Modèles de dossier', route: '/folder-models' },
           { label: facade.selectedItem()?.name ?? '...', route: '/folder-models/' + editId },
-          { label: 'Edit' }
+          { label: 'Modifier' }
         ]" />
       } @else {
         <app-breadcrumb [items]="[
-          { label: 'Folder Models', route: '/folder-models' },
-          { label: 'New Folder Model' }
+          { label: 'Modèles de dossier', route: '/folder-models' },
+          { label: 'Nouveau modèle de dossier' }
         ]" />
       }
       <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Edit Folder Model' : 'Create Folder Model' }}
+        {{ isEditMode ? 'Modifier le modèle de dossier' : 'Créer un modèle de dossier' }}
       </h1>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
           <input
             id="name"
             formControlName="name"
@@ -39,7 +39,7 @@ import { FolderModelFacade } from '../folder-model.facade';
             [class.border-error]="showError('name')"
           />
           @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Name is required.</p>
+            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
           }
         </div>
 
@@ -54,17 +54,17 @@ import { FolderModelFacade } from '../folder-model.facade';
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1">Funding Programs *</label>
+          <label class="block text-sm font-medium text-text-primary mb-1">Programmes de financement *</label>
           <app-multi-selector
             [options]="facade.fpOptions()"
             [selectedIds]="fpIds"
             [loading]="facade.fpLoading()"
             [hasError]="showError('funding_program_ids')"
-            placeholder="Select Funding Programs..."
+            placeholder="Sélectionner des programmes de financement..."
             (selectionChange)="onFpSelectionChange($event)"
           />
           @if (showError('funding_program_ids')) {
-            <p class="mt-1 text-sm text-error">At least one Funding Program is required.</p>
+            <p class="mt-1 text-sm text-error">Au moins un programme de financement est obligatoire.</p>
           }
         </div>
 
@@ -74,14 +74,14 @@ import { FolderModelFacade } from '../folder-model.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
             [disabled]="submitting()"
           >
-            {{ submitting() ? 'Saving...' : (isEditMode ? 'Save' : 'Create') }}
+            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
             (click)="goBack()"
           >
-            Cancel
+            Annuler
           </button>
         </div>
       </form>

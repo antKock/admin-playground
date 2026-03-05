@@ -56,7 +56,7 @@ describe('MultiSelectorComponent', () => {
     host.loading.set(true);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button');
-    expect(button.textContent).toContain('Loading...');
+    expect(button.textContent).toContain('Chargement...');
     expect(button.disabled).toBe(true);
   });
 
@@ -64,7 +64,7 @@ describe('MultiSelectorComponent', () => {
     host.selectedIds.set(['1', '2']);
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button');
-    expect(button.textContent).toContain('2 selected');
+    expect(button.textContent).toContain('2 sélectionnés');
   });
 
   it('should show empty state when no options', () => {
@@ -76,7 +76,7 @@ describe('MultiSelectorComponent', () => {
     fixture.detectChanges();
 
     const emptyMsg = fixture.nativeElement.querySelector('.text-center');
-    expect(emptyMsg.textContent).toContain('No options available');
+    expect(emptyMsg.textContent).toContain('Aucune option disponible');
   });
 
   it('should toggle dropdown on click', () => {

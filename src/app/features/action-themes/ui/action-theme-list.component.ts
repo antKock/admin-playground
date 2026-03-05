@@ -11,12 +11,12 @@ import { ActionThemeFacade } from '../action-theme.facade';
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Action Themes</h1>
+        <h1 class="text-2xl font-bold text-text-primary">Thèmes d'action</h1>
         <button
           class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/action-themes/new'])"
         >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un thème d'action
         </button>
       </div>
 
@@ -27,17 +27,17 @@ import { ActionThemeFacade } from '../action-theme.facade';
           [value]="statusFilter() || ''"
           (change)="onStatusFilterChange($event)"
         >
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="disabled">Disabled</option>
+          <option value="">Tous les statuts</option>
+          <option value="draft">Brouillon</option>
+          <option value="published">Publié</option>
+          <option value="disabled">Désactivé</option>
         </select>
         @if (statusFilter()) {
           <button
             class="text-sm text-text-link hover:text-text-link-hover"
             (click)="clearFilters()"
           >
-            Clear filters
+            Effacer les filtres
           </button>
         }
       </div>
@@ -45,20 +45,20 @@ import { ActionThemeFacade } from '../action-theme.facade';
       @if (!facade.isLoading() && hasLoaded() && facade.items().length === 0) {
         <div class="text-center py-16">
           @if (statusFilter()) {
-            <p class="text-text-secondary mb-4">No action themes match your filters.</p>
+            <p class="text-text-secondary mb-4">Aucun thème d'action ne correspond à vos filtres.</p>
             <button
               class="text-sm text-text-link hover:text-text-link-hover"
               (click)="clearFilters()"
             >
-              Clear filters
+              Effacer les filtres
             </button>
           } @else {
-            <p class="text-text-secondary mb-4">No action themes found.</p>
+            <p class="text-text-secondary mb-4">Aucun thème d'action trouvé.</p>
             <button
               class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/action-themes/new'])"
             >
-              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un thème d'action
             </button>
           }
         </div>
@@ -92,9 +92,9 @@ export class ActionThemeListComponent implements OnInit {
   }
 
   readonly columns: ColumnDef[] = [
-    { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
-    { key: 'status', label: 'Status', type: 'status-badge' },
-    { key: 'created_at', label: 'Created', sortable: true },
+    { key: 'name', label: 'Nom', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
+    { key: 'status', label: 'Statut', type: 'status-badge' },
+    { key: 'created_at', label: 'Créé le', sortable: true },
   ];
 
   ngOnInit(): void {
