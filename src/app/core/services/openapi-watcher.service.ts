@@ -9,14 +9,14 @@ export interface OpenApiChange {
 }
 
 const STORAGE_KEY_HASH = 'openapi-baseline-hash';
-const STORAGE_KEY_SPEC = 'openapi-baseline-spec';
 const STORAGE_KEY_DISMISSED = 'openapi-dismissed-hash';
 
 @Injectable({ providedIn: 'root' })
 export class OpenApiWatcherService {
   readonly changes = signal<OpenApiChange[] | null>(null);
   readonly currentHash = signal<string | null>(null);
-  private pendingSpecText: string | null = null;
+  private baselineSpec: Record<string, unknown> | null = null;
+  private pendingSpec: Record<string, unknown> | null = null;
 
   async check(): Promise<void> {
     try {
@@ -34,17 +34,28 @@ export class OpenApiWatcherService {
       const newHash = await this.hashSha256(specText);
       this.currentHash.set(newHash);
 
+      let newSpec: Record<string, unknown>;
+      try {
+        newSpec = JSON.parse(specText);
+      } catch {
+        console.warn('[OpenAPI Watcher] Failed to parse spec as JSON');
+        return;
+      }
+
       const storedHash = localStorage.getItem(STORAGE_KEY_HASH);
 
       // First run — save baseline, no warning
       if (!storedHash) {
         localStorage.setItem(STORAGE_KEY_HASH, newHash);
-        localStorage.setItem(STORAGE_KEY_SPEC, specText);
+        this.baselineSpec = newSpec;
         return;
       }
 
-      // Same hash — no change
+      // Same hash — no change (keep baseline in memory if missing)
       if (storedHash === newHash) {
+        if (!this.baselineSpec) {
+          this.baselineSpec = newSpec;
+        }
         return;
       }
 
@@ -54,24 +65,17 @@ export class OpenApiWatcherService {
         return;
       }
 
-      // Hash differs — compute diff
-      const storedSpecText = localStorage.getItem(STORAGE_KEY_SPEC);
-      if (storedSpecText) {
-        try {
-          const oldSpec = JSON.parse(storedSpecText);
-          const newSpec = JSON.parse(specText);
-          const changes = this.diffSpecs(oldSpec, newSpec);
-          this.changes.set(changes.length > 0 ? changes : [{ type: 'modified', category: 'schema', name: '(changement détecté)' }]);
-        } catch (e) {
-          console.error('[OpenAPI Watcher] Diff failed:', e);
-          this.changes.set([{ type: 'modified', category: 'schema', name: '(erreur de comparaison — spec modifiée)' }]);
-        }
+      // Hash differs — compute diff if baseline is available
+      if (this.baselineSpec) {
+        const changes = this.diffSpecs(this.baselineSpec, newSpec);
+        this.changes.set(changes.length > 0 ? changes : [{ type: 'modified', category: 'schema', name: '(changement détecté)' }]);
       } else {
-        this.changes.set([{ type: 'modified', category: 'schema', name: '(baseline spec missing — spec changed)' }]);
+        // No in-memory baseline (first page load after a spec change) — show generic change
+        this.changes.set([{ type: 'modified', category: 'schema', name: '(spec modifiée — recharger pour voir le détail)' }]);
       }
 
-      // Keep the NEW spec text in memory so dismiss() can update the baseline
-      this.pendingSpecText = specText;
+      // Keep the new spec for dismiss() to update the baseline
+      this.pendingSpec = newSpec;
     } catch (err) {
       console.warn('[OpenAPI Watcher] Check failed:', err);
     }
@@ -81,11 +85,11 @@ export class OpenApiWatcherService {
     const hash = this.currentHash();
     if (hash) {
       localStorage.setItem(STORAGE_KEY_DISMISSED, hash);
-      // Update baseline to the new spec so future checks compare against it
+      // Update baseline so future checks compare against the new spec
       localStorage.setItem(STORAGE_KEY_HASH, hash);
-      if (this.pendingSpecText) {
-        localStorage.setItem(STORAGE_KEY_SPEC, this.pendingSpecText);
-        this.pendingSpecText = null;
+      if (this.pendingSpec) {
+        this.baselineSpec = this.pendingSpec;
+        this.pendingSpec = null;
       }
     }
     this.changes.set(null);

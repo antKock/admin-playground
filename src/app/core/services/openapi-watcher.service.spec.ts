@@ -90,6 +90,67 @@ describe('OpenApiWatcherService', () => {
       const changes = service.diffSpecs(oldSpec, newSpec);
       expect(changes).toContainEqual({ type: 'added', category: 'path', name: '/a' });
     });
+
+    it('should detect required-to-optional field change in schema', () => {
+      const oldSpec = {
+        paths: {},
+        components: {
+          schemas: {
+            UserCreate: {
+              properties: { name: { type: 'string' }, email: { type: 'string' } },
+              required: ['name', 'email'],
+              type: 'object',
+            },
+          },
+        },
+      };
+      const newSpec = {
+        paths: {},
+        components: {
+          schemas: {
+            UserCreate: {
+              properties: { name: { type: 'string' }, email: { type: 'string' } },
+              required: ['name'],
+              type: 'object',
+            },
+          },
+        },
+      };
+      const changes = service.diffSpecs(oldSpec, newSpec);
+      expect(changes).toEqual([{ type: 'modified', category: 'schema', name: 'UserCreate' }]);
+    });
+
+    it('should detect changes in realistic OpenAPI spec structure', () => {
+      const baseSpec = {
+        openapi: '3.1.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/auth/login': { post: { operationId: 'login', requestBody: { content: { 'application/json': { schema: { '$ref': '#/components/schemas/LoginRequest' } } } } } },
+          '/agents/': { get: { operationId: 'list_agents', parameters: [{ name: 'status', in: 'query' }] } },
+        },
+        components: {
+          schemas: {
+            AgentCreate: {
+              properties: { first_name: { type: 'string' }, community_id: { anyOf: [{ type: 'string' }, { type: 'null' }] } },
+              required: ['first_name', 'community_id'],
+              type: 'object',
+            },
+            AgentRead: {
+              properties: { id: { type: 'string' }, first_name: { type: 'string' } },
+              required: ['id', 'first_name'],
+              type: 'object',
+            },
+          },
+        },
+      };
+
+      // Change community_id from required to optional
+      const modifiedSpec = JSON.parse(JSON.stringify(baseSpec));
+      modifiedSpec.components.schemas.AgentCreate.required = ['first_name'];
+
+      const changes = service.diffSpecs(baseSpec, modifiedSpec);
+      expect(changes).toEqual([{ type: 'modified', category: 'schema', name: 'AgentCreate' }]);
+    });
   });
 
   describe('check', () => {
@@ -102,7 +163,6 @@ describe('OpenApiWatcherService', () => {
 
       expect(service.changes()).toBeNull();
       expect(localStorage.getItem('openapi-baseline-hash')).toBeTruthy();
-      expect(localStorage.getItem('openapi-baseline-spec')).toBe(mockSpec);
     });
 
     it('should not set changes when spec has not changed', async () => {
