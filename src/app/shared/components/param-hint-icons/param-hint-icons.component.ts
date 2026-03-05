@@ -27,7 +27,7 @@ const DEFAULT_HINTS: ParamHints = {
   template: `
     <div class="param-summary">
       @for (hint of hintList(); track hint.label) {
-        <span class="param-hint" [class]="hint.stateClass" [title]="hint.tooltip">
+        <span class="param-hint" [class]="hint.stateClass" [attr.data-tooltip]="hint.tooltip">
           <lucide-icon [img]="hint.icon" [size]="16" />
         </span>
       }
@@ -47,7 +47,23 @@ const DEFAULT_HINTS: ParamHints = {
       justify-content: center;
       border: 1.5px solid;
       position: relative;
-      cursor: help;
+      cursor: default;
+    }
+    .param-hint:hover::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 500;
+      color: white;
+      background: var(--color-text-primary, #1a1a2e);
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
     }
     .param-hint.off {
       background: var(--color-surface-base);
@@ -67,10 +83,10 @@ const DEFAULT_HINTS: ParamHints = {
     .param-hint.on-rule::after {
       content: '';
       position: absolute;
-      bottom: -2px;
-      right: -2px;
-      width: 9px;
-      height: 9px;
+      bottom: -3px;
+      right: -3px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: var(--color-brand-tertiary, #e84e0f);
       border: 1.5px solid white;
