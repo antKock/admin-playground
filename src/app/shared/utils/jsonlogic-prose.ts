@@ -154,15 +154,17 @@ function translateNode(node: unknown, depth: number, topLevel = false): string |
   // Logic: and / or
   if ((operator === 'and' || operator === 'or') && Array.isArray(args)) {
     const parts: string[] = [];
+    // When top-level OR renders bullets, tell direct children they don't need outer parens
+    const childTopLevel = operator === 'or' && topLevel;
     for (const arg of args) {
-      const translated = resolveOperand(arg, depth);
+      const translated = resolveOperand(arg, depth, childTopLevel);
       if (translated === null) return null;
       parts.push(translated);
     }
     if (parts.length === 0) return null;
     if (operator === 'and') {
       const result = parts.join(' et ');
-      return (depth > 0 && parts.length > 1) ? `(${result})` : result;
+      return (depth > 0 && parts.length > 1 && !topLevel) ? `(${result})` : result;
     }
     // OR: bullet format only at top level; inline with parentheses when nested
     if (topLevel && parts.length > 1) {

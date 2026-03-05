@@ -105,14 +105,14 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse(rule)).toBe(`(${b('x')} contient ${b('1')} ou ${b('y')} contient ${b('2')}) et ${b('z')} contient ${b('3')}`);
   });
 
-  it('translates complex or with and branches (parenthesized)', () => {
+  it('translates complex or with and branches (no outer parens in bullets)', () => {
     const rule = '{"or": [{"and": [{"==": [{"var": "a"}, 1]}, {"==": [{"var": "b"}, 2]}]}, {"==": [{"var": "c"}, 3]}]}';
-    expect(translateJsonLogicToProse(rule)).toBe(`• (${b('a')} contient ${b('1')} et ${b('b')} contient ${b('2')})\n• ${b('c')} contient ${b('3')}`);
+    expect(translateJsonLogicToProse(rule)).toBe(`• ${b('a')} contient ${b('1')} et ${b('b')} contient ${b('2')}\n• ${b('c')} contient ${b('3')}`);
   });
 
-  it('wraps nested and-inside-or with parentheses', () => {
+  it('wraps nested and-inside-or without outer parens in bullets', () => {
     const rule = '{"or": [{"<": [{"var": "x"}, 10]}, {"and": [{"===": [{"var": "s"}, "p"]}, {">": [{"var": "b"}, 100]}]}]}';
-    expect(translateJsonLogicToProse(rule)).toBe(`• ${b('x')} &lt; ${b('10')}\n• (${b('s')} = ${b("'p'")} et ${b('b')} &gt; ${b('100')})`);
+    expect(translateJsonLogicToProse(rule)).toBe(`• ${b('x')} &lt; ${b('10')}\n• ${b('s')} = ${b("'p'")} et ${b('b')} &gt; ${b('100')}`);
   });
 
   it('returns null for invalid JSON', () => {
