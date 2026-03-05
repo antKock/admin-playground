@@ -78,6 +78,7 @@ export class FolderModelListComponent implements OnInit {
   readonly facade = inject(FolderModelFacade);
   readonly router = inject(Router);
   readonly fpFilter = signal<string>('');
+  // Prevents empty-state flash on first render — stays false until the first load completes.
   readonly hasLoaded = signal(false);
 
   constructor() {

@@ -45,6 +45,7 @@ import { CommunityFacade } from '../community.facade';
 export class CommunityListComponent implements OnInit {
   readonly facade = inject(CommunityFacade);
   readonly router = inject(Router);
+  // Prevents empty-state flash on first render — stays false until the first load completes.
   readonly hasLoaded = signal(false);
 
   constructor() {

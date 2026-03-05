@@ -103,6 +103,7 @@ export class AgentFacade {
     }
   }
 
+  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {

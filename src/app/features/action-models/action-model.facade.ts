@@ -52,7 +52,12 @@ export class ActionModelFacade {
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
   );
 
-  // Unsaved parameter state — map of indicatorModelId → modified params
+  // --- Indicator parameter edit sub-system ---
+  // Tracks unsaved changes to indicator params (rules, duplicable, constrained_values) before persisting.
+  // _paramEdits is a Map<indicatorModelId, modified IndicatorParams>. UI edits accumulate here;
+  // unsavedCount/modifiedIds derive which indicators have diverged from server state.
+  // saveParamEdits() validates all JSON rules, then sends the full association list to the API.
+  // discardParamEdits() clears the map without saving.
   private readonly _paramEdits = signal<Map<string, IndicatorParams>>(new Map());
 
   readonly paramEdits = this._paramEdits.asReadonly();
@@ -329,6 +334,7 @@ export class ActionModelFacade {
     });
   }
 
+  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
   private handleMutationError(error: unknown): void {
     const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
     if (httpError?.status === 409) {

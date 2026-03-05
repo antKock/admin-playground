@@ -77,6 +77,7 @@ export class IndicatorModelListComponent implements OnInit {
   readonly facade = inject(IndicatorModelFacade);
   readonly router = inject(Router);
   readonly typeFilter = signal<string>('');
+  // Prevents empty-state flash on first render — stays false until the first load completes.
   readonly hasLoaded = signal(false);
 
   readonly rows = computed(() =>

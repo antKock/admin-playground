@@ -100,6 +100,7 @@ export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createFolderModelForm(this.fb);
 
+  // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
   get fpIds(): string[] {
     return this.form.get('funding_program_ids')!.value;

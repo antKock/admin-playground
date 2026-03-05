@@ -123,6 +123,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createIndicatorModelForm(this.fb);
 
+  // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
 
   constructor() {

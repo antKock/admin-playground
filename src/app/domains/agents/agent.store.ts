@@ -28,6 +28,7 @@ export const AgentDomainStore = signalStore(
     detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<AgentRead>({
       loader: (params) => agentListLoader(store._http, params),

@@ -129,6 +129,9 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
           patch(store, { ...initialState });
         },
 
+        // refresh() reloads the first page. If called with filters, uses those; if called with
+        // undefined, re-uses the last applied filters (preserves current filter context).
+        // This differs from load(), which always requires explicit filters.
         refresh: rxMethod<Record<string, string> | undefined>(
           pipe(
             tap((filters) => {

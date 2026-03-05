@@ -27,6 +27,7 @@ export const ActionModelDomainStore = signalStore(
     detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<ActionModel>({
       loader: (params) => actionModelListLoader(store._http, params),

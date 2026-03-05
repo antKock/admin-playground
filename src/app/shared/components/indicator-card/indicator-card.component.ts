@@ -327,12 +327,15 @@ export class IndicatorCardComponent {
     this.paramsChange.emit({ ...this.params(), ...partial });
   }
 
+  // Convention: rule values are either 'true'/'false' (boolean sentinels) or a JSONLogic string.
+  // 'true'/'false' mean "always on/off"; anything else is a custom JSONLogic rule.
   isCustomRule(value: string): boolean {
     return value !== 'true' && value !== 'false';
   }
 
   onRuleChange(field: 'visibility_rule' | 'required_rule' | 'editable_rule', value: string): void {
-    this.emitParams({ [field]: value || (field === 'required_rule' ? 'true' : 'true') });
+    // If the editor is cleared (empty string), fall back to 'true' (always on) as the safe default.
+    this.emitParams({ [field]: value || 'true' });
   }
 
   private toggleRule(field: 'visibility_rule' | 'required_rule' | 'editable_rule', enabled: boolean, offDefault: string): void {

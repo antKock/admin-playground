@@ -31,6 +31,7 @@ export const IndicatorModelDomainStore = signalStore(
     usageError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<IndicatorModel>({
       loader: (params) => indicatorModelListLoader(store._http, params),

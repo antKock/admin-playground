@@ -31,6 +31,7 @@ export const ActionThemeDomainStore = signalStore(
     detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<ActionTheme>({
       loader: (params) => actionThemeListLoader(store._http, params),

@@ -1,3 +1,5 @@
+// Dev-tools interceptor — captures the latest API response for the API Inspector panel.
+// Only captures responses to our own API (same origin); used by ApiInspectorComponent for debugging.
 import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { tap } from 'rxjs';

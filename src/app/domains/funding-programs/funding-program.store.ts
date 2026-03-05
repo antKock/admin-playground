@@ -27,6 +27,7 @@ export const FundingProgramDomainStore = signalStore(
     detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<FundingProgram>({
       loader: (params) => fundingProgramListLoader(store._http, params),

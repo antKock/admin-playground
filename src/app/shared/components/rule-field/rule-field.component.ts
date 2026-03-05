@@ -1,3 +1,21 @@
+/**
+ * JSONLogic rule editor powered by CodeMirror 6.
+ *
+ * Embeds a JSON editor with syntax highlighting, live linting, variable extraction,
+ * and a prose translation overlay (via jsonlogic-prose.ts).
+ *
+ * Inputs:
+ *   - value: the raw JSON string (e.g. '{">":[{"var":"score"},50]}')
+ *   - placeholder: editor placeholder text
+ *
+ * Outputs:
+ *   - valueChange: emits on every keystroke with the raw editor content
+ *   - validChange: emits true/false when JSON validity changes (for parent form validation)
+ *
+ * Note: `suppressEmit` prevents circular updates when the parent pushes a new value
+ * into the editor programmatically via the effect — without it, the editor's updateListener
+ * would re-emit the same value back to the parent.
+ */
 import {
   Component,
   input,

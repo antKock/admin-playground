@@ -27,6 +27,7 @@ export const FolderModelDomainStore = signalStore(
     detailError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<FolderModel>({
       loader: (params) => folderModelListLoader(store._http, params),

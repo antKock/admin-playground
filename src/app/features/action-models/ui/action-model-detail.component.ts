@@ -234,6 +234,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Required: clear stale selection so navigating to a different item doesn't briefly show the old one.
   ngOnDestroy(): void {
     this.facade.clearSelection();
   }

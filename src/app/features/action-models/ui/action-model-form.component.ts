@@ -134,6 +134,7 @@ export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createActionModelForm(this.fb);
 
+  // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
 
   constructor() {

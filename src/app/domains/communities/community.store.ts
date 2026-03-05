@@ -33,6 +33,7 @@ export const CommunityDomainStore = signalStore(
     usersError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
+  // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
   withFeature((store) =>
     withCursorPagination<CommunityRead>({
       loader: (params) => communityListLoader(store._http, params),

@@ -1,3 +1,5 @@
+// Auth interceptor — attaches Bearer token to same-origin API requests.
+// Handles global error responses: 401 → logout, 500 → toast, 0 → connection lost.
 import { HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
@@ -7,6 +9,7 @@ import { environment } from '@app/../environments/environment';
 import { AuthService } from './auth.service';
 import { ToastService } from '@app/shared/services/toast.service';
 
+// Only inject the token for requests targeting our own API (not external URLs like CDN assets).
 function isSameOrigin(url: string): boolean {
   return url.startsWith(environment.apiBaseUrl) || url.startsWith('/');
 }
