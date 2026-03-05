@@ -82,7 +82,12 @@ export class LoginComponent {
     this.authService.login(email, password).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
-        this.router.navigateByUrl(returnUrl);
+        this.router.navigateByUrl(returnUrl).then((navigated) => {
+          if (!navigated) {
+            this.router.navigateByUrl('/');
+          }
+          this.isSubmitting.set(false);
+        });
       },
       error: (err) => {
         this.isSubmitting.set(false);

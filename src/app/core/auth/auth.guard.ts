@@ -15,3 +15,14 @@ export const authGuard: CanActivateFn = (route, state) => {
     queryParams: { returnUrl: state.url },
   });
 };
+
+/** Redirects authenticated users away from the login page. */
+export const loginGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated()) {
+    return router.createUrlTree(['/']);
+  }
+  return true;
+};

@@ -29,7 +29,9 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 401) {
+      // Don't intercept 401 on auth endpoints (login, register) — let the component handle it
+      const isAuthEndpoint = req.url.includes('/auth/login') || req.url.includes('/auth/register');
+      if (error.status === 401 && !isAuthEndpoint) {
         authService.logout();
         router.navigate(['/login'], {
           queryParams: { returnUrl: router.url },
