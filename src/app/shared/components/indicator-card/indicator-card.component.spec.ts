@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { IndicatorCardComponent, IndicatorCardData, IndicatorParams } from './indicator-card.component';
+import { IndicatorCardComponent, IndicatorCardData, IndicatorParams, isRuleOverridden } from './indicator-card.component';
 
 describe('IndicatorCardComponent', () => {
   let component: IndicatorCardComponent;
@@ -22,9 +22,9 @@ describe('IndicatorCardComponent', () => {
   };
 
   const mockParams: IndicatorParams = {
-    visibility_rule: 'true',
-    required_rule: 'false',
-    editable_rule: 'true',
+    visibility_rule: null,
+    required_rule: null,
+    editable_rule: null,
     default_value_rule: null,
     duplicable: null,
     constrained_values: null,
@@ -78,22 +78,58 @@ describe('IndicatorCardComponent', () => {
     expect(removeSpy).toHaveBeenCalledWith('ind-1');
   });
 
-  it('should emit paramsChange on visibility toggle', () => {
+  it('should emit null when toggling visibility OFF (no override)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
     component.onVisibilityToggle(false);
 
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ visibility_rule: null }));
+  });
+
+  it('should emit "false" when toggling visibility ON (override: hide)', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onVisibilityToggle(true);
+
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ visibility_rule: 'false' }));
   });
 
-  it('should emit paramsChange on required toggle', () => {
+  it('should emit "true" when toggling required ON (override: required)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
     component.onRequiredToggle(true);
 
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ required_rule: 'true' }));
+  });
+
+  it('should emit null when toggling required OFF (no override)', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onRequiredToggle(false);
+
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ required_rule: null }));
+  });
+
+  it('should emit "false" when toggling editable ON (override: non-editable)', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onEditableToggle(true);
+
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ editable_rule: 'false' }));
+  });
+
+  it('should emit null when toggling editable OFF (no override)', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onEditableToggle(false);
+
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ editable_rule: null }));
   });
 
   it('should emit paramsChange with duplicable config on toggle', () => {
@@ -146,5 +182,52 @@ describe('IndicatorCardComponent', () => {
     component.onDefaultValueToggle(false);
 
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ default_value_rule: null }));
+  });
+
+  it('should preserve and restore JSONLogic rule across toggle cycle', () => {
+    // Start with a custom JSONLogic rule on required
+    const paramsWithRule: IndicatorParams = {
+      ...mockParams,
+      required_rule: '{"if": [{"var": "x"}, true, false]}',
+    };
+    fixture.componentRef.setInput('params', paramsWithRule);
+
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    // Toggle OFF — should save the rule and emit null
+    component.onRequiredToggle(false);
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ required_rule: null }));
+
+    // Toggle ON again — should restore the saved rule
+    changeSpy.mockClear();
+    component.onRequiredToggle(true);
+    expect(changeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ required_rule: '{"if": [{"var": "x"}, true, false]}' }),
+    );
+  });
+});
+
+describe('isRuleOverridden', () => {
+  it('should return false for null (no override)', () => {
+    expect(isRuleOverridden('required_rule', null)).toBe(false);
+    expect(isRuleOverridden('editable_rule', null)).toBe(false);
+    expect(isRuleOverridden('visibility_rule', null)).toBe(false);
+  });
+
+  it('should return false for backend string defaults (backward compat)', () => {
+    expect(isRuleOverridden('required_rule', 'false')).toBe(false);
+    expect(isRuleOverridden('editable_rule', 'true')).toBe(false);
+    expect(isRuleOverridden('visibility_rule', 'true')).toBe(false);
+  });
+
+  it('should return true for active overrides', () => {
+    expect(isRuleOverridden('required_rule', 'true')).toBe(true);
+    expect(isRuleOverridden('editable_rule', 'false')).toBe(true);
+    expect(isRuleOverridden('visibility_rule', 'false')).toBe(true);
+  });
+
+  it('should return true for JSONLogic rules', () => {
+    expect(isRuleOverridden('required_rule', '{"if": [true]}')).toBe(true);
   });
 });

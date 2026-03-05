@@ -13,6 +13,12 @@ import { ToastService } from '@app/shared/services/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { ActionModelFeatureStore } from './action-model.store';
 
+// Backend currently expects string defaults — convert null to the backend's expected defaults.
+// TODO: Remove after backend migrates to null defaults (backend-work-summary.md item 5).
+function ruleForApi(value: string | null, backendDefault: string): string {
+  return value ?? backendDefault;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ActionModelFacade {
   private readonly domainStore = inject(ActionModelDomainStore);
@@ -89,7 +95,7 @@ export class ActionModelFacade {
   });
 
   private isParamModified(
-    original: { visibility_rule: string; required_rule: string; editable_rule: string; default_value_rule?: string | null; duplicable?: { enabled: boolean; min_count?: number | null; max_count?: number | null } | null; constrained_values?: { enabled: boolean; min_value?: number | null; max_value?: number | null } | null },
+    original: { visibility_rule: string | null; required_rule: string | null; editable_rule: string | null; default_value_rule?: string | null; duplicable?: { enabled: boolean; min_count?: number | null; max_count?: number | null } | null; constrained_values?: { enabled: boolean; min_value?: number | null; max_value?: number | null } | null },
     edited: IndicatorParams,
   ): boolean {
     return (
@@ -107,13 +113,13 @@ export class ActionModelFacade {
     if (edited) return edited;
     const attached = this.attachedIndicators().find((im) => im.id === indicatorId);
     if (!attached) {
-      return { visibility_rule: 'true', required_rule: 'false', editable_rule: 'true', default_value_rule: null, duplicable: null, constrained_values: null };
+      return { visibility_rule: null, required_rule: null, editable_rule: null, default_value_rule: null, duplicable: null, constrained_values: null };
     }
     return this.toIndicatorParams(attached);
   }
 
   private toIndicatorParams(im: {
-    visibility_rule: string; required_rule: string; editable_rule: string;
+    visibility_rule: string | null; required_rule: string | null; editable_rule: string | null;
     default_value_rule?: string | null;
     duplicable?: { enabled: boolean; min_count?: number | null; max_count?: number | null } | null;
     constrained_values?: { enabled: boolean; min_value?: number | null; max_value?: number | null } | null;
@@ -142,7 +148,7 @@ export class ActionModelFacade {
     const edits = this._paramEdits();
     for (const [, params] of edits) {
       for (const rule of [params.visibility_rule, params.required_rule, params.editable_rule]) {
-        if (rule !== 'true' && rule !== 'false') {
+        if (rule != null && rule !== 'true' && rule !== 'false') {
           const trimmed = rule.trim();
           if (trimmed) {
             try {
@@ -162,9 +168,9 @@ export class ActionModelFacade {
       const params = edited ?? this.toIndicatorParams(im);
       return {
         indicator_model_id: im.id,
-        visibility_rule: params.visibility_rule,
-        required_rule: params.required_rule,
-        editable_rule: params.editable_rule,
+        visibility_rule: ruleForApi(params.visibility_rule, 'true'),
+        required_rule: ruleForApi(params.required_rule, 'false'),
+        editable_rule: ruleForApi(params.editable_rule, 'true'),
         default_value_rule: params.default_value_rule,
         duplicable: params.duplicable,
         constrained_values: params.constrained_values,
@@ -252,18 +258,18 @@ export class ActionModelFacade {
     const associations: IndicatorModelAssociationInput[] = [
       ...current.map((im) => ({
         indicator_model_id: im.id,
-        visibility_rule: im.visibility_rule,
-        required_rule: im.required_rule,
-        editable_rule: im.editable_rule,
+        visibility_rule: ruleForApi(im.visibility_rule, 'true'),
+        required_rule: ruleForApi(im.required_rule, 'false'),
+        editable_rule: ruleForApi(im.editable_rule, 'true'),
         default_value_rule: im.default_value_rule ?? null,
         duplicable: im.duplicable ?? null,
         constrained_values: im.constrained_values ?? null,
       })),
       {
         indicator_model_id: indicatorModelId,
-        visibility_rule: 'true',
-        required_rule: 'false',
-        editable_rule: 'true',
+        visibility_rule: ruleForApi(null, 'true'),
+        required_rule: ruleForApi(null, 'false'),
+        editable_rule: ruleForApi(null, 'true'),
         default_value_rule: null,
         duplicable: null,
         constrained_values: null,
@@ -287,9 +293,9 @@ export class ActionModelFacade {
       .filter((im) => im.id !== indicatorModelId)
       .map((im) => ({
         indicator_model_id: im.id,
-        visibility_rule: im.visibility_rule,
-        required_rule: im.required_rule,
-        editable_rule: im.editable_rule,
+        visibility_rule: ruleForApi(im.visibility_rule, 'true'),
+        required_rule: ruleForApi(im.required_rule, 'false'),
+        editable_rule: ruleForApi(im.editable_rule, 'true'),
         default_value_rule: im.default_value_rule ?? null,
         duplicable: im.duplicable ?? null,
         constrained_values: im.constrained_values ?? null,
@@ -313,9 +319,9 @@ export class ActionModelFacade {
       .filter(Boolean)
       .map((im) => ({
         indicator_model_id: im!.id,
-        visibility_rule: im!.visibility_rule,
-        required_rule: im!.required_rule,
-        editable_rule: im!.editable_rule,
+        visibility_rule: ruleForApi(im!.visibility_rule, 'true'),
+        required_rule: ruleForApi(im!.required_rule, 'false'),
+        editable_rule: ruleForApi(im!.editable_rule, 'true'),
         default_value_rule: im!.default_value_rule ?? null,
         duplicable: im!.duplicable ?? null,
         constrained_values: im!.constrained_values ?? null,

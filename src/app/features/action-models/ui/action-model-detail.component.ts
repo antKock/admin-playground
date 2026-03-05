@@ -332,8 +332,8 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     return formatDateFr(value);
   }
 
-  private ruleState(value: string, defaultVal: string): ParamState {
-    if (value === defaultVal) return 'off';
+  private ruleState(value: string | null, defaultVal: string): ParamState {
+    if (value == null || value === defaultVal) return 'off';
     if (value === 'true' || value === 'false') return 'on';
     return 'rule';
   }
