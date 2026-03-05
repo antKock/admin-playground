@@ -51,7 +51,6 @@ export class CommunityListComponent implements OnInit {
     { key: 'name', label: 'Nom', sortable: true },
     { key: 'siret', label: 'SIRET' },
     { key: 'public_comment', label: 'Commentaire public' },
-    { key: 'created_at', label: 'Créé le', sortable: true, type: 'date' },
     { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date' },
   ];
 

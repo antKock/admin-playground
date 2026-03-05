@@ -25,7 +25,7 @@ describe('FolderModelListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns().map(c => c.key)).toEqual([
-      'name', 'description', 'funding_programs_display', 'created_at',
+      'name', 'description', 'funding_programs_display', 'updated_at',
     ]);
   });
 

@@ -31,30 +31,43 @@ th {
 .th-content {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 4px;
 }
 
 .th-label {
   flex: 1;
 }
 
-.th-label.clickable {
-  cursor: pointer;
-  user-select: none;
+.th-icons {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
 }
 
-.th-label.clickable:hover {
-  color: var(--color-text-primary);
+.sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.sort-btn:hover {
+  background: var(--color-surface-muted, #f3f4f6);
 }
 
 .sort-indicator {
   font-size: 10px;
-  margin-left: 4px;
   color: var(--color-text-tertiary);
   transition: color 0.15s;
 }
 
-.th-label.clickable:hover .sort-indicator {
+.sort-btn:hover .sort-indicator {
   color: var(--color-text-secondary);
 }
 

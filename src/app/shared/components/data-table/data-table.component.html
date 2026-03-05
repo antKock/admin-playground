@@ -10,34 +10,36 @@
             [attr.aria-sort]="col.sortable ? (sortColumn() === col.key ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none') : null"
           >
             <div class="th-content">
-              <span class="th-label" [class.clickable]="col.sortable" (click)="onSortClick(col)">
-                {{ col.label }}
-                @if (col.sortable) {
-                  <span class="sort-indicator" aria-hidden="true">
-                    @if (sortColumn() === col.key && sortDirection() === 'asc') {
-                      ▲
-                    } @else if (sortColumn() === col.key && sortDirection() === 'desc') {
-                      ▼
-                    } @else {
-                      ⇅
+              <span class="th-label">{{ col.label }}</span>
+              <span class="th-icons">
+                @if (col.filterable) {
+                  <button
+                    class="filter-icon-btn"
+                    [class.filter-active]="hasActiveFilter(col.key)"
+                    [attr.aria-label]="'Filtrer ' + col.label"
+                    [attr.aria-expanded]="openFilterColumn() === col.key"
+                    (click)="onFilterIconClick($event, col)"
+                  >
+                    <lucide-icon [img]="ListFilterIcon" [size]="14" />
+                    @if (hasActiveFilter(col.key)) {
+                      <span class="filter-badge">{{ getActiveFilterValues(col.key).length }}</span>
                     }
-                  </span>
+                  </button>
+                }
+                @if (col.sortable) {
+                  <button class="sort-btn" (click)="onSortClick(col)" [attr.aria-label]="'Trier par ' + col.label">
+                    <span class="sort-indicator" aria-hidden="true">
+                      @if (sortColumn() === col.key && sortDirection() === 'asc') {
+                        ▲
+                      } @else if (sortColumn() === col.key && sortDirection() === 'desc') {
+                        ▼
+                      } @else {
+                        ⇅
+                      }
+                    </span>
+                  </button>
                 }
               </span>
-              @if (col.filterable) {
-                <button
-                  class="filter-icon-btn"
-                  [class.filter-active]="hasActiveFilter(col.key)"
-                  [attr.aria-label]="'Filtrer ' + col.label"
-                  [attr.aria-expanded]="openFilterColumn() === col.key"
-                  (click)="onFilterIconClick($event, col)"
-                >
-                  <lucide-icon [img]="ListFilterIcon" [size]="14" />
-                  @if (hasActiveFilter(col.key)) {
-                    <span class="filter-badge">{{ getActiveFilterValues(col.key).length }}</span>
-                  }
-                </button>
-              }
             </div>
             @if (col.filterable && openFilterColumn() === col.key && col.filterOptions) {
               <app-column-filter-popover

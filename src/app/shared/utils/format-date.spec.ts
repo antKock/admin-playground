@@ -1,11 +1,8 @@
 import { formatDateFr } from './format-date';
 
 describe('formatDateFr', () => {
-  it('should format a valid ISO date string in fr-FR locale', () => {
-    const result = formatDateFr('2024-06-15T10:00:00Z');
-    expect(result).toMatch(/15/);
-    expect(result).toMatch(/juin/);
-    expect(result).toMatch(/2024/);
+  it('should format a valid ISO date string as dd/mm/yyyy hh:mm', () => {
+    expect(formatDateFr('2024-06-15T10:30:00Z')).toBe('15/06/2024 10:30');
   });
 
   it('should return em-dash for null', () => {

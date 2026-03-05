@@ -25,7 +25,7 @@ describe('AgentListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns.map(c => c.key)).toEqual([
-      'displayName', 'email', 'agent_type', 'status', 'community_name', 'created_at',
+      'displayName', 'email', 'agent_type', 'status', 'community_name', 'updated_at',
     ]);
   });
 

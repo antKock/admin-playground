@@ -136,6 +136,26 @@ _Living document tracking API gaps, limitations, and suggestions discovered duri
 - **Suggestion:** Add a `q` or `search` query parameter to list endpoints that performs server-side full-text search across entity name/description fields.
 - **Priority:** LOW — filter dropdowns (Story 4-2) cover the primary filtering use case. Full-text search is a nice-to-have.
 
+## Epic 6 Observations (In-Column Filters & Table Polish)
+
+### Multi-Select Filters — No OR Support
+- **Observation:** The frontend sends comma-separated values for multi-select filters (e.g., `?status=draft,published`), but the API only accepts single values per filter parameter. Multi-value selection triggers a server error.
+- **Impact:** In-column multi-select filters (Story 6-1) effectively only work with single selection. Selecting multiple values causes the API to return an error.
+- **Suggestion:** Add OR support for filter parameters. Accept comma-separated values (e.g., `status=draft,published`) and return items matching ANY of the specified values.
+- **Priority:** HIGH — multi-select filtering is a core table UX feature.
+
+### Action Theme Filter on Action Models — Missing Parameter
+- **Observation:** `GET /action-models/` only accepts `funding_program_id` as a filter parameter. There is no `action_theme_id` filter, despite action models being associated with action themes via `action_theme_id`.
+- **Impact:** The action model table cannot filter by action theme, even though the column and filter UI exist. Frontend sends `action_theme_id=<value>` but the API ignores it.
+- **Suggestion:** Add `action_theme_id` query parameter to `GET /action-models/` for server-side filtering by action theme.
+- **Priority:** MEDIUM — limits table usability for operators managing models by theme.
+
+### Community Filter on Agents — Missing Parameter
+- **Observation:** `GET /agents/` only accepts `status` and `include_deleted` as filter parameters. There is no `community_id` filter, despite agents being associated with communities via `community_id`.
+- **Impact:** The agent table cannot filter by community. Operators managing agents across communities have no server-side filtering option.
+- **Suggestion:** Add `community_id` query parameter to `GET /agents/` for server-side filtering by community.
+- **Priority:** MEDIUM — limits table usability for multi-community operator workflows.
+
 ---
 
 _Add new observations below as they arise during development._

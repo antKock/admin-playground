@@ -77,7 +77,7 @@ export class IndicatorModelListComponent implements OnInit {
       ],
     },
     { key: 'unit', label: 'Unité', sortable: true },
-    { key: 'created_at', label: 'Créé le', type: 'date', sortable: true },
+    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true },
   ];
 
   ngOnInit(): void {

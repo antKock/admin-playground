@@ -137,11 +137,11 @@ describe('DataTableComponent', () => {
     expect(indicators.length).toBe(2);
   });
 
-  it('should sort ascending on first header click', () => {
+  it('should sort ascending on first sort button click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
-    nameLabel.click();
+    const sortBtns = fixture.nativeElement.querySelectorAll('.sort-btn');
+    sortBtns[1].click();
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -150,12 +150,12 @@ describe('DataTableComponent', () => {
     expect(rows[2].textContent).toContain('Cherry');
   });
 
-  it('should sort descending on second header click', () => {
+  it('should sort descending on second sort button click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
-    nameLabel.click(); // asc
-    nameLabel.click(); // desc
+    const sortBtns = fixture.nativeElement.querySelectorAll('.sort-btn');
+    sortBtns[1].click(); // asc
+    sortBtns[1].click(); // desc
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -163,13 +163,13 @@ describe('DataTableComponent', () => {
     expect(rows[2].textContent).toContain('Apple');
   });
 
-  it('should reset sort on third header click', () => {
+  it('should reset sort on third sort button click', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const nameLabel = fixture.nativeElement.querySelectorAll('.th-label')[1];
-    nameLabel.click(); // asc
-    nameLabel.click(); // desc
-    nameLabel.click(); // reset
+    const sortBtns = fixture.nativeElement.querySelectorAll('.sort-btn');
+    sortBtns[1].click(); // asc
+    sortBtns[1].click(); // desc
+    sortBtns[1].click(); // reset
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('.data-row');
@@ -355,9 +355,9 @@ describe('DataTableComponent', () => {
     ];
     fixture.detectChanges();
 
-    // Sort should work via label click
-    const label = fixture.nativeElement.querySelector('.th-label');
-    label.click();
+    // Sort should work via sort button click
+    const sortBtn = fixture.nativeElement.querySelector('.sort-btn');
+    sortBtn.click();
     fixture.detectChanges();
 
     const th = fixture.nativeElement.querySelector('th');
