@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { FundingProgramFacade } from '../funding-program.facade';
 
 @Component({
   selector: 'app-funding-program-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +16,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/funding-programs/new'])"
         >
-          Create Funding Program
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Funding Program
         </button>
       </div>
 
@@ -56,7 +57,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/funding-programs/new'])"
             >
-              Create Funding Program
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Funding Program
             </button>
           }
         </div>
@@ -74,6 +75,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
   `,
 })
 export class FundingProgramListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(FundingProgramFacade);
   readonly router = inject(Router);
   readonly activeFilter = signal<string>('');

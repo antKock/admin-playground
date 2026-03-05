@@ -1,12 +1,14 @@
 import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { navigateToLink } from '@app/shared/utils/navigate-to-link';
 import { AgentFacade } from '../agent.facade';
 
 @Component({
   selector: 'app-agent-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +17,7 @@ import { AgentFacade } from '../agent.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/agents/new'])"
         >
-          Create Agent
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Agent
         </button>
       </div>
 
@@ -57,7 +59,7 @@ import { AgentFacade } from '../agent.facade';
               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/agents/new'])"
             >
-              Create Agent
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Agent
             </button>
           }
         </div>
@@ -68,6 +70,7 @@ import { AgentFacade } from '../agent.facade';
           [isLoading]="facade.isLoading()"
           [hasMore]="facade.hasMore()"
           (rowClick)="onRowClick($event)"
+          (linkClick)="onLinkClick($event)"
           (loadMore)="onLoadMore()"
         />
       }
@@ -75,6 +78,7 @@ import { AgentFacade } from '../agent.facade';
   `,
 })
 export class AgentListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(AgentFacade);
   readonly router = inject(Router);
   readonly statusFilter = signal<string>('');
@@ -94,7 +98,7 @@ export class AgentListComponent implements OnInit {
     { key: 'email', label: 'Email', sortable: true },
     { key: 'agent_type', label: 'Agent Type', sortable: true },
     { key: 'status', label: 'Status', type: 'status-badge' },
-    { key: 'community_name', label: 'Community', sortable: true },
+    { key: 'community_name', label: 'Community', sortable: true, type: 'link', linkRoute: '/communities', linkIdKey: 'community_id' },
     { key: 'created_at', label: 'Created', sortable: true },
   ];
 
@@ -118,6 +122,10 @@ export class AgentListComponent implements OnInit {
 
   onRowClick(row: Record<string, unknown>): void {
     this.router.navigate(['/agents', row['id']]);
+  }
+
+  onLinkClick(event: { route: string; id: string }): void {
+    navigateToLink(this.router, event);
   }
 
   onLoadMore(): void {

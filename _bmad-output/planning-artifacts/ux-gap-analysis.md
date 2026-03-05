@@ -741,3 +741,99 @@ Each gap has been categorized by root cause and assigned a resolution.
 - **Story 5-5:** DataTable Sorting & Row Interactions (GAP-EL1, EL3, EL4, EL5)
 - **Story 5-6:** Detail Page Header & Navigation Polish (GAP-L1, MW2, MW3, MW5, MW11, ID5, ID7)
 - **Story 5-7:** Accessibility & Cross-Cutting Consistency (GAP-TR1, CC2, CC3, CC4, CC5, L2, L3)
+
+---
+
+## Post-Implementation Verification (2026-03-05)
+
+> **Auditor:** UX Designer (Sally)
+> **Scope:** Full codebase verification of all 42 gaps after Epics 0–5 completion
+> **All stories in review status as of this date**
+
+### Closure Summary
+
+| Category | Count |
+|----------|-------|
+| **Fully Resolved** | 32 |
+| **Partially Resolved** | 0 |
+| **Deferred** | 3 |
+| **API-Blocked (unchanged)** | 6 |
+| **Intentional Divergence** | 4 |
+
+### Verified Resolved (27 gaps)
+
+| Gap | Verification |
+|-----|-------------|
+| GAP-L1 Breadcrumbs | `BreadcrumbComponent` with `aria-label="Breadcrumb"` on all 7 detail + all form pages |
+| GAP-L2 User avatar & name | Circular `.user-avatar` with initials + `userName()` in header |
+| GAP-L3 Sidebar section labels | "Configuration" and "Administration" uppercase labels with `nav-section-label` CSS |
+| GAP-L5 Icon set | Lucide icons on all nav items |
+| GAP-L7 Brand name | "Laureat Admin" in sidebar header |
+| GAP-EL1 Column sorting (P0) | Full sort with `sortColumn`/`sortDirection` signals, `aria-sort`, direction indicators |
+| GAP-EL2 Column filters | Per-entity filter dropdowns + cross-entity funding program filter |
+| GAP-EL3 Row hover actions | `.row-actions { opacity: 0 }` revealed on `.data-row:hover` and `:focus-within` |
+| GAP-EL4 Dual name display | `type: 'dual-line'` with monospace `secondaryKey` on all Name columns |
+| GAP-EL11 Table borders | `border-bottom` on all `td` elements |
+| GAP-MW2 Technical name in header | Monospace `<p>` below `<h1>` on applicable detail pages |
+| GAP-MW3 Meta line | "Updated ... · ID: ..." on all 7 detail pages |
+| GAP-MW5 Section anchors | `SectionAnchorsComponent` with `IntersectionObserver` scroll-spy on action-model and indicator-model detail |
+| GAP-MW8 / GAP-SC1 API Inspector | `ApiInspectorComponent` with HTTP interceptor on all 7 detail pages |
+| GAP-MW9 Section dividers | `<hr>` between sections on detail pages |
+| GAP-MW11 Back-to-list | Unified with breadcrumb navigation |
+| GAP-IC4 Rule prose | `translateJsonLogicToProse()` renders in `RuleFieldComponent` |
+| GAP-ID4 Usage section | Full usage section with loading/empty/list states + router links |
+| GAP-ID5 Section anchors | On indicator-model-detail |
+| GAP-ID6 API Inspector | On indicator-model-detail |
+| GAP-ID7 Meta line | On indicator-model-detail |
+| GAP-TR1 ARIA toggle | `role="switch"`, `aria-checked`, `aria-label` on `ToggleRowComponent` |
+| GAP-CC2 Date consistency | `formatDateFr()` used consistently across all components |
+| GAP-CC3 Empty state flash | `hasLoaded` signal guard on all list components |
+| GAP-CC4 Error state | `detailError()` handling in all detail components |
+| GAP-CC5 clearSelection | `facade.clearSelection()` in `ngOnDestroy` of all detail components |
+| GAP-SB2 Sticky save bar | Fixed positioning at bottom (functional equivalent) |
+| GAP-EL5 Linked references | `type: 'link'` with `linkRoute`/`linkIdKey` wired on FK columns in action-model-list and agent-list |
+| GAP-EL8 Create button icons | `Plus` lucide icon added to all 7 list component Create buttons |
+| GAP-EL10 Uppercase headers | `text-transform: uppercase; letter-spacing: 0.3px` on DataTable `<th>` |
+| GAP-L6 Active-state corners | `border-radius: 0 6px 6px 0; margin-right: 8px` on `.nav-item-active` |
+| GAP-MW10 Count badge | Section anchor counts styled as `.count-badge` with background and border-radius |
+
+### Deferred (3 gaps)
+
+| Gap | Rationale |
+|-----|-----------|
+| GAP-EL7 Page subtitles | Marginal value — page context is clear from title and breadcrumbs |
+| GAP-IP1 Picker loading | Sub-300ms loads make spinners counterproductive (flash of spinner is worse than no indicator) |
+| GAP-ID1 Type badge in title | Redundant with MetadataGrid which already displays the type prominently |
+
+### API-Blocked — Unchanged (6 gaps)
+
+| Gap | Blocker |
+|-----|---------|
+| GAP-EL6 Updated-by column | No `updated_by` field in API |
+| GAP-EL9 / GAP-SC2 Search bar | No search endpoint in API |
+| GAP-MW1 Status badge (ActionModel) | ActionModel has no `status` field |
+| GAP-MW4 Action buttons (ActionModel) | No status transitions for ActionModel |
+| GAP-ID2 3-column metadata | No sub-type field in API |
+| GAP-ID3 List Values CRUD (P0) | No list values endpoints |
+| GAP-ID8 Action buttons (Indicator) | No status transitions for IndicatorModel |
+
+### Intentional Divergences — Acknowledged (4 gaps)
+
+| Gap | Decision |
+|-----|----------|
+| GAP-MW6 / GAP-CC1 Inline editing | Form-based editing retained as architectural choice |
+| GAP-MW7 Linked ref go-link | Read-only link with navigation; inline FK change deferred |
+| GAP-DT1 CSS naming convention | `--color-` prefix required by Tailwind v4 |
+| GAP-SB1 Save bar visual | Brand-purple save button is a better fit than spec's amber/orange — consistent with brand identity |
+
+### Remaining Actionable Items
+
+All 5 implementable items from the post-verification review have been completed in Story 5-8:
+
+1. ~~Wire `type: 'link'` on FK columns in list components (GAP-EL5)~~ — **Done**
+2. ~~Add `Plus` icon to Create buttons (GAP-EL8)~~ — **Done**
+3. ~~Add `text-transform: uppercase` to DataTable `<th>` (GAP-EL10)~~ — **Done**
+4. ~~Add `border-radius` to `.nav-item-active` (GAP-L6)~~ — **Done**
+5. ~~Style indicator count as distinct badge in section anchors (GAP-MW10)~~ — **Done**
+
+No further actionable UX gaps remain. All non-blocked, non-deferred gaps are now resolved.

@@ -46,14 +46,15 @@ describe('SectionAnchorsComponent', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
     const pills = fixture.nativeElement.querySelectorAll('.anchor-pill');
-    expect(pills[1].textContent).toContain('(5)');
+    expect(pills[1].textContent).toContain('5');
+    expect(pills[1].querySelector('.count-badge')).toBeTruthy();
   });
 
   it('should not display count when not provided', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
     const pills = fixture.nativeElement.querySelectorAll('.anchor-pill');
-    expect(pills[0].textContent).not.toContain('(');
+    expect(pills[0].querySelector('.count-badge')).toBeFalsy();
   });
 
   it('should emit anchorClicked on pill click', () => {

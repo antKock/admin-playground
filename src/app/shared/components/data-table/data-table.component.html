@@ -61,7 +61,7 @@
                   @if (col.secondaryKey) {
                     <div class="dual-line-secondary">{{ getCellValue(row, col.secondaryKey) }}</div>
                   }
-                } @else if (col.type === 'link') {
+                } @else if (col.type === 'link' && hasLinkTarget(row, col)) {
                   <a class="cell-link" tabindex="0" role="link" (click)="onLinkClick($event, col, row)" (keydown.enter)="onLinkClick($event, col, row)">{{ getCellValue(row, col.key) }}</a>
                 } @else {
                   {{ getCellValue(row, col.key) }}

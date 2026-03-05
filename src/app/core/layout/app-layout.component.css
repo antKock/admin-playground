@@ -85,6 +85,8 @@
   background-color: var(--color-surface-active);
   font-weight: 600;
   color: var(--color-brand);
+  border-radius: 0 6px 6px 0;
+  margin-right: 8px;
 }
 
 .main-area {

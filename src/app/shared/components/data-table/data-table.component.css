@@ -23,6 +23,8 @@ th {
   background-color: var(--color-surface-subtle);
   border-bottom: 1px solid var(--color-stroke-standard);
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 th.sortable {

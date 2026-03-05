@@ -18,7 +18,7 @@ export interface SectionDef {
         >
           {{ section.label }}
           @if (section.count !== undefined) {
-            <span class="ml-1 text-text-tertiary">({{ section.count }})</span>
+            <span class="count-badge">{{ section.count }}</span>
           }
         </button>
       }
@@ -50,6 +50,19 @@ export interface SectionDef {
       background-color: var(--color-surface-active);
       color: var(--color-brand);
       font-weight: 600;
+    }
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
+      padding: 0 6px;
+      font-size: 11px;
+      line-height: 18px;
+      border-radius: 10px;
+      background: var(--color-surface-elevated, var(--color-surface-subtle));
+      color: var(--color-text-tertiary);
     }
   `,
 })

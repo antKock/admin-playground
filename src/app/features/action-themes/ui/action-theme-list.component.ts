@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +16,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/action-themes/new'])"
         >
-          Create Action Theme
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme
         </button>
       </div>
 
@@ -57,7 +58,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/action-themes/new'])"
             >
-              Create Action Theme
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Theme
             </button>
           }
         </div>
@@ -75,6 +76,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
   `,
 })
 export class ActionThemeListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(ActionThemeFacade);
   readonly router = inject(Router);
   readonly statusFilter = signal<string>('');

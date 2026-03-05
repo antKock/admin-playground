@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +16,7 @@ import { CommunityFacade } from '../community.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/communities/new'])"
         >
-          Create Community
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Community
         </button>
       </div>
 
@@ -26,7 +27,7 @@ import { CommunityFacade } from '../community.facade';
             class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
             (click)="router.navigate(['/communities/new'])"
           >
-            Create Community
+            <lucide-icon [img]="PlusIcon" [size]="16" /> Create Community
           </button>
         </div>
       } @else {
@@ -43,6 +44,7 @@ import { CommunityFacade } from '../community.facade';
   `,
 })
 export class CommunityListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(CommunityFacade);
   readonly router = inject(Router);
   // Prevents empty-state flash on first render — stays false until the first load completes.

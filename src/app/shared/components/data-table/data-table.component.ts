@@ -122,6 +122,10 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  hasLinkTarget(row: Record<string, unknown>, col: ColumnDef): boolean {
+    return !!col.linkIdKey && typeof row[col.linkIdKey] === 'string';
+  }
+
   getCellValue(row: Record<string, unknown>, key: string): unknown {
     return row[key];
   }

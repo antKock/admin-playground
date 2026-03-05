@@ -1,12 +1,14 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { navigateToLink } from '@app/shared/utils/navigate-to-link';
 import { ActionModelFacade } from '../action-model.facade';
 
 @Component({
   selector: 'app-action-model-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +17,7 @@ import { ActionModelFacade } from '../action-model.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/action-models/new'])"
         >
-          Create Action Model
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Model
         </button>
       </div>
 
@@ -57,7 +59,7 @@ import { ActionModelFacade } from '../action-model.facade';
               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/action-models/new'])"
             >
-              Create Action Model
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Action Model
             </button>
           }
         </div>
@@ -68,6 +70,7 @@ import { ActionModelFacade } from '../action-model.facade';
           [isLoading]="facade.isLoading()"
           [hasMore]="facade.hasMore()"
           (rowClick)="onRowClick($event)"
+          (linkClick)="onLinkClick($event)"
           (loadMore)="onLoadMore()"
         />
       }
@@ -75,6 +78,7 @@ import { ActionModelFacade } from '../action-model.facade';
   `,
 })
 export class ActionModelListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(ActionModelFacade);
   readonly router = inject(Router);
   readonly fpFilter = signal<string>('');
@@ -99,8 +103,8 @@ export class ActionModelListComponent implements OnInit {
 
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Name', sortable: true, type: 'dual-line', secondaryKey: 'technical_label' },
-    { key: 'funding_program_name', label: 'Funding Program', sortable: true },
-    { key: 'action_theme_name', label: 'Action Theme', sortable: true },
+    { key: 'funding_program_name', label: 'Funding Program', sortable: true, type: 'link', linkRoute: '/funding-programs', linkIdKey: 'funding_program_id' },
+    { key: 'action_theme_name', label: 'Action Theme', sortable: true, type: 'link', linkRoute: '/action-themes', linkIdKey: 'action_theme_id' },
     { key: 'created_at', label: 'Created', sortable: true },
   ];
 
@@ -111,6 +115,10 @@ export class ActionModelListComponent implements OnInit {
 
   onRowClick(row: Record<string, unknown>): void {
     this.router.navigate(['/action-models', row['id']]);
+  }
+
+  onLinkClick(event: { route: string; id: string }): void {
+    navigateToLink(this.router, event);
   }
 
   onLoadMore(): void {

@@ -1,12 +1,13 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-list',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, LucideAngularModule],
   template: `
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
@@ -15,7 +16,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
           (click)="router.navigate(['/indicator-models/new'])"
         >
-          Create Indicator Model
+          <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model
         </button>
       </div>
 
@@ -56,7 +57,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
               class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
               (click)="router.navigate(['/indicator-models/new'])"
             >
-              Create Indicator Model
+              <lucide-icon [img]="PlusIcon" [size]="16" /> Create Indicator Model
             </button>
           }
         </div>
@@ -74,6 +75,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
   `,
 })
 export class IndicatorModelListComponent implements OnInit {
+  protected readonly PlusIcon = Plus;
   readonly facade = inject(IndicatorModelFacade);
   readonly router = inject(Router);
   readonly typeFilter = signal<string>('');
