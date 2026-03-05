@@ -280,7 +280,10 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
 
     .param-section {
       border-bottom: 1px solid var(--color-stroke-standard);
-      padding-bottom: 4px;
+      padding: 12px 0 8px;
+    }
+    .param-section:first-child {
+      padding-top: 4px;
     }
     .param-section.last,
     .param-section:last-child {

@@ -4,52 +4,60 @@
  */
 
 const OPERATOR_NAMES: Record<string, string> = {
-  '==': 'est égal à',
-  '===': 'est strictement égal à',
-  '!=': 'est différent de',
-  '!==': 'est strictement différent de',
-  '<': 'est inférieur à',
-  '<=': 'est inférieur ou égal à',
-  '>': 'est supérieur à',
-  '>=': 'est supérieur ou égal à',
+  '==': 'contient',
+  '===': '=',
+  '!=': 'ne contient pas',
+  '!==': '≠',
+  '<': '&lt;',
+  '<=': '≤',
+  '>': '&gt;',
+  '>=': '≥',
 };
 
-const MAX_DEPTH = 3;
+const MAX_DEPTH = 8;
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function escapeQuotes(s: string): string {
-  return s.replace(/'/g, "\\'");
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function bold(s: string): string {
+  return `<strong>${s}</strong>`;
 }
 
 function formatValue(val: unknown): string {
-  if (typeof val === 'string') return `'${escapeQuotes(val)}'`;
+  if (typeof val === 'string') return `'${escapeQuotes(escapeHtml(val))}'`;
   if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   if (val === null) return 'null';
-  return String(val);
+  return escapeHtml(String(val));
 }
 
 function resolveVar(node: Record<string, unknown>): string | null {
   const v = node['var'];
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') return bold(escapeHtml(v));
+  if (typeof v === 'number') return bold(String(v));
   // Array syntax: {"var": ["name", default]}
   if (Array.isArray(v) && v.length >= 1) {
     const name = v[0];
-    if (typeof name === 'string') return name;
-    if (typeof name === 'number') return String(name);
+    if (typeof name === 'string') return bold(escapeHtml(name));
+    if (typeof name === 'number') return bold(String(name));
   }
   return null;
 }
 
-function resolveOperand(node: unknown, depth: number): string | null {
+function resolveOperand(node: unknown, depth: number, topLevel = false): string | null {
   if (depth > MAX_DEPTH) return null;
 
-  if (node === null || node === undefined) return 'null';
-  if (typeof node === 'string') return `'${escapeQuotes(node)}'`;
-  if (typeof node === 'number' || typeof node === 'boolean') return String(node);
+  if (node === null || node === undefined) return bold('null');
+  if (typeof node === 'string') return bold(`'${escapeQuotes(escapeHtml(node))}'`);
+  if (typeof node === 'number' || typeof node === 'boolean') return bold(String(node));
 
   if (Array.isArray(node)) {
     const items = node.map((item) => formatValue(item));
-    return `[${items.join(', ')}]`;
+    return bold(`[${items.join(', ')}]`);
   }
 
   if (typeof node === 'object') {
@@ -58,13 +66,13 @@ function resolveOperand(node: unknown, depth: number): string | null {
       return resolveVar(obj);
     }
     // Nested operation — translate recursively
-    return translateNode(obj, depth + 1);
+    return translateNode(obj, depth + 1, topLevel);
   }
 
   return null;
 }
 
-function translateNode(node: unknown, depth: number): string | null {
+function translateNode(node: unknown, depth: number, topLevel = false): string | null {
   if (depth > MAX_DEPTH) return null;
   if (!node || typeof node !== 'object' || Array.isArray(node)) return null;
 
@@ -101,14 +109,21 @@ function translateNode(node: unknown, depth: number): string | null {
   // Logic: and / or
   if ((operator === 'and' || operator === 'or') && Array.isArray(args)) {
     const parts: string[] = [];
-    const connector = operator === 'and' ? 'et' : 'ou';
     for (const arg of args) {
       const translated = resolveOperand(arg, depth);
       if (translated === null) return null;
       parts.push(translated);
     }
     if (parts.length === 0) return null;
-    return parts.join(` ${connector} `);
+    if (operator === 'and') {
+      return parts.join(' et ');
+    }
+    // OR: bullet format only at top level; inline with parentheses when nested
+    if (topLevel && parts.length > 1) {
+      return parts.map((p) => `• ${p}`).join('\n');
+    }
+    if (parts.length === 1) return parts[0];
+    return `(${parts.join(' ou ')})`;
   }
 
   // Negation: !
@@ -149,7 +164,7 @@ function translateNode(node: unknown, depth: number): string | null {
 
   // missing
   if (operator === 'missing' && Array.isArray(args)) {
-    return `champs manquants parmi [${args.map(formatValue).join(', ')}]`;
+    return `champs manquants parmi ${bold(`[${args.map(formatValue).join(', ')}]`)}`;
   }
 
   // Arithmetic
@@ -236,7 +251,7 @@ export function translateJsonLogicToProse(jsonString: string): string | null {
   try {
     const parsed = JSON.parse(jsonString);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
-    return translateNode(parsed, 0);
+    return translateNode(parsed, 0, true);
   } catch {
     return null;
   }

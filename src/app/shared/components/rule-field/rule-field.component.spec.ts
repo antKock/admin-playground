@@ -26,23 +26,6 @@ describe('RuleFieldComponent', () => {
     expect(host.querySelector('textarea')).toBeFalsy();
   });
 
-  it('should return empty string for variables label when empty', () => {
-    fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('');
-  });
-
-  it('should extract variable names from JSONLogic', () => {
-    fixture.componentRef.setInput('value', '{"==": [{"var": "mode_chauffe"}, "autre"]}');
-    fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('Variables référencées : mode_chauffe');
-  });
-
-  it('should extract multiple variables', () => {
-    fixture.componentRef.setInput('value', '{"and": [{"==": [{"var": "mode"}, "a"]}, {"==": [{"var": "type"}, "b"]}]}');
-    fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('Variables référencées : mode, type');
-  });
-
   it('should show no error initially', () => {
     fixture.detectChanges();
     expect(component.hasError()).toBe(false);
@@ -108,8 +91,7 @@ describe('RuleFieldComponent', () => {
     fixture.detectChanges();
 
     expect(component.hasError()).toBe(true);
-    expect(component.errorMessage()).toBeTruthy();
-    expect(component.errorMessage().length).toBeGreaterThan(0);
+    expect(component.errorMessage()).toContain('JSON invalide');
   });
 
   it('should allow empty string without error', () => {
@@ -129,23 +111,11 @@ describe('RuleFieldComponent', () => {
     expect(cmContent?.textContent).toContain('"test"');
   });
 
-  it('extractVariables handles non-JSON gracefully', () => {
-    fixture.componentRef.setInput('value', 'not json at all');
-    fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('');
-  });
-
-  it('extractVariables handles boolean strings', () => {
-    fixture.componentRef.setInput('value', 'true');
-    fixture.detectChanges();
-    expect(component.variablesLabel()).toBe('');
-  });
-
   // Prose translation tests (Story 5.2)
   it('should show prose translation for translatable JSONLogic rule', () => {
     fixture.componentRef.setInput('value', '{"==": [{"var": "mode_chauffe"}, "autre"]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe("mode_chauffe est égal à 'autre'");
+    expect(component.proseTranslation()).toContain('mode_chauffe');
     expect(fixture.nativeElement.querySelector('.rule-prose')).toBeTruthy();
   });
 
@@ -166,10 +136,12 @@ describe('RuleFieldComponent', () => {
   it('should update prose when value input changes', () => {
     fixture.componentRef.setInput('value', '{"==": [{"var": "x"}, 1]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe('x est égal à 1');
+    expect(component.proseTranslation()).toContain('x');
+    expect(component.proseTranslation()).toContain('contient');
 
     fixture.componentRef.setInput('value', '{"!=": [{"var": "y"}, 2]}');
     fixture.detectChanges();
-    expect(component.proseTranslation()).toBe('y est différent de 2');
+    expect(component.proseTranslation()).toContain('y');
+    expect(component.proseTranslation()).toContain('ne contient pas');
   });
 });

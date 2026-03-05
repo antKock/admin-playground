@@ -37,35 +37,6 @@ import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
 import { translateJsonLogicToProse } from '../../utils/jsonlogic-prose';
 import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 
-function extractVariables(jsonLogicStr: string): string[] {
-  if (!jsonLogicStr || jsonLogicStr === 'true' || jsonLogicStr === 'false') return [];
-  try {
-    const parsed = JSON.parse(jsonLogicStr);
-    const vars: string[] = [];
-    const walk = (obj: unknown): void => {
-      if (obj && typeof obj === 'object') {
-        if ('var' in (obj as Record<string, unknown>)) {
-          const v = (obj as Record<string, unknown>)['var'];
-          if (typeof v === 'string' && v !== '') vars.push(v);
-          if (typeof v === 'number') vars.push(String(v));
-          // Array syntax: {"var": ["name", default]}
-          if (Array.isArray(v) && v.length >= 1) {
-            if (typeof v[0] === 'string' && v[0] !== '') vars.push(v[0]);
-            if (typeof v[0] === 'number') vars.push(String(v[0]));
-          }
-        }
-        for (const val of Object.values(obj as Record<string, unknown>)) {
-          walk(val);
-        }
-      }
-    };
-    walk(parsed);
-    return [...new Set(vars)];
-  } catch {
-    return [];
-  }
-}
-
 /** Custom JSON + JSONLogic linter for CodeMirror 6 */
 function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
   return (view: EditorView): Diagnostic[] => {
@@ -156,37 +127,39 @@ const ruleFieldTheme = EditorView.theme({
 @Component({
   selector: 'app-rule-field',
   template: `
-    <div class="rule-field" [class.valid]="isValidJsonLogic()">
+    <div class="rule-field">
       <div class="rule-field-header">
         <span class="rule-field-label">{{ label() }}</span>
       </div>
-      @if (variablesLabel()) {
-        <div class="rule-reference">
-          <em>{{ variablesLabel() }}</em>
+      @let parts = proseParts();
+      @if (parts) {
+        <div class="rule-prose">
+          <em [innerHTML]="parts.prefix"></em>
+          @if (parts.branches) {
+            <ul class="rule-or-list">
+              @for (branch of parts.branches; track branch) {
+                <li [innerHTML]="branch"></li>
+              }
+            </ul>
+          }
         </div>
       }
-      @if (proseTranslation()) {
-        <div class="rule-prose">
-          <em>Le paramètre est activé si {{ proseTranslation() }}</em>
+      @if (errorMessage()) {
+        <div class="rule-prose" [class.rule-error]="hasError()" [class.rule-warning]="!hasError()">
+          <em>{{ errorMessage() }}</em>
         </div>
       }
       <div class="cm-host" #editorHost></div>
-      @if (errorMessage()) {
-        <div class="rule-hint" [class.error-hint]="hasError()" [class.warning-hint]="!hasError()">{{ errorMessage() }}</div>
-      }
     </div>
   `,
   styles: [`
     .rule-field {
       width: 100%;
-      margin-top: 12px;
+      margin-top: 6px;
       padding: 12px;
       background: var(--color-surface-base);
       border: 1px solid var(--color-stroke-brand, #1400cc33);
       border-radius: 8px;
-    }
-    .rule-field.valid {
-      border-color: var(--color-status-success, #16a34a);
     }
     .rule-field-header {
       display: flex;
@@ -201,20 +174,6 @@ const ruleFieldTheme = EditorView.theme({
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    .rule-reference {
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      margin-bottom: 8px;
-      padding: 8px 12px;
-      background: var(--color-surface-subtle);
-      border-radius: 6px;
-      border-left: 3px solid var(--color-brand-light, #f0edff);
-      line-height: 1.6;
-    }
-    .rule-reference em {
-      color: var(--color-text-primary);
-      font-style: italic;
-    }
     .rule-prose {
       font-size: 13px;
       color: var(--color-text-secondary);
@@ -226,21 +185,35 @@ const ruleFieldTheme = EditorView.theme({
       line-height: 1.6;
     }
     .rule-prose em {
-      color: var(--color-text-primary);
       font-style: italic;
+    }
+    .rule-prose :is(em, li) strong {
+      color: var(--color-text-primary);
+      font-weight: 600;
+    }
+    .rule-or-list {
+      margin: 6px 0 0;
+      padding-left: 20px;
+      list-style: disc;
+    }
+    .rule-or-list li {
+      color: var(--color-text-primary);
+      padding: 3px 0;
+    }
+    .rule-or-list li + li {
+      border-top: 1px solid var(--color-stroke-standard);
+      margin-top: 3px;
+      padding-top: 6px;
     }
     .cm-host {
       width: 100%;
     }
-    .rule-hint {
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      margin-top: 4px;
-    }
-    .error-hint {
+    .rule-error {
+      border-left-color: var(--color-text-error, #dc2626);
       color: var(--color-text-error, #dc2626);
     }
-    .warning-hint {
+    .rule-warning {
+      border-left-color: var(--color-status-warning, #d97706);
       color: var(--color-status-warning, #d97706);
     }
   `],
@@ -260,24 +233,19 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   private editorView: EditorView | null = null;
   private suppressEmit = false;
 
-  readonly variablesLabel = computed(() => {
-    const vars = extractVariables(this.value());
-    return vars.length > 0
-      ? `Variables référencées : ${vars.join(', ')}`
-      : '';
-  });
-
   readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value()));
 
-  readonly isValidJsonLogic = computed(() => {
-    const val = this.value().trim();
-    if (!val) return false;
-    try {
-      JSON.parse(val);
-    } catch {
-      return false;
+  readonly proseParts = computed(() => {
+    const prose = this.proseTranslation();
+    if (!prose) return null;
+    const lines = prose.split('\n');
+    if (lines.length > 1) {
+      return {
+        prefix: "Le paramètre est activé si l'une de ces conditions est vraie :",
+        branches: lines.map((l) => l.replace(/^• /, '')),
+      };
     }
-    return validateJsonLogic(val).length === 0;
+    return { prefix: `Le paramètre est activé si ${prose}`, branches: null };
   });
 
   constructor() {
@@ -345,10 +313,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     }
     try {
       JSON.parse(trimmed);
-    } catch (e) {
-      const msg = e instanceof SyntaxError ? e.message : 'JSON invalide';
+    } catch {
       this.hasError.set(true);
-      this.errorMessage.set(msg);
+      this.errorMessage.set('JSON invalide — vérifiez la syntaxe (accolades, guillemets, virgules)');
       this.validChange.emit(false);
       return;
     }
