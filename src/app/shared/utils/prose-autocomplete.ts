@@ -29,9 +29,9 @@ const ALL_OPERATORS = new Set(
 
 /** Expression completions (quantifier keywords) */
 const EXPRESSION_COMPLETIONS: Completion[] = [
-  { label: 'au moins un élément de …', type: 'keyword', detail: 'some', section: { name: 'Expressions', rank: 99 } },
-  { label: 'tous les éléments de …', type: 'keyword', detail: 'all', section: { name: 'Expressions', rank: 99 } },
-  { label: 'aucun élément de …', type: 'keyword', detail: 'none', section: { name: 'Expressions', rank: 99 } },
+  { label: 'au moins un élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
+  { label: 'tous les éléments de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
+  { label: 'aucun élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
 ];
 
 /** Connector completions */
@@ -180,25 +180,30 @@ export function createProseCompletionSource(
     // Determine the "from" position: start of the partial word being typed
     const wordMatch = context.matchBefore(/[\w.À-ÿ≠≥≤]+/);
     const from = wordMatch ? wordMatch.from : context.pos;
+    const typed = wordMatch ? wordMatch.text.toLowerCase() : '';
+
+    // Substring filter (replaces CM's default fuzzy matching)
+    const filterOptions = (options: Completion[]) =>
+      typed ? options.filter((o) => o.label.toLowerCase().includes(typed)) : options;
 
     switch (detected.phase) {
       case 'variable': {
-        const options = [
+        const options = filterOptions([
           ...buildVariableCompletions(vars),
           ...EXPRESSION_COMPLETIONS,
-        ];
-        return { from, options };
+        ]);
+        return { from, options, filter: false };
       }
 
       case 'operator': {
         const variable = vars.find((v) => v.path === detected.variableName);
         const varType = variable?.type ?? 'texte';
-        const options = buildOperatorCompletions(varType);
-        return { from, options };
+        const options = filterOptions(buildOperatorCompletions(varType));
+        return { from, options, filter: false };
       }
 
       case 'connector': {
-        return { from, options: CONNECTOR_COMPLETIONS };
+        return { from, options: filterOptions(CONNECTOR_COMPLETIONS), filter: false };
       }
     }
   };

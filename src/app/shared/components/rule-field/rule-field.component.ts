@@ -208,13 +208,11 @@ export const proseEditorTheme = EditorView.theme({
     borderRadius: '3px',
     marginLeft: '8px',
   },
-  '.cm-completionSection': {
-    display: 'block',
+  '.cm-tooltip-autocomplete ul .cm-completionSection': {
     fontSize: '10px',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.8px',
-    lineHeight: '1',
     color: 'var(--color-text-tertiary, #888)',
     padding: '6px 12px 4px',
     background: 'var(--color-surface-subtle, #f8f8f8)',
@@ -866,9 +864,8 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           icons: false,
         }),
         EditorView.domEventHandlers({
-          focus: (_event, view) => {
-            startCompletion(view);
-          },
+          focus: (_event, view) => { startCompletion(view); },
+          click: (_event, view) => { startCompletion(view); },
         }),
         updateListener,
       ],

@@ -104,7 +104,9 @@ describe('createProseCompletionSource', () => {
       matchBefore(re: RegExp) {
         const line = state.doc.lineAt(pos);
         const textBefore = line.text.slice(0, pos - line.from);
-        const match = textBefore.match(re);
+        // Anchor at end to match CM's real matchBefore behavior
+        const anchored = new RegExp(re.source + '$', re.flags);
+        const match = textBefore.match(anchored);
         if (!match) return null;
         return { from: pos - match[0].length, to: pos, text: match[0] };
       },
@@ -187,5 +189,31 @@ describe('createProseCompletionSource', () => {
     expect(statut?.detail).toBe('texte');
     const score = result!.options.find((o) => o.label === 'score');
     expect(score?.detail).toBe('nombre');
+  });
+
+  it('expressions have no detail tag', () => {
+    const result = callSource('', SAMPLE_VARIABLES);
+    expect(result).not.toBeNull();
+    const expressions = result!.options.filter((o) => o.type === 'keyword');
+    for (const expr of expressions) {
+      expect(expr.detail).toBeUndefined();
+    }
+  });
+
+  it('uses substring matching, not fuzzy matching', () => {
+    const result = callSource('au', SAMPLE_VARIABLES);
+    expect(result).not.toBeNull();
+    const labels = result!.options.map((o) => o.label);
+    // "au" should match expressions starting with "au" and "aucun"
+    expect(labels).toContain('au moins un élément de …');
+    expect(labels).toContain('aucun élément de …');
+    // "au" should NOT fuzzy-match variables like "statut" (contains a and u but not "au")
+    expect(labels).not.toContain('statut');
+  });
+
+  it('disables CM default filtering', () => {
+    const result = callSource('', SAMPLE_VARIABLES);
+    expect(result).not.toBeNull();
+    expect((result as any).filter).toBe(false);
   });
 });
