@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prose Editor — Final UX Specification</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  PROSE EDITOR — FINAL UX SPECIFICATION (v2)                    ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                                                                 ║
+  ║  DECISIONS LOCKED:                                              ║
+  ║  • Copy: "Texte" (not "Prose")                                 ║
+  ║  • Toggle: Segmented control (Texte / JSON)                    ║
+  ║  • Edit entry: Click anywhere + visible "Modifier" button      ║
+  ║  • Empty rule: always Texte edit mode on load                  ║
+  ║  • Non-empty rule: read mode on load                           ║
+  ║  • No collapse/expand — just read or edit                      ║
+  ║  • Validation: inline badge (Style B) + inline error marks     ║
+  ║  • Colors carry meaning — no bold used                         ║
+  ║  • Keyword & operator share same color (#555)                  ║
+  ║  • Top-level OR uses bullet (•) format, nested OR uses parens  ║
+  ║  • Autocomplete: type-aware operator groups                    ║
+  ║  • Quantifiers (some/all/none) in autocomplete suggestions     ║
+  ║                                                                 ║
+  ║  MATCHES jsonlogic-prose.ts OUTPUT:                             ║
+  ║  • Top-level OR → "• branch1\n• branch2"                       ║
+  ║  • Nested OR → "(x ou y)"                                      ║
+  ║  • AND → "x et y"                                              ║
+  ║  • Quantifiers → "au moins un élément de X satisfait : ..."    ║
+  ║  • Dot-path vars → "formation.type_etablissement"              ║
+  ║                                                                 ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<link href="https://unpkg.com/lucide-static@latest/font/lucide.css" rel="stylesheet">
+<style>
+  :root {
+    --brand-primary: #1400cc;
+    --brand-hover: #0d009a;
+    --brand-light: #d9c8f5;
+    --brand-tertiary: #e84e0f;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-tertiary: #888888;
+    --text-disabled: #b0b0b0;
+    --text-link: #1400cc;
+    --text-error: #b32020;
+    --text-success: #006b5e;
+    --text-warning: #8a6000;
+    --surface-base: #ffffff;
+    --surface-subtle: #f9f9f9;
+    --surface-muted: #f4f4f4;
+    --surface-light: #eeeeee;
+    --surface-mid: #e4e4e4;
+    --surface-dark: #333333;
+    --surface-active: #dde2f5;
+    --stroke-standard: #e0e0e0;
+    --stroke-medium: #cccccc;
+    --stroke-strong: #aaaaaa;
+    --stroke-brand: #1400cc;
+    --status-unsaved: #e89420;
+    --status-unsaved-bg: #fef3e0;
+    --radius: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* === TOKEN COLORS (used in both read and edit mode) === */
+    --token-variable: #7c3aed;
+    --token-keyword: #555555;   /* keywords AND operators share same color */
+    --token-value: #059669;
+    --token-prefix: #888888;
+    --token-error: #b32020;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .page-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; max-width: 750px; }
+
+  /* ===== TOC ===== */
+  .toc { background: var(--surface-base); border: 1px solid var(--stroke-standard); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 40px; }
+  .toc-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { font-size: 13px; color: var(--text-link); margin-bottom: 4px; }
+  .toc li a { color: var(--text-link); text-decoration: none; }
+  .toc li a:hover { text-decoration: underline; }
+
+  /* ===== SECTION ===== */
+  .section { background: var(--surface-base); border: 1px solid var(--stroke-standard); border-radius: var(--radius-lg); margin-bottom: 32px; overflow: visible; }
+  .section-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--stroke-standard); background: var(--surface-subtle); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .section-header h2 { font-size: 17px; font-weight: 600; color: var(--brand-primary); margin-bottom: 4px; }
+  .section-header p { font-size: 13px; color: var(--text-secondary); max-width: 700px; }
+  .section-body { padding: 24px; overflow: visible; }
+
+  /* ===== BEHAVIOR NOTE ===== */
+  .behavior-note {
+    padding: 12px 16px; border-left: 3px solid var(--brand-primary); background: #f0f2fa;
+    border-radius: 0 var(--radius) var(--radius) 0; font-size: 12px; color: var(--text-secondary);
+    margin-top: 16px; line-height: 1.6;
+  }
+  .behavior-note strong { color: var(--text-primary); }
+  .behavior-note code { background: var(--surface-muted); padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: 'JetBrains Mono', 'Fira Code', monospace; color: var(--brand-primary); }
+  .behavior-note.warning { border-left-color: var(--text-warning); background: #fffbf0; }
+  .behavior-note.success { border-left-color: var(--text-success); background: #f0faf8; }
+
+  /* ===== DEV NOTE ===== */
+  .dev-note { padding: 10px 14px; background: var(--surface-muted); border-radius: var(--radius); font-size: 11px; color: var(--text-tertiary); margin-top: 12px; font-family: 'JetBrains Mono', 'Fira Code', monospace; line-height: 1.5; }
+  .dev-note::before { content: '🔧 DEV: '; font-weight: 600; color: var(--text-secondary); }
+
+  /* ===== STATES LAYOUT ===== */
+  .states-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; overflow: visible; }
+  .states-grid.single { grid-template-columns: 1fr; max-width: 560px; }
+
+  .state-card { border: 1px solid var(--stroke-standard); border-radius: var(--radius-md); overflow: visible; }
+  .state-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-tertiary); padding: 10px 16px; background: var(--surface-subtle);
+    border-bottom: 1px solid var(--stroke-standard); display: flex; align-items: center; gap: 8px;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+  .state-label .state-tag { font-size: 9px; padding: 2px 6px; border-radius: 3px; font-weight: 600; letter-spacing: 0.3px; }
+  .state-tag.default { background: var(--surface-active); color: var(--brand-primary); }
+  .state-tag.interaction { background: #fef3e0; color: var(--text-warning); }
+  .state-tag.result { background: #f0faf8; color: var(--text-success); }
+  .state-tag.error { background: #fef5f5; color: var(--text-error); }
+
+  .state-content { padding: 16px; background: var(--surface-base); overflow: visible; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+
+  /* ===== TRANSITION ===== */
+  .transition { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 0; font-size: 12px; color: var(--text-tertiary); }
+  .transition .arrow { font-size: 18px; color: var(--stroke-strong); }
+  .transition .trigger { background: var(--surface-muted); padding: 3px 10px; border-radius: 12px; font-size: 11px; color: var(--text-secondary); }
+
+  /* ===== RULE FIELD ===== */
+  .rule-field { border: 1px solid var(--stroke-standard); border-radius: var(--radius); overflow: hidden; font-size: 13px; }
+  .rule-field.ac-visible { overflow: visible; } /* only on autocomplete mockup cards */
+  /* No special border for edit mode — cursor + validation badge are sufficient signals */
+  .rule-field.has-error { border-color: var(--text-error); box-shadow: 0 0 0 2px rgba(179, 32, 32, 0.08); }
+
+  .field-label-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: var(--surface-subtle); border-bottom: 1px solid var(--stroke-standard); min-height: 36px;
+  }
+  .field-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ===== SEGMENTED TOGGLE ===== */
+  .toggle-segmented { display: inline-flex; background: var(--surface-light); border-radius: 6px; padding: 2px; gap: 2px; }
+  .toggle-segmented button {
+    font-size: 12px; font-weight: 500; padding: 4px 14px; border: none; border-radius: 4px;
+    cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.15s ease; font-family: inherit;
+  }
+  .toggle-segmented button.active { background: var(--surface-base); color: var(--brand-primary); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* ===== SHARED TOKEN COLORS (read + edit) ===== */
+  .tk-var { color: var(--token-variable); }
+  .tk-kw { color: var(--token-keyword); }
+  .tk-val { color: var(--token-value); }
+  .tk-pfx { color: var(--token-prefix); font-style: italic; }
+  .tk-err { color: var(--token-error); }
+
+  /* ===== PROSE/EDITOR SHARED ===== */
+  .mono { font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace; font-size: 13px; line-height: 1.6; }
+
+  /* ===== PROSE ZONE (read-only) ===== */
+  .prose-zone {
+    padding: 12px; min-height: 48px; cursor: text; transition: background 0.12s ease;
+    position: relative; background: var(--surface-base);
+  }
+  .prose-zone:hover { background: var(--surface-subtle); }
+
+  /* Bullet for top-level OR branches */
+  .prose-zone .bullet-branch {
+    display: block;
+    padding-left: 16px;
+    position: relative;
+    margin-bottom: 2px;
+  }
+  .prose-zone .bullet-branch::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--token-keyword);
+  }
+
+  /* ===== EDIT BUTTON (hover overlay) ===== */
+  .edit-btn-overlay {
+    position: absolute; top: 8px; right: 8px;
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 500; padding: 4px 10px;
+    border: 1px solid var(--stroke-medium); border-radius: var(--radius);
+    cursor: pointer; background: var(--surface-base); color: var(--text-secondary);
+    font-family: inherit; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    opacity: 0; transition: opacity 0.12s ease;
+  }
+  .prose-zone:hover .edit-btn-overlay { opacity: 1; }
+  .edit-btn-overlay:hover { border-color: var(--stroke-brand); color: var(--brand-primary); }
+
+  /* ===== EDITOR ZONE ===== */
+  .editor-content {
+    padding: 12px; min-height: 60px; position: relative; background: var(--surface-base); overflow: visible;
+  }
+  .editor-content .cursor {
+    display: inline-block; width: 2px; height: 16px; background: var(--brand-primary);
+    animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ===== EMPTY EDITOR ===== */
+  .editor-empty { padding: 12px; min-height: 60px; position: relative; background: var(--surface-base); }
+  .editor-empty .placeholder { color: var(--text-disabled); font-style: italic; position: absolute; pointer-events: none; }
+
+  /* ===== VALIDATION BADGE ===== */
+  .validation-row { display: flex; justify-content: flex-end; padding: 6px 12px; border-top: 1px solid var(--stroke-standard); background: var(--surface-base); }
+  .v-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 12px; font-family: inherit; }
+  .v-badge.valid { background: #f0faf8; color: var(--text-success); }
+  .v-badge.error { background: #fef5f5; color: var(--text-error); }
+  .v-badge.warning { background: #fffbf0; color: var(--text-warning); }
+  .v-badge .v-icon { font-size: 12px; }
+
+  /* ===== INLINE ERRORS ===== */
+  .error-underline { text-decoration: wavy underline; text-decoration-color: var(--text-error); text-underline-offset: 3px; }
+  .error-tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 0;
+    background: var(--surface-dark); color: #fff; font-size: 11px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    padding: 5px 10px; border-radius: var(--radius); white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 20;
+  }
+  .error-tooltip::after { content: ''; position: absolute; top: 100%; left: 12px; border: 5px solid transparent; border-top-color: var(--surface-dark); }
+  .warning-underline { text-decoration: wavy underline; text-decoration-color: var(--text-warning); text-underline-offset: 3px; }
+
+  /* ===== AUTOCOMPLETE ===== */
+  .autocomplete {
+    position: absolute; background: var(--surface-base); border: 1px solid var(--stroke-medium);
+    border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 260px; z-index: 100; overflow: hidden;
+  }
+  .autocomplete-header {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-tertiary); padding: 6px 12px 4px; background: var(--surface-subtle);
+    border-bottom: 1px solid var(--surface-light);
+  }
+  .autocomplete-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; font-size: 13px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    cursor: pointer; border-bottom: 1px solid var(--surface-light);
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active { background: var(--surface-active); }
+  .autocomplete-item .ac-name { color: var(--text-primary); }
+  .autocomplete-item .ac-type {
+    font-size: 11px; color: var(--text-tertiary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--surface-muted); padding: 1px 6px; border-radius: 3px;
+  }
+  .autocomplete-item .ac-desc {
+    font-size: 11px; color: var(--text-tertiary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  .autocomplete-sep { border-top: 1px solid var(--stroke-standard); }
+
+  /* ===== JSON MIRROR ===== */
+  .json-mirror {
+    padding: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary);
+    background: var(--surface-subtle); border-bottom: 1px solid var(--stroke-standard);
+  }
+
+  /* ===== SPEC TABLE ===== */
+  .spec-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+  .spec-table th { text-align: left; padding: 8px 12px; background: var(--surface-muted); border: 1px solid var(--stroke-standard); font-weight: 600; color: var(--text-secondary); font-size: 12px; }
+  .spec-table td { padding: 8px 12px; border: 1px solid var(--stroke-standard); vertical-align: top; }
+  .spec-table code { background: var(--surface-muted); padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+  /* ===== FLOW DIAGRAM ===== */
+  .flow { display: flex; align-items: center; gap: 0; padding: 16px 0; flex-wrap: wrap; }
+  .flow-box { padding: 8px 14px; border: 1px solid var(--stroke-standard); border-radius: var(--radius); font-size: 12px; background: var(--surface-base); color: var(--text-primary); text-align: center; white-space: nowrap; }
+  .flow-box.active { border-color: var(--stroke-brand); background: var(--surface-active); color: var(--brand-primary); }
+  .flow-arrow { padding: 0 8px; color: var(--stroke-strong); font-size: 16px; }
+  .flow-label { font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 2px; }
+  .flow-col { display: flex; flex-direction: column; align-items: center; }
+
+  /* ===== SECTION DIVIDER ===== */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px; margin: 40px 0 20px;
+    color: var(--text-tertiary); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--stroke-standard); }
+
+  /* ===== COLOR SWATCH ===== */
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Prose Editor — Final UX Specification</h1>
+<p class="page-subtitle">
+  Definitive implementation reference for the constrained-language rule editor.
+  Every state, transition, and detail is documented. Matches <code>jsonlogic-prose.ts</code> output format.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">State Machine — All Rule Field States</a></li>
+    <li><a href="#s2">Empty Rule — Texte Edit Mode (Default)</a></li>
+    <li><a href="#s3">Non-Empty Rule — Read Mode (Page Load Default)</a></li>
+    <li><a href="#s4">Edit Mode — Texte Editing</a></li>
+    <li><a href="#s5">Complex Rule — Read &amp; Edit (OR Bullets, Quantifiers, Nested Groups)</a></li>
+    <li><a href="#s6">Autocomplete — Variables, Operators, Connectors, Quantifiers</a></li>
+    <li><a href="#s7">Validation — Badge + Inline Error Highlights</a></li>
+    <li><a href="#s8">JSON Mode — Read &amp; Edit</a></li>
+    <li><a href="#s9">Mode Switching (Texte ↔ JSON)</a></li>
+    <li><a href="#s10">Color Legend &amp; Syntax Tokens</a></li>
+    <li><a href="#s11">Complete Behavior Spec Table</a></li>
+  </ol>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1. STATE MACHINE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="section-header">
+    <h2>1. State Machine — All Rule Field States</h2>
+    <p>The rule field has exactly 4 states. No "collapse" mechanic — the field is either in read mode or edit mode.</p>
+  </div>
+  <div class="section-body">
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-box">Page loads</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-box" style="background:#fffbf0; border-color:var(--text-warning);">Rule empty?</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-box active">Yes → Texte Edit Mode</div>
+        <div class="flow-label">cursor ready, placeholder shown</div>
+      </div>
+    </div>
+    <div class="flow" style="padding-top:0;">
+      <div class="flow-col" style="width: 90px;"></div>
+      <div class="flow-arrow" style="visibility:hidden">→</div>
+      <div class="flow-col" style="width:105px;"></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-box active">No → Texte Read Mode</div>
+        <div class="flow-label">prose displayed, click to edit</div>
+      </div>
+    </div>
+
+    <div class="behavior-note" style="margin-top:20px;">
+      <strong>4 states total:</strong><br>
+      <strong>① Texte Read</strong> — non-empty rule, read-only prose with syntax colors, click anywhere to enter edit mode<br>
+      <strong>② Texte Edit</strong> — CodeMirror active, cursor blinking, same syntax colors, autocomplete available<br>
+      <strong>③ JSON Read</strong> — prose mirror shown (read-only), click to edit JSON below<br>
+      <strong>④ JSON Edit</strong> — prose mirror (read-only) + JSON CodeMirror active
+    </div>
+
+    <div class="dev-note">
+      On page load: check if rule field value is empty/null. If empty → state ②. If non-empty → state ①.
+      No localStorage persistence needed — purely based on content.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     2. EMPTY RULE — TEXTE EDIT MODE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="section-header">
+    <h2>2. Empty Rule — Texte Edit Mode (Default)</h2>
+    <p>When a rule is empty, the field immediately opens in Texte edit mode with a placeholder and cursor. No action needed from the admin.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid single">
+      <div class="state-card">
+        <div class="state-label">
+          Empty rule — immediate edit mode
+          <span class="state-tag default">DEFAULT</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-empty mono">
+              <span class="placeholder">Saisir une règle… ex : statut fait partie de ['actif']</span>
+              <span class="cursor" style="display:inline-block;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="behavior-note">
+      <strong>Placeholder text:</strong> "Saisir une règle… ex : statut fait partie de ['actif']" — gives a concrete syntax example.<br>
+      <strong>Cursor position:</strong> beginning of the editor, ready for input.<br>
+      <strong>Autocomplete:</strong> triggers on first keystroke — suggests variable names from the indicator dictionary.<br>
+      <strong>No validation badge shown</strong> until the admin types something.
+    </div>
+
+    <div class="dev-note">
+      CodeMirror should auto-focus when the rule field is empty. Placeholder is a CodeMirror placeholder extension.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     3. NON-EMPTY RULE — READ MODE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="section-header">
+    <h2>3. Non-Empty Rule — Read Mode (Page Load Default)</h2>
+    <p>When a rule has content, the field displays the prose translation in read mode with syntax colors. Click anywhere to edit.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+      <!-- Read mode (resting) -->
+      <div class="state-card">
+        <div class="state-label">
+          Read mode — resting
+          <span class="state-tag default">DEFAULT</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="prose-zone mono" style="cursor:default;">
+              <span class="tk-pfx">Le paramètre est activé si :</span><br>
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Read mode (hover) -->
+      <div class="state-card">
+        <div class="state-label">
+          Read mode — hover
+          <span class="state-tag interaction">HOVER</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="prose-zone mono" style="background: var(--surface-subtle);">
+              <span class="tk-pfx">Le paramètre est activé si :</span><br>
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span>
+              <button class="edit-btn-overlay" style="opacity: 1;">
+                <i class="icon-pencil" style="font-size:12px"></i> Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transition">
+      <span class="arrow">↓</span>
+      <span class="trigger">Click anywhere in prose zone — or — click "Modifier" button</span>
+      <span class="arrow">↓</span>
+    </div>
+
+    <div class="states-grid single">
+      <div class="state-card">
+        <div class="state-label">
+          Texte edit mode — entered
+          <span class="state-tag result">RESULT</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> Valide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="behavior-note">
+      <strong>Click target:</strong> The entire prose zone is clickable. The "Modifier" button is a bonus affordance on hover — clicking the text itself does the same thing.<br>
+      <strong>Transition:</strong> Prose zone transforms into CodeMirror editor. Existing text loaded. Cursor at end.<br>
+      <strong>Same colors in both modes:</strong> Read mode and edit mode use the exact same token colors. The only visual difference is the cursor and the validation badge.<br>
+      <strong>No border change:</strong> The border stays <code>stroke-standard</code> in both modes. No blue glow.<br>
+      <strong>Returning to read mode:</strong> Click outside (blur). If valid → save, show read mode. If invalid → stay in edit mode, show errors.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     4. EDIT MODE — SIMPLE RULE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="section-header">
+    <h2>4. Edit Mode — Texte Editing</h2>
+    <p>In edit mode, the admin types constrained French prose with real-time syntax coloring and autocomplete. Colors are identical to read mode.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="state-label">
+          Simple rule with dot-path variable
+          <span class="state-tag interaction">EDITING</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono">
+              <span class="tk-var">formation.type_etablissement</span> <span class="tk-kw">=</span> <span class="tk-val">'université'</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">candidat.age</span> <span class="tk-kw">≥</span> <span class="tk-val">18</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> Valide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-card">
+        <div class="state-label">
+          Rule with nested parenthetical OR
+          <span class="state-tag interaction">EDITING</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="line-height:1.7;">
+              <span class="tk-var">age</span> <span class="tk-kw">≥</span> <span class="tk-val">18</span> <span class="tk-kw">et</span> <span class="tk-var">age</span> <span class="tk-kw">≤</span> <span class="tk-val">65</span><br>
+              <span class="tk-kw">et</span> (<span class="tk-var">departement</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['75', '92', '93']</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="tk-kw">ou</span> <span class="tk-var">region</span> <span class="tk-kw">=</span> <span class="tk-val">'IDF'</span>)<span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> Valide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="behavior-note">
+      <strong>Dot-path variables:</strong> Variables like <code>formation.type_etablissement</code> or <code>candidat.age</code> are colored as a single token. Autocomplete suggests the full path.<br>
+      <strong>Parenthetical grouping:</strong> <code>(</code>...<code>)</code> creates nested OR/AND. Matching parens highlight on cursor proximity (CodeMirror bracket matching).<br>
+      <strong>Line breaks:</strong> Enter key for readability — line breaks are whitespace, don't affect parsing.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     5. COMPLEX RULE — READ + EDIT
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="section-header">
+    <h2>5. Complex Rule — Read &amp; Edit (OR Bullets, Quantifiers, Nested Groups)</h2>
+    <p>The full complexity example from the exploration doc. Shows how top-level OR renders as bullets in read mode, and how quantifiers (some/all/none) appear in both modes.</p>
+  </div>
+  <div class="section-body">
+
+    <div class="behavior-note success" style="margin-top:0; margin-bottom:20px;">
+      <strong>Key pattern from <code>jsonlogic-prose.ts</code>:</strong> Top-level OR branches render as bullet points (<code>•</code>). Each bullet is an independent AND-chain. Nested OR within a bullet uses inline parentheses <code>(x ou y)</code>. This applies to both read mode and edit mode.
+    </div>
+
+    <!-- READ MODE — Complex -->
+    <div class="states-grid single" style="max-width:100%;">
+      <div class="state-card">
+        <div class="state-label">
+          Complex rule — Read Mode
+          <span class="state-tag default">DEFAULT ON PAGE LOAD</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="prose-zone mono" style="cursor:default;">
+              <span class="tk-pfx">Le paramètre est activé si au moins une de ces conditions est vraie :</span>
+              <div class="bullet-branch">
+                <span class="tk-var">age</span> <span class="tk-kw">≥</span> <span class="tk-val">18</span>
+                <span class="tk-kw">et</span> <span class="tk-var">age</span> <span class="tk-kw">≤</span> <span class="tk-val">65</span>
+                <span class="tk-kw">et</span> (<span class="tk-var">departement</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['75', '92', '93', '94']</span>
+                <span class="tk-kw">ou</span> <span class="tk-var">region</span> <span class="tk-kw">=</span> <span class="tk-val">'IDF'</span>)
+                <span class="tk-kw">et</span> <span class="tk-var">nombre_unite</span> <span class="tk-kw">×</span> <span class="tk-var">cout_unitaire</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span>
+              </div>
+              <div class="bullet-branch">
+                <span class="tk-kw">au moins un élément de</span> <span class="tk-var">beneficiaries</span> <span class="tk-kw">satisfait :</span>
+                <span class="tk-var">departement</span> <span class="tk-kw">=</span> <span class="tk-val">'75'</span>
+                <span class="tk-kw">et</span> <span class="tk-var">subvention_locale</span> <span class="tk-kw">+</span> <span class="tk-var">subvention_region</span> <span class="tk-kw">≥</span> <span class="tk-val">500</span>
+                <span class="tk-kw">et</span> <span class="tk-kw">aucun champ manquant parmi</span> <span class="tk-val">['numero_siret']</span>
+              </div>
+              <div class="bullet-branch">
+                <span class="tk-var">presta</span> <span class="tk-kw">=</span> <span class="tk-val">'OK'</span>
+                <span class="tk-kw">et</span> (<span class="tk-var">aide_sollicitee</span> <span class="tk-kw">&lt;</span> <span class="tk-var">aide_sollicitable</span>
+                <span class="tk-kw">ou</span> (<span class="tk-var">statut</span> <span class="tk-kw">=</span> <span class="tk-val">'prioritaire'</span> <span class="tk-kw">et</span> <span class="tk-var">budget_total</span> <span class="tk-kw">&gt;</span> <span class="tk-val">10000</span>))
+                <span class="tk-kw">et</span> <span class="tk-var">type_projet</span> <span class="tk-kw">ne contient pas</span> <span class="tk-val">'refuse'</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="transition">
+      <span class="arrow">↓</span>
+      <span class="trigger">Click anywhere — enters edit mode</span>
+      <span class="arrow">↓</span>
+    </div>
+
+    <!-- EDIT MODE — Complex -->
+    <div class="states-grid single" style="max-width:100%;">
+      <div class="state-card">
+        <div class="state-label">
+          Complex rule — Edit Mode (same colors, same structure)
+          <span class="state-tag interaction">EDITING</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="line-height:1.8;">
+              <span class="tk-var">age</span> <span class="tk-kw">≥</span> <span class="tk-val">18</span> <span class="tk-kw">et</span> <span class="tk-var">age</span> <span class="tk-kw">≤</span> <span class="tk-val">65</span>
+              <span class="tk-kw">et</span> (<span class="tk-var">departement</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['75', '92', '93', '94']</span>
+              <span class="tk-kw">ou</span> <span class="tk-var">region</span> <span class="tk-kw">=</span> <span class="tk-val">'IDF'</span>)
+              <span class="tk-kw">et</span> <span class="tk-var">nombre_unite</span> <span class="tk-kw">×</span> <span class="tk-var">cout_unitaire</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span><br><br>
+              <span class="tk-kw">au moins un élément de</span> <span class="tk-var">beneficiaries</span> <span class="tk-kw">satisfait :</span>
+              <span class="tk-var">departement</span> <span class="tk-kw">=</span> <span class="tk-val">'75'</span>
+              <span class="tk-kw">et</span> <span class="tk-var">subvention_locale</span> <span class="tk-kw">+</span> <span class="tk-var">subvention_region</span> <span class="tk-kw">≥</span> <span class="tk-val">500</span>
+              <span class="tk-kw">et</span> <span class="tk-kw">aucun champ manquant parmi</span> <span class="tk-val">['numero_siret']</span><br><br>
+              <span class="tk-var">presta</span> <span class="tk-kw">=</span> <span class="tk-val">'OK'</span>
+              <span class="tk-kw">et</span> (<span class="tk-var">aide_sollicitee</span> <span class="tk-kw">&lt;</span> <span class="tk-var">aide_sollicitable</span>
+              <span class="tk-kw">ou</span> (<span class="tk-var">statut</span> <span class="tk-kw">=</span> <span class="tk-val">'prioritaire'</span> <span class="tk-kw">et</span> <span class="tk-var">budget_total</span> <span class="tk-kw">&gt;</span> <span class="tk-val">10000</span>))
+              <span class="tk-kw">et</span> <span class="tk-var">type_projet</span> <span class="tk-kw">ne contient pas</span> <span class="tk-val">'refuse'</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> Valide — 3 branches OR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="behavior-note">
+      <strong>Read mode vs Edit mode for OR:</strong><br>
+      • <strong>Read mode:</strong> Top-level OR branches are rendered with bullet points (<code>•</code>) and indented — mirroring the exact output of <code>jsonlogic-prose.ts</code>. The prefix says "au moins une de ces conditions est vraie".<br>
+      • <strong>Edit mode:</strong> No bullets — the admin types plain text. OR branches are separated by blank lines for readability. The parser identifies top-level OR branches by the structure (lines that are independent AND-chains separated by blank lines).<br><br>
+      <strong>Quantifiers in edit mode:</strong> Phrases like <code>au moins un élément de</code>, <code>tous les éléments de</code>, <code>aucun élément de</code> are typed as plain text. They are colored as keywords (<code>tk-kw</code>). The parser recognizes them as quantifier operators.<br><br>
+      <strong>Nested parens:</strong> <code>(aide_sollicitee &lt; aide_sollicitable ou (statut = 'prioritaire' et budget_total &gt; 10000))</code> — double nesting is fully supported. CodeMirror bracket matching highlights paired parens.
+    </div>
+
+    <div class="dev-note">
+      The parser needs to handle top-level separation: blank lines between OR branches in edit mode.
+      In read mode, use the bullet-branch CSS class for each top-level OR branch.
+      The prefix "Le paramètre est activé si au moins une de ces conditions est vraie :" is only shown in read mode when there are multiple OR branches.
+      For a single branch (no OR), the prefix is just "Le paramètre est activé si :".
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     6. AUTOCOMPLETE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="section-header">
+    <h2>6. Autocomplete — Variables, Operators, Connectors, Quantifiers</h2>
+    <p>Context-aware suggestions. The dropdown adapts based on what token is expected next. Includes quantifier phrases for array operations.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+
+      <!-- Variable suggestions with dot-paths -->
+      <div class="state-card" style="position:relative; z-index:40;">
+        <div class="state-label">
+          After connector — variable + quantifier suggestions
+          <span class="state-tag interaction">AUTOCOMPLETE</span>
+        </div>
+        <div class="state-content" style="padding-bottom: 80px;">
+          <div class="rule-field ac-visible">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="overflow:visible;">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif']</span><br>
+              <span class="tk-kw">et</span> <span class="cursor"></span>
+              <div class="autocomplete" style="top: 44px; left: 30px;">
+                <div class="autocomplete-header">Indicateurs</div>
+                <div class="autocomplete-item active">
+                  <span class="ac-name">montant</span>
+                  <span class="ac-type">nombre</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">statut</span>
+                  <span class="ac-type">texte</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">formation.type_etablissement</span>
+                  <span class="ac-type">texte</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">candidat.age</span>
+                  <span class="ac-type">nombre</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">beneficiaries</span>
+                  <span class="ac-type">liste</span>
+                </div>
+                <div class="autocomplete-sep"></div>
+                <div class="autocomplete-header">Expressions</div>
+                <div class="autocomplete-item">
+                  <span class="ac-name" style="font-size:12px;">au moins un élément de …</span>
+                  <span class="ac-type">some</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name" style="font-size:12px;">tous les éléments de …</span>
+                  <span class="ac-type">all</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name" style="font-size:12px;">aucun élément de …</span>
+                  <span class="ac-type">none</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operator suggestions (type-aware) -->
+      <div class="state-card" style="position:relative; z-index:30;">
+        <div class="state-label">
+          After variable — type-aware operators
+          <span class="state-tag interaction">AUTOCOMPLETE</span>
+        </div>
+        <div class="state-content" style="padding-bottom: 60px;">
+          <div class="rule-field ac-visible">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="overflow:visible;">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="cursor"></span>
+              <div class="autocomplete" style="top: 44px; left: 78px;">
+                <div class="autocomplete-header">Opérateurs pour nombre</div>
+                <div class="autocomplete-item active">
+                  <span class="ac-name">=</span>
+                  <span class="ac-type">égal</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">≠</span>
+                  <span class="ac-type">différent</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">&gt;</span>
+                  <span class="ac-type">supérieur</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">&lt;</span>
+                  <span class="ac-type">inférieur</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">≥</span>
+                  <span class="ac-type">supérieur ou égal</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">≤</span>
+                  <span class="ac-type">inférieur ou égal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector suggestions -->
+      <div class="state-card" style="position:relative; z-index:20;">
+        <div class="state-label">
+          After complete condition — connectors
+          <span class="state-tag interaction">AUTOCOMPLETE</span>
+        </div>
+        <div class="state-content" style="padding-bottom: 20px;">
+          <div class="rule-field ac-visible">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="overflow:visible;">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif']</span> <span class="cursor"></span>
+              <div class="autocomplete" style="top: 24px; left: 240px;">
+                <div class="autocomplete-header">Connecteurs</div>
+                <div class="autocomplete-item active">
+                  <span class="ac-name">et</span>
+                  <span class="ac-type">toutes les conditions</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">ou</span>
+                  <span class="ac-type">au moins une condition</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text-type operator suggestions -->
+      <div class="state-card" style="position:relative; z-index:10;">
+        <div class="state-label">
+          Text variable — filtered operators
+          <span class="state-tag interaction">AUTOCOMPLETE</span>
+        </div>
+        <div class="state-content" style="padding-bottom: 40px;">
+          <div class="rule-field ac-visible">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono" style="overflow:visible;">
+              <span class="tk-var">formation.type_etablissement</span> <span class="cursor"></span>
+              <div class="autocomplete" style="top: 24px; left: 54px;">
+                <div class="autocomplete-header">Opérateurs pour texte</div>
+                <div class="autocomplete-item active">
+                  <span class="ac-name">contient</span>
+                  <span class="ac-type">==</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">ne contient pas</span>
+                  <span class="ac-type">!=</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">=</span>
+                  <span class="ac-type">strict</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">≠</span>
+                  <span class="ac-type">strict</span>
+                </div>
+                <div class="autocomplete-item">
+                  <span class="ac-name">fait partie de</span>
+                  <span class="ac-type">in [...]</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="behavior-note">
+      <strong>Autocomplete trigger rules:</strong><br>
+      • <strong>Start of line / after connector</strong> → suggest variable names (fuzzy) + quantifier expressions<br>
+      • <strong>After a variable name</strong> → suggest operators filtered by variable type ("Opérateurs pour nombre", "Opérateurs pour texte")<br>
+      • <strong>After an operator</strong> → no dropdown (admin types value freely). Exception: after <code>fait partie de</code> → suggest <code>[</code><br>
+      • <strong>After a complete condition</strong> → suggest connectors (<code>et</code>, <code>ou</code>)<br>
+      • <strong>After "au moins un élément de"</strong> → suggest only array-type variables from dictionary<br>
+      • <strong>After quantifier + array variable + "satisfait :"</strong> → suggest variable names again (new sub-condition)<br><br>
+      <strong>Quantifiers in autocomplete:</strong> When the context expects a variable or expression start, the dropdown shows both individual indicators AND quantifier phrases ("au moins un élément de …", "tous les éléments de …", "aucun élément de …") in a separate "Expressions" group. Selecting a quantifier phrase inserts the text and then triggers a second autocomplete for the array variable.<br><br>
+      <strong>Keyboard:</strong> ↑/↓ navigate. Enter/Tab accept. Esc dismiss. First item pre-selected.<br>
+      <strong>Fuzzy matching:</strong> <code>contien</code> → <code>contient</code>. <code>forma</code> → <code>formation.type_etablissement</code>.
+    </div>
+
+    <div class="dev-note">
+      Use @codemirror/autocomplete. Source function receives editor state + cursor position.
+      Parse tokens left of cursor to determine context. Header text changes per context.
+      For quantifiers: after inserting "au moins un élément de ", immediately trigger a new autocomplete
+      showing only array-type indicators. After array variable + " satisfait : ", reset context to expect a new condition.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     7. VALIDATION
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="section-header">
+    <h2>7. Validation — Badge + Inline Error Highlights</h2>
+    <p>Validation uses two complementary signals: a compact badge for overall status, and inline wavy underlines with hover tooltips for specific errors. Only one tooltip visible at a time (the one being hovered).</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+
+      <!-- Valid state -->
+      <div class="state-card">
+        <div class="state-label">
+          Valid rule
+          <span class="state-tag result">VALID</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> Valide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incomplete (warning) -->
+      <div class="state-card">
+        <div class="state-label">
+          Incomplete expression
+          <span class="state-tag interaction">WARNING</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="warning-underline tk-kw">&gt;</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge warning"><i class="icon-alert-triangle v-icon"></i> Incomplet</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Error state — full width -->
+    <div style="margin-top:24px;">
+      <div class="state-card">
+        <div class="state-label">
+          Errors — inline underlines + single hover tooltip + badge
+          <span class="state-tag error">ERRORS</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field has-error" style="max-width:560px;">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button class="active">Texte</button>
+                <button>JSON</button>
+              </div>
+            </div>
+            <div class="editor-content mono">
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="error-underline tk-err">&gt;</span><br>
+              <span class="tk-kw">et</span> <span class="error-underline tk-err" style="position:relative; display:inline-block;">foobar<span class="error-tooltip">Variable inconnue « foobar » — vérifiez l'orthographe</span></span> <span class="tk-kw">=</span> <span class="tk-val">'test'</span><span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge error"><i class="icon-x-circle v-icon"></i> 2 erreurs — survoler pour détails</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="behavior-note" style="margin-top:16px;">
+      <strong>Two-layer error reporting:</strong><br>
+      <strong>Layer 1 — Inline underlines:</strong> Red wavy underline on each offending token. All errors are underlined simultaneously.<br>
+      <strong>Layer 2 — Hover tooltip:</strong> Hovering a specific underlined token shows ONE dark tooltip with an actionable message. Only one tooltip visible at a time — the one currently being hovered. No tooltip shown by default.<br>
+      <strong>Layer 3 — Badge:</strong> Right-aligned badge with count: <code>2 erreurs — survoler pour détails</code>. Tells the admin to hover for specifics.<br><br>
+      <strong>Error types and tooltip messages:</strong><br>
+      • Unknown variable → "Variable inconnue « X » — vérifiez l'orthographe"<br>
+      • Missing value → "Valeur manquante après l'opérateur « &gt; »"<br>
+      • Type mismatch → "L'opérateur « &gt; » n'est pas applicable au type texte"<br>
+      • Unclosed parens → "Parenthèse non fermée"<br>
+      • Dangling connector → "Condition manquante après « et »"
+    </div>
+
+    <div class="dev-note">
+      Use @codemirror/lint. Each diagnostic: {from, to, severity, message}.
+      Tooltip = CodeMirror's built-in lint tooltip (shows on hover, one at a time).
+      Badge is a custom panel below the editor, updated on every lint cycle.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     8. JSON MODE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="section-header">
+    <h2>8. JSON Mode — Read &amp; Edit</h2>
+    <p>JSON mode shows the prose translation as a read-only mirror above the JSON editor. Same read/edit pattern as Texte mode.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+
+      <!-- JSON Read mode -->
+      <div class="state-card">
+        <div class="state-label">
+          JSON read mode — prose mirror only
+          <span class="state-tag default">DEFAULT</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button>Texte</button>
+                <button class="active">JSON</button>
+              </div>
+            </div>
+            <div class="prose-zone mono" style="background: var(--surface-subtle); border-bottom: none;">
+              <span class="tk-pfx">Le paramètre est activé si :</span><br>
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span><br>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span>
+              <button class="edit-btn-overlay" style="opacity: 1;">
+                <i class="icon-pencil" style="font-size:12px"></i> Modifier le JSON
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JSON Edit mode -->
+      <div class="state-card">
+        <div class="state-label">
+          JSON edit mode — prose mirror + editor
+          <span class="state-tag interaction">EDITING</span>
+        </div>
+        <div class="state-content">
+          <div class="rule-field">
+            <div class="field-label-row">
+              <span class="field-label">Règle de visibilité</span>
+              <div class="toggle-segmented">
+                <button>Texte</button>
+                <button class="active">JSON</button>
+              </div>
+            </div>
+            <div class="json-mirror mono" style="font-size:12px;">
+              <span class="tk-pfx">Traduction :</span>
+              <span class="tk-var">statut</span> <span class="tk-kw">fait partie de</span> <span class="tk-val">['actif', 'en attente']</span>
+              <span class="tk-kw">et</span> <span class="tk-var">montant</span> <span class="tk-kw">&gt;</span> <span class="tk-val">1000</span>
+            </div>
+            <div class="editor-content mono" style="font-size:12px;">
+              <span style="color:#059669">"and"</span>: [<br>
+              &nbsp;&nbsp;{<span style="color:#059669">"in"</span>: [{<span style="color:#059669">"var"</span>: <span style="color:#7c3aed">"statut"</span>},<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;[<span style="color:#059669">"actif"</span>, <span style="color:#059669">"en attente"</span>]]},<br>
+              &nbsp;&nbsp;{<span style="color:#059669">"&gt;"</span>: [{<span style="color:#059669">"var"</span>: <span style="color:#7c3aed">"montant"</span>}, <span style="color:var(--brand-tertiary)">1000</span>]}]}<span class="cursor"></span>
+            </div>
+            <div class="validation-row">
+              <span class="v-badge valid"><i class="icon-check v-icon"></i> JSON valide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="behavior-note">
+      <strong>JSON Read mode:</strong> Shows prose translation only. "Modifier le JSON" button on hover. Click anywhere reveals JSON editor.<br>
+      <strong>JSON Edit mode:</strong> Prose mirror (top, read-only, auto-updates as JSON changes) + JSON CodeMirror (bottom, editable).<br>
+      <strong>Prose mirror label:</strong> "Traduction :" prefix in italic, then colored prose.<br>
+      <strong>Empty rule in JSON mode:</strong> empty editor with placeholder.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     9. MODE SWITCHING
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="section-header">
+    <h2>9. Mode Switching (Texte ↔ JSON)</h2>
+    <p>The segmented toggle switches modes instantly. Both directions perform a conversion. Invalid content blocks the switch.</p>
+  </div>
+  <div class="section-body">
+    <div class="states-grid">
+      <div class="state-card">
+        <div class="state-label">Texte → JSON</div>
+        <div class="state-content" style="padding:16px;">
+          <div class="flow" style="padding:0; justify-content:center;">
+            <div class="flow-col">
+              <div class="flow-box active">Texte mode</div>
+              <div class="flow-label">admin clicks "JSON"</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-col">
+              <div class="flow-box" style="background:#fffbf0; border-color:var(--text-warning);">Parse</div>
+              <div class="flow-label">prose → JSONLogic</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-col">
+              <div class="flow-box active">JSON read</div>
+            </div>
+          </div>
+          <div class="behavior-note" style="margin-top:12px;">
+            <strong>Valid:</strong> convert to JSONLogic, switch to JSON read mode.<br>
+            <strong>Invalid:</strong> block switch, show inline warning. Stay in Texte mode.
+          </div>
+        </div>
+      </div>
+
+      <div class="state-card">
+        <div class="state-label">JSON → Texte</div>
+        <div class="state-content" style="padding:16px;">
+          <div class="flow" style="padding:0; justify-content:center;">
+            <div class="flow-col">
+              <div class="flow-box active">JSON mode</div>
+              <div class="flow-label">admin clicks "Texte"</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-col">
+              <div class="flow-box" style="background:#fffbf0; border-color:var(--text-warning);">Translate</div>
+              <div class="flow-label">JSONLogic → prose</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-col">
+              <div class="flow-box active">Texte read</div>
+            </div>
+          </div>
+          <div class="behavior-note" style="margin-top:12px;">
+            <strong>Valid:</strong> use <code>translateJsonLogicToProse()</code>, switch to Texte read mode.<br>
+            <strong>Invalid:</strong> block switch, show inline warning. Stay in JSON mode.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dev-note">
+      Toggle is always clickable (never disabled). Validation on click — if fails, toggle bounces back visually.
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     10. COLOR LEGEND
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s10">
+  <div class="section-header">
+    <h2>10. Color Legend &amp; Syntax Tokens</h2>
+    <p>Every token type has a dedicated color. No bold is used. Keywords and operators share the same color. Identical colors in read mode and edit mode.</p>
+  </div>
+  <div class="section-body">
+
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th style="width:160px">Token Type</th>
+          <th style="width:140px">Color</th>
+          <th style="width:300px">Examples</th>
+          <th>CSS class</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Variable</td>
+          <td><span class="swatch" style="background:#7c3aed;"></span><code>#7c3aed</code></td>
+          <td class="mono">
+            <span style="color:#7c3aed;">statut</span> &nbsp;
+            <span style="color:#7c3aed;">montant</span> &nbsp;
+            <span style="color:#7c3aed;">formation.type_etablissement</span> &nbsp;
+            <span style="color:#7c3aed;">candidat.age</span>
+          </td>
+          <td><code>.tk-var</code></td>
+        </tr>
+        <tr>
+          <td>Keyword / Operator</td>
+          <td><span class="swatch" style="background:#555555;"></span><code>#555555</code></td>
+          <td class="mono">
+            <span style="color:#555;">fait partie de</span> &nbsp;
+            <span style="color:#555;">et</span> &nbsp;
+            <span style="color:#555;">ou</span> &nbsp;
+            <span style="color:#555;">ne contient pas</span> &nbsp;
+            <span style="color:#555;">contient</span> &nbsp;
+            <span style="color:#555;">&gt;</span> &nbsp;
+            <span style="color:#555;">≤</span> &nbsp;
+            <span style="color:#555;">=</span> &nbsp;
+            <span style="color:#555;">≠</span> &nbsp;
+            <span style="color:#555;">×</span> &nbsp;
+            <span style="color:#555;">+</span> &nbsp;
+            <span style="color:#555;">au moins un élément de</span> &nbsp;
+            <span style="color:#555;">satisfait :</span> &nbsp;
+            <span style="color:#555;">aucun champ manquant parmi</span>
+          </td>
+          <td><code>.tk-kw</code></td>
+        </tr>
+        <tr>
+          <td>Value (string, number, array)</td>
+          <td><span class="swatch" style="background:#059669;"></span><code>#059669</code></td>
+          <td class="mono">
+            <span style="color:#059669;">'actif'</span> &nbsp;
+            <span style="color:#059669;">1000</span> &nbsp;
+            <span style="color:#059669;">['75', '92', '93']</span> &nbsp;
+            <span style="color:#059669;">'IDF'</span>
+          </td>
+          <td><code>.tk-val</code></td>
+        </tr>
+        <tr>
+          <td>Prefix (read mode only)</td>
+          <td><span class="swatch" style="background:#888888;"></span><code>#888888</code> italic</td>
+          <td class="mono" style="font-style:italic; color:#888;">Le paramètre est activé si :</td>
+          <td><code>.tk-pfx</code></td>
+        </tr>
+        <tr>
+          <td>Error token</td>
+          <td><span class="swatch" style="background:#b32020;"></span><code>#b32020</code> + underline</td>
+          <td class="mono"><span style="color:#b32020; text-decoration:wavy underline; text-decoration-color:#b32020; text-underline-offset:3px;">foobar</span></td>
+          <td><code>.tk-err</code> + <code>.error-underline</code></td>
+        </tr>
+        <tr>
+          <td>Bullet (read mode only)</td>
+          <td><span class="swatch" style="background:#555555;"></span><code>#555555</code></td>
+          <td class="mono"><span style="color:#555;">•</span> (top-level OR branch marker)</td>
+          <td><code>.bullet-branch::before</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="behavior-note" style="margin-top:16px;">
+      <strong>Key design decision:</strong> Keywords (<code>fait partie de</code>, <code>et</code>, <code>ou</code>, <code>au moins un élément de</code>) and symbol operators (<code>&gt;</code>, <code>≤</code>, <code>=</code>, <code>×</code>) share the same <code>#555555</code> color. This reduces visual noise — the important contrast is between variables (purple), values (green), and everything else (gray).
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     11. COMPLETE SPEC TABLE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="section" id="s11">
+  <div class="section-header">
+    <h2>11. Complete Behavior Spec Table</h2>
+    <p>Quick-reference for every behavior. Copy this into your story or ticket.</p>
+  </div>
+  <div class="section-body">
+
+    <table class="spec-table">
+      <thead>
+        <tr>
+          <th style="width:220px">Behavior</th>
+          <th>Specification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Toggle copy</td>
+          <td><code>Texte</code> / <code>JSON</code> — never "Prose"</td>
+        </tr>
+        <tr>
+          <td>Toggle style</td>
+          <td>Segmented control (pill). Active: white bg, brand-primary text, subtle shadow. Inactive: transparent, text-secondary.</td>
+        </tr>
+        <tr>
+          <td>Empty rule → page load</td>
+          <td><strong>Texte edit mode</strong> immediately. CodeMirror auto-focused. Placeholder shown. No validation badge.</td>
+        </tr>
+        <tr>
+          <td>Non-empty rule → page load</td>
+          <td><strong>Texte read mode</strong>. Prose with syntax colors. No editor visible.</td>
+        </tr>
+        <tr>
+          <td>Enter edit mode</td>
+          <td>Click anywhere in the prose zone. The "Modifier" button is a bonus hover affordance.</td>
+        </tr>
+        <tr>
+          <td>Exit edit mode</td>
+          <td>Click outside (blur). If valid → save, return to read mode. If invalid → stay in edit mode, show errors.</td>
+        </tr>
+        <tr>
+          <td>Edit button text</td>
+          <td>Texte mode: "Modifier". JSON mode: "Modifier le JSON".</td>
+        </tr>
+        <tr>
+          <td>Edit button visibility</td>
+          <td>Hidden by default. Fades in on hover (opacity 0→1, 120ms). Not shown during edit mode.</td>
+        </tr>
+        <tr>
+          <td>Token colors</td>
+          <td>Variable: <code>#7c3aed</code>. Keyword/Operator: <code>#555555</code>. Value: <code>#059669</code>. Prefix: <code>#888888</code> italic. Error: <code>#b32020</code> + wavy underline. Same in read and edit modes. No bold anywhere.</td>
+        </tr>
+        <tr>
+          <td>Border — all modes</td>
+          <td><code>1px solid #e0e0e0</code> — no change between read and edit mode</td>
+        </tr>
+        <tr>
+          <td>Border — error state</td>
+          <td><code>1px solid #b32020</code> + <code>box-shadow: 0 0 0 2px rgba(179,32,32,0.08)</code></td>
+        </tr>
+        <tr>
+          <td>Top-level OR (read mode)</td>
+          <td>Bullet format: each branch prefixed with <code>•</code> and indented. Prefix: "au moins une de ces conditions est vraie :"</td>
+        </tr>
+        <tr>
+          <td>Top-level OR (edit mode)</td>
+          <td>No bullets. Branches separated by blank lines. Parser identifies structure from blank line separation.</td>
+        </tr>
+        <tr>
+          <td>Nested OR</td>
+          <td>Inline with parentheses: <code>(x ou y)</code>. Same in both modes.</td>
+        </tr>
+        <tr>
+          <td>Prefix (read mode)</td>
+          <td>Single branch: "Le paramètre est activé si :". Multiple OR branches: "Le paramètre est activé si au moins une de ces conditions est vraie :". Not shown in edit mode.</td>
+        </tr>
+        <tr>
+          <td>Validation badge position</td>
+          <td>Right-aligned, below editor, inside the rule field border. Pill-shaped (border-radius: 12px).</td>
+        </tr>
+        <tr>
+          <td>Validation badge states</td>
+          <td>
+            <span style="color:#006b5e; background:#f0faf8; padding:2px 8px; border-radius:10px; font-size:11px;">✓ Valide</span>&nbsp;
+            <span style="color:#8a6000; background:#fffbf0; padding:2px 8px; border-radius:10px; font-size:11px;">⚠ Incomplet</span>&nbsp;
+            <span style="color:#b32020; background:#fef5f5; padding:2px 8px; border-radius:10px; font-size:11px;">✕ N erreur(s) — survoler pour détails</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Error display</td>
+          <td>All errors get red wavy underline simultaneously. Tooltip appears only on hover over a specific error — one tooltip at a time. Tooltip: dark bg, white text, actionable French message.</td>
+        </tr>
+        <tr>
+          <td>Autocomplete trigger</td>
+          <td>On keystroke when context expects variable, operator, or connector. Min 1 char for variables (fuzzy). Immediate for operators/connectors.</td>
+        </tr>
+        <tr>
+          <td>Autocomplete header</td>
+          <td>"Indicateurs" + "Expressions" (for quantifiers), "Opérateurs pour nombre", "Opérateurs pour texte", "Connecteurs"</td>
+        </tr>
+        <tr>
+          <td>Autocomplete — quantifiers</td>
+          <td>Shown in "Expressions" group alongside indicators when context expects a variable/expression start. Includes: "au moins un élément de …" (some), "tous les éléments de …" (all), "aucun élément de …" (none). Selecting inserts text and triggers follow-up autocomplete for array variables.</td>
+        </tr>
+        <tr>
+          <td>Autocomplete keyboard</td>
+          <td>↑/↓ navigate. Enter/Tab accept. Esc dismiss. First item pre-selected.</td>
+        </tr>
+        <tr>
+          <td>Mode switch — valid</td>
+          <td>Instant switch. Content converted. Lands in read mode of target mode.</td>
+        </tr>
+        <tr>
+          <td>Mode switch — invalid</td>
+          <td>Blocked. Inline warning. Toggle bounces back.</td>
+        </tr>
+        <tr>
+          <td>JSON — prose mirror</td>
+          <td>Read-only, background <code>surface-subtle</code>, prefix "Traduction :" italic. Updates live as JSON changes.</td>
+        </tr>
+        <tr>
+          <td>Placeholder (empty, edit)</td>
+          <td>"Saisir une règle… ex : statut fait partie de ['actif']" — italic, <code>#b0b0b0</code></td>
+        </tr>
+        <tr>
+          <td>Font</td>
+          <td>JetBrains Mono → Fira Code → SF Mono → system monospace. 13px. Line-height: 1.6.</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+
+</body>
+</html>
