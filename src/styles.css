@@ -1,5 +1,60 @@
 @import 'tailwindcss';
 
+/* CodeMirror autocomplete tooltip — global styles needed because tooltip is rendered outside component DOM */
+.cm-tooltip-autocomplete {
+  min-width: 260px !important;
+  border: 1px solid var(--color-stroke-standard) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+  overflow: hidden !important;
+}
+.cm-tooltip-autocomplete ul {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace !important;
+}
+.cm-tooltip-autocomplete ul li {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid #eeeeee !important;
+}
+.cm-tooltip-autocomplete ul li:last-child {
+  border-bottom: none !important;
+}
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background: #dde2f5 !important;
+}
+.cm-tooltip-autocomplete ul completion-section {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  color: #555555 !important;
+  padding: 8px 12px 6px !important;
+  background: #f9f9f9 !important;
+  border-bottom: 1px solid #eeeeee !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
+}
+.cm-completionLabel {
+  color: #1a1a1a !important;
+  flex: 1 !important;
+}
+.cm-completionDetail {
+  font-size: 11px !important;
+  color: #888888 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
+  font-style: normal !important;
+  background: #f4f4f4 !important;
+  padding: 1px 6px !important;
+  border-radius: 3px !important;
+  margin-left: 8px !important;
+}
+.cm-completionIcon {
+  display: none !important;
+}
+
 @theme {
   /* Brand */
   --color-brand: #1400cc;

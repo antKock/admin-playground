@@ -106,6 +106,8 @@ import { ActionModelFacade } from '../action-model.facade';
                     [indicator]="card"
                     [params]="getParams(card.id)"
                     [modified]="isModified(card.id)"
+                    modelType="action"
+                    [modelId]="model()!.id"
                     (remove)="onDetach($event)"
                     (paramsChange)="onParamsChange(card.id, $event)"
                   />

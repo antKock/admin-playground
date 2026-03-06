@@ -6,76 +6,63 @@ describe('OpenApiWatcherService', () => {
   let service: OpenApiWatcherService;
 
   beforeEach(() => {
-    localStorage.clear();
     TestBed.configureTestingModule({});
     service = TestBed.inject(OpenApiWatcherService);
   });
 
   afterEach(() => {
-    localStorage.clear();
     vi.restoreAllMocks();
   });
 
-  describe('hashSha256', () => {
-    it('should produce a 64-char hex string', async () => {
-      const hash = await service.hashSha256('hello');
-      expect(hash).toMatch(/^[0-9a-f]{64}$/);
-    });
-
-    it('should produce different hashes for different inputs', async () => {
-      const hash1 = await service.hashSha256('hello');
-      const hash2 = await service.hashSha256('world');
-      expect(hash1).not.toBe(hash2);
-    });
-
-    it('should produce the same hash for the same input', async () => {
-      const hash1 = await service.hashSha256('test');
-      const hash2 = await service.hashSha256('test');
-      expect(hash1).toBe(hash2);
-    });
-  });
-
   describe('diffSpecs', () => {
-    it('should detect added paths', () => {
-      const oldSpec = { paths: { '/a': {} } };
-      const newSpec = { paths: { '/a': {}, '/b': {} } };
+    it('should detect added paths with after value', () => {
+      const oldSpec = { paths: { '/a': { get: {} } } };
+      const newSpec = { paths: { '/a': { get: {} }, '/b': { post: {} } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'added', category: 'path', name: '/b' });
+      expect(changes).toContainEqual({ type: 'added', category: 'path', name: '/b', after: { post: {} } });
     });
 
-    it('should detect removed paths', () => {
-      const oldSpec = { paths: { '/a': {}, '/b': {} } };
-      const newSpec = { paths: { '/a': {} } };
+    it('should detect removed paths with before value', () => {
+      const oldSpec = { paths: { '/a': { get: {} }, '/b': { post: {} } } };
+      const newSpec = { paths: { '/a': { get: {} } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'removed', category: 'path', name: '/b' });
+      expect(changes).toContainEqual({ type: 'removed', category: 'path', name: '/b', before: { post: {} } });
     });
 
-    it('should detect modified paths', () => {
+    it('should detect modified paths with before and after values', () => {
       const oldSpec = { paths: { '/a': { get: { summary: 'old' } } } };
       const newSpec = { paths: { '/a': { get: { summary: 'new' } } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'modified', category: 'path', name: '/a' });
+      expect(changes).toContainEqual({
+        type: 'modified', category: 'path', name: '/a',
+        before: { get: { summary: 'old' } },
+        after: { get: { summary: 'new' } },
+      });
     });
 
-    it('should detect added schemas', () => {
-      const oldSpec = { components: { schemas: { Foo: {} } } };
-      const newSpec = { components: { schemas: { Foo: {}, Bar: {} } } };
+    it('should detect added schemas with after value', () => {
+      const oldSpec = { components: { schemas: { Foo: { type: 'string' } } } };
+      const newSpec = { components: { schemas: { Foo: { type: 'string' }, Bar: { type: 'number' } } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'added', category: 'schema', name: 'Bar' });
+      expect(changes).toContainEqual({ type: 'added', category: 'schema', name: 'Bar', after: { type: 'number' } });
     });
 
-    it('should detect removed schemas', () => {
-      const oldSpec = { components: { schemas: { Foo: {}, Bar: {} } } };
-      const newSpec = { components: { schemas: { Foo: {} } } };
+    it('should detect removed schemas with before value', () => {
+      const oldSpec = { components: { schemas: { Foo: { type: 'string' }, Bar: { type: 'number' } } } };
+      const newSpec = { components: { schemas: { Foo: { type: 'string' } } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'removed', category: 'schema', name: 'Bar' });
+      expect(changes).toContainEqual({ type: 'removed', category: 'schema', name: 'Bar', before: { type: 'number' } });
     });
 
-    it('should detect modified schemas', () => {
+    it('should detect modified schemas with before and after values', () => {
       const oldSpec = { components: { schemas: { Foo: { type: 'string' } } } };
       const newSpec = { components: { schemas: { Foo: { type: 'number' } } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'modified', category: 'schema', name: 'Foo' });
+      expect(changes).toContainEqual({
+        type: 'modified', category: 'schema', name: 'Foo',
+        before: { type: 'string' },
+        after: { type: 'number' },
+      });
     });
 
     it('should return empty array when specs are identical', () => {
@@ -86,110 +73,52 @@ describe('OpenApiWatcherService', () => {
 
     it('should handle missing paths or components gracefully', () => {
       const oldSpec = {};
-      const newSpec = { paths: { '/a': {} } };
+      const newSpec = { paths: { '/a': { get: {} } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toContainEqual({ type: 'added', category: 'path', name: '/a' });
+      expect(changes).toContainEqual({ type: 'added', category: 'path', name: '/a', after: { get: {} } });
     });
 
     it('should detect required-to-optional field change in schema', () => {
-      const oldSpec = {
-        paths: {},
-        components: {
-          schemas: {
-            UserCreate: {
-              properties: { name: { type: 'string' }, email: { type: 'string' } },
-              required: ['name', 'email'],
-              type: 'object',
-            },
-          },
-        },
+      const oldSchema = {
+        properties: { name: { type: 'string' }, email: { type: 'string' } },
+        required: ['name', 'email'],
+        type: 'object',
       };
-      const newSpec = {
-        paths: {},
-        components: {
-          schemas: {
-            UserCreate: {
-              properties: { name: { type: 'string' }, email: { type: 'string' } },
-              required: ['name'],
-              type: 'object',
-            },
-          },
-        },
+      const newSchema = {
+        properties: { name: { type: 'string' }, email: { type: 'string' } },
+        required: ['name'],
+        type: 'object',
       };
+      const oldSpec = { paths: {}, components: { schemas: { UserCreate: oldSchema } } };
+      const newSpec = { paths: {}, components: { schemas: { UserCreate: newSchema } } };
       const changes = service.diffSpecs(oldSpec, newSpec);
-      expect(changes).toEqual([{ type: 'modified', category: 'schema', name: 'UserCreate' }]);
-    });
-
-    it('should detect changes in realistic OpenAPI spec structure', () => {
-      const baseSpec = {
-        openapi: '3.1.0',
-        info: { title: 'Test API', version: '1.0.0' },
-        paths: {
-          '/auth/login': { post: { operationId: 'login', requestBody: { content: { 'application/json': { schema: { '$ref': '#/components/schemas/LoginRequest' } } } } } },
-          '/agents/': { get: { operationId: 'list_agents', parameters: [{ name: 'status', in: 'query' }] } },
-        },
-        components: {
-          schemas: {
-            AgentCreate: {
-              properties: { first_name: { type: 'string' }, community_id: { anyOf: [{ type: 'string' }, { type: 'null' }] } },
-              required: ['first_name', 'community_id'],
-              type: 'object',
-            },
-            AgentRead: {
-              properties: { id: { type: 'string' }, first_name: { type: 'string' } },
-              required: ['id', 'first_name'],
-              type: 'object',
-            },
-          },
-        },
-      };
-
-      // Change community_id from required to optional
-      const modifiedSpec = JSON.parse(JSON.stringify(baseSpec));
-      modifiedSpec.components.schemas.AgentCreate.required = ['first_name'];
-
-      const changes = service.diffSpecs(baseSpec, modifiedSpec);
-      expect(changes).toEqual([{ type: 'modified', category: 'schema', name: 'AgentCreate' }]);
+      expect(changes).toEqual([{
+        type: 'modified', category: 'schema', name: 'UserCreate',
+        before: oldSchema,
+        after: newSchema,
+      }]);
     });
   });
 
   describe('check', () => {
-    const mockSpec = JSON.stringify({ paths: { '/a': {} }, components: { schemas: { Foo: {} } } });
+    it('should set changes when live spec differs from baseline', async () => {
+      const liveSpec = JSON.stringify({ paths: { '/new': { get: {} } }, components: { schemas: {} } });
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(liveSpec, { status: 200 }));
 
-    it('should save baseline on first run and not set changes', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-
-      await service.check();
-
-      expect(service.changes()).toBeNull();
-      expect(localStorage.getItem('openapi-baseline-hash')).toBeTruthy();
-    });
-
-    it('should not set changes when spec has not changed', async () => {
-      // First run
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-      await service.check();
-
-      // Second run — same spec
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-      await service.check();
-
-      expect(service.changes()).toBeNull();
-    });
-
-    it('should set changes when spec has changed', async () => {
-      // First run
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-      await service.check();
-
-      // Second run — different spec
-      const newSpec = JSON.stringify({ paths: { '/a': {}, '/b': {} }, components: { schemas: { Foo: {} } } });
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(newSpec, { status: 200 }));
       await service.check();
 
       expect(service.changes()).toBeTruthy();
       expect(service.changes()!.length).toBeGreaterThan(0);
-      expect(service.changes()).toContainEqual({ type: 'added', category: 'path', name: '/b' });
+    });
+
+    it('should not set changes when live spec matches baseline', async () => {
+      // Mock diffSpecs to return empty (simulating identical specs)
+      vi.spyOn(service, 'diffSpecs').mockReturnValue([]);
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+
+      await service.check();
+
+      expect(service.changes()).toBeNull();
     });
 
     it('should fail silently on fetch error', async () => {
@@ -210,43 +139,6 @@ describe('OpenApiWatcherService', () => {
 
       expect(service.changes()).toBeNull();
       expect(warnSpy).toHaveBeenCalled();
-    });
-
-    it('should not show banner when hash was dismissed', async () => {
-      // First run
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-      await service.check();
-
-      // Change spec + dismiss
-      const newSpec = JSON.stringify({ paths: { '/b': {} }, components: { schemas: {} } });
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(newSpec, { status: 200 }));
-      await service.check();
-      service.dismiss();
-
-      expect(service.changes()).toBeNull();
-
-      // Re-check same changed spec — should stay dismissed
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(newSpec, { status: 200 }));
-      await service.check();
-      expect(service.changes()).toBeNull();
-    });
-  });
-
-  describe('dismiss', () => {
-    it('should clear changes and store dismissed hash', async () => {
-      const mockSpec = JSON.stringify({ paths: { '/a': {} }, components: { schemas: {} } });
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(mockSpec, { status: 200 }));
-      await service.check();
-
-      const newSpec = JSON.stringify({ paths: { '/b': {} }, components: { schemas: {} } });
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(newSpec, { status: 200 }));
-      await service.check();
-
-      expect(service.changes()).toBeTruthy();
-
-      service.dismiss();
-      expect(service.changes()).toBeNull();
-      expect(localStorage.getItem('openapi-dismissed-hash')).toBeTruthy();
     });
   });
 });

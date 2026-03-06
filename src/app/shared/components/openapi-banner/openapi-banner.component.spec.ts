@@ -36,6 +36,14 @@ describe('OpenApiBannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le schéma API a changé');
   });
 
+  it('should not have a dismiss button', () => {
+    service.changes.set([
+      { type: 'added', category: 'path', name: '/new-endpoint' },
+    ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.openapi-dismiss-btn')).toBeFalsy();
+  });
+
   it('should be collapsed by default', () => {
     service.changes.set([
       { type: 'added', category: 'path', name: '/new-endpoint' },
@@ -79,17 +87,88 @@ describe('OpenApiBannerComponent', () => {
     expect(component.changeLabel('modified')).toBe('Modifié');
   });
 
-  it('should dismiss banner on dismiss click', () => {
-    service.changes.set([
-      { type: 'added', category: 'path', name: '/test' },
-    ]);
-    service.currentHash.set('abc123');
-    fixture.detectChanges();
+  describe('before/after detail', () => {
+    it('should show expand chevron when before/after data is available', () => {
+      service.changes.set([
+        { type: 'modified', category: 'schema', name: 'Foo', before: { type: 'string' }, after: { type: 'number' } },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
 
-    const dismissSpy = vi.spyOn(service, 'dismiss');
-    fixture.nativeElement.querySelector('.openapi-dismiss-btn').click();
-    fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.detail-chevron')).toBeTruthy();
+    });
 
-    expect(dismissSpy).toHaveBeenCalled();
+    it('should not show expand chevron when no before/after data', () => {
+      service.changes.set([
+        { type: 'modified', category: 'schema', name: 'Foo' },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.detail-chevron')).toBeFalsy();
+    });
+
+    it('should show before/after panels when detail is expanded', () => {
+      service.changes.set([
+        { type: 'modified', category: 'schema', name: 'Foo', before: { type: 'string' }, after: { type: 'number' } },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.openapi-change-item.expandable').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.openapi-detail')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.detail-before')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.detail-after')).toBeTruthy();
+      expect(fixture.nativeElement.textContent).toContain('Avant');
+      expect(fixture.nativeElement.textContent).toContain('Après');
+    });
+
+    it('should show only Après for added items', () => {
+      service.changes.set([
+        { type: 'added', category: 'path', name: '/new', after: { get: {} } },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.openapi-change-item.expandable').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.detail-before')).toBeFalsy();
+      expect(fixture.nativeElement.querySelector('.detail-after')).toBeTruthy();
+    });
+
+    it('should show only Avant for removed items', () => {
+      service.changes.set([
+        { type: 'removed', category: 'schema', name: 'Old', before: { type: 'object' } },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.openapi-change-item.expandable').click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.detail-before')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.detail-after')).toBeFalsy();
+    });
+
+    it('should toggle detail on repeated clicks', () => {
+      service.changes.set([
+        { type: 'modified', category: 'schema', name: 'Foo', before: { type: 'string' }, after: { type: 'number' } },
+      ]);
+      component.isExpanded.set(true);
+      fixture.detectChanges();
+
+      const item = fixture.nativeElement.querySelector('.openapi-change-item.expandable');
+
+      item.click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.openapi-detail')).toBeTruthy();
+
+      item.click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.openapi-detail')).toBeFalsy();
+    });
   });
 });

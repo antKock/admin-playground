@@ -216,6 +216,7 @@ export class ActionModelFacade {
 
   clearSelection(): void {
     this.domainStore.clearSelection();
+    this._paramEdits.set(new Map());
   }
 
   async create(data: ActionModelCreate): Promise<void> {

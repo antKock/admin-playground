@@ -1,8 +1,8 @@
 /**
  * JSONLogic rule editor powered by CodeMirror 6.
  *
- * Embeds a JSON editor with syntax highlighting, live linting, variable extraction,
- * and a prose translation overlay (via jsonlogic-prose.ts).
+ * Supports 4 states: texte-read, texte-edit, json-read, json-edit
+ * controlled by a `RuleEditorState` signal.
  *
  * Inputs:
  *   - value: the raw JSON string (e.g. '{">":[{"var":"score"},50]}')
@@ -12,9 +12,7 @@
  *   - valueChange: emits on every keystroke with the raw editor content
  *   - validChange: emits true/false when JSON validity changes (for parent form validation)
  *
- * Note: `suppressEmit` prevents circular updates when the parent pushes a new value
- * into the editor programmatically via the effect — without it, the editor's updateListener
- * would re-emit the same value back to the parent.
+ * @see docs/jsonlogic-prose-architecture.md
  */
 import {
   Component,
@@ -27,15 +25,27 @@ import {
   AfterViewInit,
   OnDestroy,
   effect,
+  untracked,
+  ChangeDetectorRef,
+  inject,
 } from '@angular/core';
 import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
 import { bracketMatching } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
+import { history } from '@codemirror/commands';
 import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
 import { translateJsonLogicToProse, type ProseMode } from '../../utils/jsonlogic-prose';
 import { validateJsonLogic } from '../../utils/jsonlogic-validate';
+import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
+import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
+import { tokenize } from '../../utils/prose-tokenizer';
+import { autocompletion, startCompletion, acceptCompletion, closeCompletion } from '@codemirror/autocomplete';
+import { createProseCompletionSource } from '../../utils/prose-autocomplete';
+import { VariableDictionaryService } from '../../services/variable-dictionary.service';
+
+export type RuleEditorState = 'texte-read' | 'texte-edit' | 'json-read' | 'json-edit';
 
 /** Custom JSON + JSONLogic linter for CodeMirror 6 */
 function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
@@ -58,7 +68,6 @@ function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
       return [{ from, to, severity: 'error', message: msg }];
     }
 
-    // JSON is valid — now validate JSONLogic structure (warnings, not blocking)
     const logicErrors = validateJsonLogic(trimmed);
     return logicErrors.map((err) => ({
       from: 0,
@@ -103,8 +112,6 @@ const ruleFieldTheme = EditorView.theme({
   '.cm-cursor': {
     borderLeftColor: 'var(--color-brand, #1400cc)',
   },
-  // JSON string token highlighting — uses CM6 internal generated class.
-  // If this breaks after a CM upgrade, replace with syntaxHighlighting(HighlightStyle.define(...))
   '.ͼc': {
     color: 'var(--color-brand, #1400cc)',
   },
@@ -124,32 +131,187 @@ const ruleFieldTheme = EditorView.theme({
   },
 });
 
+/** Prose editor theme — neutralizes focus border/shadow for prose CM instances */
+export const proseEditorTheme = EditorView.theme({
+  '&': {
+    fontSize: '13px',
+    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+    border: '1px solid var(--color-stroke-standard)',
+    borderRadius: '6px',
+    background: 'var(--color-surface-base)',
+  },
+  '&.cm-focused': {
+    outline: 'none',
+    borderColor: 'var(--color-stroke-standard)',
+    boxShadow: 'none',
+  },
+  '.cm-content': {
+    padding: '8px',
+    caretColor: 'var(--color-text-primary)',
+    color: 'var(--color-text-primary)',
+    lineHeight: '1.6',
+  },
+  '.cm-cursor': {
+    borderLeftColor: 'var(--color-brand, #1400cc)',
+  },
+  '.cm-selectionBackground, ::selection': {
+    background: 'rgba(20, 0, 204, 0.08) !important',
+  },
+  '.cm-lintRange-error': {
+    backgroundImage: 'none',
+    textDecoration: 'underline wavy var(--color-text-error, #dc2626)',
+  },
+  '.cm-diagnostic-error': {
+    borderLeftColor: 'var(--color-text-error, #dc2626)',
+  },
+  '.cm-lintRange-warning': {
+    backgroundImage: 'none',
+    textDecoration: 'underline wavy var(--color-status-warning, #d97706)',
+  },
+  '.cm-diagnostic-warning': {
+    borderLeftColor: 'var(--color-status-warning, #d97706)',
+  },
+});
+
+/**
+ * Convert HTML prose output (from translateJsonLogicToProse) to plain text
+ * suitable for the prose CodeMirror editor.
+ */
+function proseToPlainText(html: string): string {
+  return decodeHtmlEntities(stripHtml(html));
+}
+
+/**
+ * Convert bullet-prefixed prose lines to blank-line-separated blocks.
+ * Input:  "• condition1 et condition2\n• condition3"
+ * Output: "condition1 et condition2\n\ncondition3"
+ */
+function bulletsToBlankLines(prose: string): string {
+  const lines = prose.split('\n');
+  return lines
+    .map((l) => l.replace(/^• /, ''))
+    .join('\n\n');
+}
+
+/** Recursively extract all variable paths from a JSONLogic object */
+function extractVarPaths(jsonLogic: unknown): string[] {
+  const paths: string[] = [];
+  function walk(node: unknown): void {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    if ('var' in obj) {
+      const v = obj['var'];
+      if (typeof v === 'string' && v) paths.push(v);
+      else if (Array.isArray(v) && typeof v[0] === 'string' && v[0]) paths.push(v[0]);
+      return;
+    }
+    for (const key of Object.keys(obj)) {
+      walk(obj[key]);
+    }
+  }
+  walk(jsonLogic);
+  return [...new Set(paths)];
+}
+
 @Component({
   selector: 'app-rule-field',
   template: `
-    <div class="rule-field">
+    <div class="rule-field" [class.has-error]="hasBlockingErrors()">
       <div class="rule-field-header">
         <span class="rule-field-label">{{ label() }}</span>
+        <div class="mode-toggle">
+          <button type="button" class="toggle-seg" [class.active]="activeMode() === 'texte'" (click)="switchMode('texte')">Texte</button>
+          <button type="button" class="toggle-seg" [class.active]="activeMode() === 'json'" (click)="switchMode('json')">JSON</button>
+        </div>
       </div>
-      @let parts = proseParts();
-      @if (parts) {
-        <div class="rule-prose">
-          <em [innerHTML]="parts.prefix"></em>
-          @if (parts.branches) {
-            <ul class="rule-or-list">
-              @for (branch of parts.branches; track branch) {
-                <li [innerHTML]="branch"></li>
-              }
-            </ul>
-          }
-        </div>
+
+      <!-- TEXTE READ MODE -->
+      @if (editorState() === 'texte-read') {
+        @let parts = proseParts();
+        @if (parts) {
+          <div class="prose-read-zone" (click)="enterTexteEdit()">
+            <button class="prose-edit-btn" type="button">Modifier</button>
+            <em class="tk-pfx">{{ parts.prefix }}</em>
+            @if (parts.content) {
+              <span [innerHTML]="parts.content"></span>
+            }
+            @if (parts.branches) {
+              <ul class="rule-or-list">
+                @for (branch of parts.branches; track branch) {
+                  <li [innerHTML]="branch"></li>
+                }
+              </ul>
+            }
+          </div>
+        }
       }
-      @if (errorMessage()) {
-        <div class="rule-prose" [class.rule-error]="hasError()" [class.rule-warning]="!hasError()">
-          <em>{{ errorMessage() }}</em>
-        </div>
+
+      <!-- TEXTE EDIT MODE -->
+      @if (editorState() === 'texte-edit') {
+        <div class="prose-cm-host" #proseCmHost></div>
+        @if (parseResult(); as result) {
+          <div class="validation-row">
+            @if (result.success && unknownVarCount() > 0) {
+              <span class="validation-badge warning">Avertissement — {{ unknownVarCount() }} variable(s) inconnue(s)</span>
+            } @else if (result.success) {
+              <span class="validation-badge valid">Valide{{ orBranchCount() > 1 ? ' — ' + orBranchCount() + ' branches OR' : '' }}</span>
+            } @else if (result.errors.some(e => !e.atEnd)) {
+              <span class="validation-badge error">{{ result.errors.find(e => !e.atEnd)?.message }}</span>
+            }
+          </div>
+        }
       }
-      <div class="cm-host" #editorHost></div>
+
+      <!-- JSON READ MODE -->
+      @if (editorState() === 'json-read') {
+        @let parts = proseParts();
+        @if (parts) {
+          <div class="prose-mirror read-only">
+            <em class="tk-pfx">{{ parts.prefix }}</em>
+            @if (parts.content) {
+              <span [innerHTML]="parts.content"></span>
+            }
+            @if (parts.branches) {
+              <ul class="rule-or-list">
+                @for (branch of parts.branches; track branch) {
+                  <li [innerHTML]="branch"></li>
+                }
+              </ul>
+            }
+          </div>
+        }
+        <pre class="json-read-zone" (click)="enterJsonEdit()">{{ formattedJson() }}</pre>
+      }
+
+      <!-- JSON EDIT MODE -->
+      @if (editorState() === 'json-edit') {
+        @let parts = jsonEditProseParts();
+        @if (parts) {
+          <div class="prose-mirror read-only">
+            <em class="tk-pfx">{{ parts.prefix }}</em>
+            @if (parts.content) {
+              <span [innerHTML]="parts.content"></span>
+            }
+            @if (parts.branches) {
+              <ul class="rule-or-list">
+                @for (branch of parts.branches; track branch) {
+                  <li [innerHTML]="branch"></li>
+                }
+              </ul>
+            }
+          </div>
+        }
+        @if (errorMessage()) {
+          <div class="rule-prose" [class.rule-error]="hasError()" [class.rule-warning]="!hasError()">
+            <em>{{ errorMessage() }}</em>
+          </div>
+        }
+        <div class="cm-host" #editorHost></div>
+      }
     </div>
   `,
   styles: [`
@@ -174,6 +336,96 @@ const ruleFieldTheme = EditorView.theme({
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
+    .mode-toggle {
+      display: flex;
+      border: 1px solid var(--color-brand, #1400cc);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .toggle-seg {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      color: var(--color-brand, #1400cc);
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .toggle-seg.active {
+      background: var(--color-brand, #1400cc);
+      color: white;
+    }
+    .prose-read-zone {
+      position: relative;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      padding: 8px 12px;
+      background: var(--color-surface-subtle);
+      border-radius: 6px;
+      border-left: 3px solid var(--color-brand, #1400cc);
+      line-height: 1.6;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .prose-read-zone:hover {
+      background: var(--color-surface-muted);
+    }
+    .prose-edit-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--color-brand, #1400cc);
+      background: var(--color-surface-base);
+      color: var(--color-brand, #1400cc);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .prose-read-zone:hover .prose-edit-btn {
+      opacity: 1;
+    }
+    .prose-mirror {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      padding: 8px 12px;
+      background: var(--color-surface-subtle);
+      border-radius: 6px;
+      border-left: 3px solid var(--color-brand, #1400cc);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .prose-mirror.read-only {
+      cursor: default;
+    }
+    .json-read-zone {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 13px;
+      padding: 8px 12px;
+      background: var(--color-surface-base);
+      border: 1px solid var(--color-stroke-standard);
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: pointer;
+      color: var(--color-text-primary);
+      line-height: 1.5;
+      margin: 0;
+      transition: background 0.15s ease;
+    }
+    .json-read-zone:hover {
+      background: var(--color-surface-muted);
+    }
+    .tk-var { color: var(--color-tk-var, #7c3aed); }
+    .tk-kw  { color: var(--color-tk-kw, #555555); }
+    .tk-val { color: var(--color-tk-val, #059669); }
+    .tk-pfx { color: var(--color-tk-pfx, #888888); font-style: italic; margin-right: 4px; }
+    .tk-err { color: var(--color-tk-err, #b32020); }
     .rule-prose {
       font-size: 13px;
       color: var(--color-text-secondary);
@@ -186,10 +438,6 @@ const ruleFieldTheme = EditorView.theme({
     }
     .rule-prose em {
       font-style: italic;
-    }
-    .rule-prose :is(em, li) strong {
-      color: var(--color-text-primary);
-      font-weight: 600;
     }
     .rule-or-list {
       margin: 6px 0 0;
@@ -205,7 +453,7 @@ const ruleFieldTheme = EditorView.theme({
       margin-top: 3px;
       padding-top: 6px;
     }
-    .cm-host {
+    .cm-host, .prose-cm-host {
       width: 100%;
     }
     .rule-error {
@@ -216,6 +464,32 @@ const ruleFieldTheme = EditorView.theme({
       border-left-color: var(--color-status-warning, #d97706);
       color: var(--color-status-warning, #d97706);
     }
+    .validation-row {
+      margin-top: 6px;
+    }
+    .validation-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .validation-badge.valid {
+      background: #059669;
+      color: white;
+    }
+    .validation-badge.error {
+      background: #b32020;
+      color: white;
+    }
+    .validation-badge.warning {
+      background: var(--color-status-warning, #d97706);
+      color: white;
+    }
+    .rule-field.has-error {
+      border-color: var(--color-text-error, #dc2626);
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.08);
+    }
   `],
 })
 export class RuleFieldComponent implements AfterViewInit, OnDestroy {
@@ -223,6 +497,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly label = input('JSONLogic Rule');
   readonly placeholder = input('');
   readonly mode = input<ProseMode>('condition');
+  readonly modelType = input<'action' | 'folder' | undefined>(undefined);
+  readonly modelId = input<string | undefined>(undefined);
+  readonly excludeIndicator = input<string | undefined>(undefined);
 
   readonly valueChange = output<string>();
   readonly validChange = output<boolean>();
@@ -230,36 +507,122 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly hasError = signal(false);
   readonly errorMessage = signal('');
 
-  private editorHost = viewChild.required<ElementRef<HTMLElement>>('editorHost');
-  private editorView: EditorView | null = null;
-  private suppressEmit = false;
+  /** 4-state machine: texte-read, texte-edit, json-read, json-edit */
+  readonly editorState = signal<RuleEditorState>('texte-read');
 
-  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value(), this.mode()));
+  readonly activeMode = computed(() =>
+    this.editorState().startsWith('texte') ? 'texte' : 'json'
+  );
 
-  readonly proseParts = computed(() => {
-    const prose = this.proseTranslation();
-    if (!prose) return null;
-    const isValue = this.mode() === 'value';
-    const lines = prose.split('\n');
-    if (lines.length > 1) {
-      return {
-        prefix: isValue
-          ? "La valeur par défaut correspond à la première condition vérifiée :"
-          : "Le paramètre est activé si au moins une de ces conditions est vraie :",
-        branches: lines.map((l) => l.replace(/^• /, '')),
-      };
+  /** Live JSON editor value signal — tracks CM content during json-edit for live prose mirror */
+  readonly jsonEditorValue = signal('');
+
+  /** Locally committed value — set on blur before parent round-trips the input */
+  private readonly committedValue = signal<string | null>(null);
+
+  /** Parse result from prose editor (texte-edit mode) */
+  readonly parseResult = signal<ParseResult | null>(null);
+
+  /** Count top-level OR branches in parse result (excludes simple variable truthiness checks) */
+  readonly orBranchCount = computed(() => {
+    const result = this.parseResult();
+    if (!result || !result.success) return 0;
+    const jl = result.jsonLogic as Record<string, unknown>;
+    if (jl && typeof jl === 'object' && 'or' in jl && Array.isArray(jl['or'])) {
+      const branches = jl['or'] as unknown[];
+      // Bare variable OR (truthiness check) counts as a single condition
+      const allSimple = branches.every((a) =>
+        !a || typeof a !== 'object' || Array.isArray(a) ||
+        'var' in (a as Record<string, unknown>),
+      );
+      return allSimple ? 1 : branches.length;
     }
-    const singlePrefix = isValue
-      ? `La valeur par défaut est : ${prose}`
-      : `Le paramètre est activé si ${prose}`;
-    return { prefix: singlePrefix, branches: null };
+    return 1;
+  });
+
+  /** Whether the parse result has blocking errors (not warnings) */
+  readonly hasBlockingErrors = computed(() => {
+    const r = this.parseResult();
+    return r !== null && !r.success;
+  });
+
+  /** Count of unknown variable warnings */
+  readonly unknownVarCount = signal(0);
+
+  /** Known variable paths for linting (populated by variable dictionary when modelType/modelId are provided) */
+  readonly variables = signal<import('../../services/variable-dictionary.service').ProseVariable[]>([]);
+
+  /** Whether the variable dictionary has indicator entries (used to suppress false unknown-variable warnings) */
+  readonly hasIndicators = computed(() => this.variables().some((v) => v.source === 'indicator'));
+
+  private editorHost = viewChild<ElementRef<HTMLElement>>('editorHost');
+  private proseCmHost = viewChild<ElementRef<HTMLElement>>('proseCmHost');
+  private editorView: EditorView | null = null;
+  private proseEditorView: EditorView | null = null;
+  private suppressEmit = false;
+  private initialized = false;
+  private parseTimeout: ReturnType<typeof setTimeout> | null = null;
+  private cdr = inject(ChangeDetectorRef);
+  private variableDictionary = inject(VariableDictionaryService);
+
+  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.committedValue() ?? this.value(), this.mode()));
+
+  /** Prose parts for json-edit mode — reacts to live editor content */
+  readonly jsonEditProseTranslation = computed(() => translateJsonLogicToProse(this.jsonEditorValue(), this.mode()));
+
+  readonly proseParts = computed(() => this.buildProseParts(this.proseTranslation()));
+
+  readonly jsonEditProseParts = computed(() => this.buildProseParts(this.jsonEditProseTranslation()));
+
+  /** Formatted JSON for the json-read display */
+  readonly formattedJson = computed(() => {
+    const val = this.committedValue() ?? this.value();
+    if (!val?.trim()) return '';
+    try {
+      return JSON.stringify(JSON.parse(val), null, 2);
+    } catch {
+      return val;
+    }
   });
 
   constructor() {
-    // Sync external value changes into the editor and validate
+    // Initialize editor state based on whether value is empty
+    // Clear committedValue once the parent input catches up
+    effect(() => {
+      const val = this.value();
+      if (!this.initialized) {
+        this.initialized = true;
+        if (!val?.trim()) {
+          this.editorState.set('texte-edit');
+        }
+      }
+      // Clear local override once parent input matches
+      if (this.committedValue() !== null && val === this.committedValue()) {
+        this.committedValue.set(null);
+      }
+    });
+
+    // Populate variables from dictionary when modelType/modelId are provided
+    effect(() => {
+      const type = this.modelType();
+      const id = this.modelId();
+      const exclude = this.excludeIndicator();
+      if (type && id) {
+        // Use untracked to avoid calling toSignal() inside a reactive context (NG0602)
+        const dictSignal = untracked(() => this.variableDictionary.getVariables(type, id));
+        let vars = dictSignal();
+        // Exclude the indicator being edited (its own rule shouldn't reference itself)
+        if (exclude) {
+          vars = vars.filter((v) => v.path !== exclude);
+        }
+        this.variables.set(vars);
+      }
+    });
+
+    // Sync external value changes into the JSON editor
     effect(() => {
       const newVal = this.value();
-      if (this.editorView) {
+      if (this.editorView && this.editorState() === 'json-edit') {
         const currentDoc = this.editorView.state.doc.toString();
         if (newVal !== currentDoc) {
           this.suppressEmit = true;
@@ -271,9 +634,256 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         }
       }
     });
+
+    // Manage JSON editor lifecycle based on state changes
+    effect(() => {
+      const state = this.editorState();
+      if (state === 'json-edit') {
+        queueMicrotask(() => {
+          if (!this.editorView) {
+            this.initJsonEditor();
+          }
+        });
+      } else {
+        if (this.editorView) {
+          this.editorView.destroy();
+          this.editorView = null;
+        }
+      }
+    });
+
+    // Manage prose editor lifecycle based on state changes
+    effect(() => {
+      const state = this.editorState();
+      if (state === 'texte-edit') {
+        queueMicrotask(() => {
+          if (!this.proseEditorView) {
+            this.initProseEditor();
+          }
+        });
+      } else {
+        if (this.proseEditorView) {
+          this.proseEditorView.destroy();
+          this.proseEditorView = null;
+        }
+        this.parseResult.set(null);
+      }
+    });
+  }
+
+  enterTexteEdit(): void {
+    this.editorState.set('texte-edit');
+  }
+
+  enterJsonEdit(): void {
+    this.editorState.set('json-edit');
+  }
+
+  switchMode(mode: 'texte' | 'json'): void {
+    const currentState = this.editorState();
+    const isRead = currentState.endsWith('-read');
+    const hasValue = !!this.value()?.trim();
+
+    if (mode === 'texte') {
+      if (isRead) {
+        this.editorState.set('texte-read');
+      } else {
+        this.editorState.set('texte-edit');
+      }
+    } else {
+      // JSON mode
+      if (!hasValue) {
+        this.editorState.set('json-edit');
+      } else if (isRead) {
+        this.editorState.set('json-read');
+      } else {
+        this.editorState.set('json-edit');
+      }
+    }
   }
 
   ngAfterViewInit(): void {
+    if (this.editorState() === 'json-edit') {
+      this.initJsonEditor();
+    }
+  }
+
+  /** Convert stored JSONLogic to plain-text prose for the prose editor */
+  private jsonLogicToProseText(): string {
+    const val = this.value();
+    if (!val?.trim()) return '';
+    const html = translateJsonLogicToProse(val, this.mode());
+    if (!html) return '';
+    const plain = proseToPlainText(html);
+    // In condition mode, convert OR bullets to blank-line-separated blocks.
+    // In value mode, keep bullets — the parser needs them for • Si … ⇒ … syntax.
+    return this.mode() === 'value' ? plain : bulletsToBlankLines(plain);
+  }
+
+  private initProseEditor(): void {
+    const host = this.proseCmHost();
+    if (!host) return;
+    if (this.proseEditorView) return;
+
+    const doc = this.jsonLogicToProseText();
+
+    const updateListener = EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
+        if (this.parseTimeout) clearTimeout(this.parseTimeout);
+        this.parseTimeout = setTimeout(() => {
+          const text = update.state.doc.toString();
+          if (!text.trim()) {
+            this.parseResult.set(null);
+            this.unknownVarCount.set(0);
+          } else {
+            const result = parseProse(text);
+            this.parseResult.set(result);
+            // Count unknown variables (only when indicators have loaded)
+            if (result.success) {
+              const varPaths = extractVarPaths(result.jsonLogic);
+              const knownPaths = new Set(this.variables().map((v) => v.path));
+              const unknowns = this.hasIndicators()
+                ? varPaths.filter((p) => !knownPaths.has(p))
+                : [];
+              this.unknownVarCount.set(unknowns.length);
+            } else {
+              this.unknownVarCount.set(0);
+            }
+          }
+        }, 300);
+      }
+      // Blur handling
+      if (update.focusChanged && !update.view.hasFocus) {
+        const text = update.view.state.doc.toString().trim();
+        if (!text) {
+          this.valueChange.emit('');
+          this.validChange.emit(true);
+          // Stay in texte-edit so the placeholder remains visible and clickable
+          return;
+        }
+        // Run parser immediately on blur (skip debounce)
+        const result = parseProse(text);
+        this.parseResult.set(result);
+        if (result.success) {
+          // Valid + any warnings → save and transition (warnings don't block)
+          const jsonStr = JSON.stringify(result.jsonLogic);
+          this.committedValue.set(jsonStr);
+          this.valueChange.emit(jsonStr);
+          this.validChange.emit(true);
+          // Defer state change to avoid destroying the editor mid-callback
+          setTimeout(() => {
+            this.editorState.set('texte-read');
+            this.cdr.detectChanges();
+          }, 0);
+        }
+        // If errors → stay in texte-edit, errors remain visible
+      }
+    });
+
+    // Prose linter: inline error marks and unknown variable warnings
+    const proseLint = linter((view: EditorView): Diagnostic[] => {
+      const text = view.state.doc.toString().trim();
+      if (!text) return [];
+
+      const diagnostics: Diagnostic[] = [];
+      const result = parseProse(text);
+
+      if (!result.success) {
+        // Filter out end-of-input errors (incomplete expressions being typed)
+        const realErrors = result.errors.filter((e) => !e.atEnd);
+        for (const error of realErrors) {
+          diagnostics.push({
+            from: error.start,
+            to: Math.max(error.end, error.start + 1),
+            severity: 'error',
+            message: error.message,
+          });
+        }
+      } else {
+        // Unknown variable warnings (only when indicators have loaded successfully)
+        const varPaths = extractVarPaths(result.jsonLogic);
+        const knownPaths = new Set(this.variables().map((v) => v.path));
+        if (this.hasIndicators()) {
+          const tokens = tokenize(text);
+          for (const varPath of varPaths) {
+            if (!knownPaths.has(varPath)) {
+              const varToken = tokens.find((t) => t.type === 'variable' && t.value === varPath);
+              if (varToken) {
+                diagnostics.push({
+                  from: varToken.start,
+                  to: varToken.end,
+                  severity: 'warning',
+                  message: `Variable inconnue : '${varPath}'`,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return diagnostics;
+    }, { delay: 300 });
+
+    const startState = EditorState.create({
+      doc,
+      extensions: [
+        proseLanguageExtension,
+        bracketMatching(),
+        EditorView.lineWrapping,
+        history(),
+        cmPlaceholder("Saisir une règle… ex : statut fait partie de ['actif']"),
+        proseEditorTheme,
+        proseLint,
+        autocompletion({
+          override: [createProseCompletionSource(this.variables)],
+          activateOnTyping: true,
+          icons: false,
+        }),
+        keymap.of([
+          { key: 'Tab', run: acceptCompletion },
+          { key: 'Enter', run: closeCompletion },
+        ]),
+        EditorView.domEventHandlers({
+          focus: (_event, view) => { startCompletion(view); },
+          click: (_event, view) => { startCompletion(view); },
+        }),
+        updateListener,
+      ],
+    });
+
+    this.proseEditorView = new EditorView({
+      state: startState,
+      parent: host.nativeElement,
+    });
+
+    // Position cursor at end
+    this.proseEditorView.dispatch({
+      selection: { anchor: doc.length },
+    });
+    this.proseEditorView.focus();
+
+    // Run initial parse if there's content
+    if (doc.trim()) {
+      const result = parseProse(doc);
+      this.parseResult.set(result);
+      if (result.success) {
+        const varPaths = extractVarPaths(result.jsonLogic);
+        const knownPaths = new Set(this.variables().map((v) => v.path));
+        const unknowns = this.hasIndicators()
+          ? varPaths.filter((p) => !knownPaths.has(p))
+          : [];
+        this.unknownVarCount.set(unknowns.length);
+      }
+    }
+  }
+
+  private initJsonEditor(): void {
+    const host = this.editorHost();
+    if (!host) return;
+
+    // Avoid double-init
+    if (this.editorView) return;
+
     const jsonLint = linter(jsonLogicLinter(), { delay: 300 });
 
     const updateListener = EditorView.updateListener.of((update) => {
@@ -281,6 +891,19 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         const val = update.state.doc.toString();
         this.valueChange.emit(val);
         this.validateJson(val);
+        this.jsonEditorValue.set(val);
+      }
+      // Blur → json-read
+      if (update.focusChanged && !update.view.hasFocus) {
+        const val = update.view.state.doc.toString().trim();
+        if (val) {
+          try {
+            JSON.parse(val);
+            this.editorState.set('json-read');
+          } catch {
+            // Invalid JSON — stay in json-edit
+          }
+        }
       }
     });
 
@@ -301,13 +924,41 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
 
     this.editorView = new EditorView({
       state: startState,
-      parent: this.editorHost().nativeElement,
+      parent: host.nativeElement,
     });
+
+    // Initialize live prose mirror value
+    this.jsonEditorValue.set(this.value());
   }
 
   ngOnDestroy(): void {
     this.editorView?.destroy();
     this.editorView = null;
+    this.proseEditorView?.destroy();
+    this.proseEditorView = null;
+    if (this.parseTimeout) clearTimeout(this.parseTimeout);
+  }
+
+  private buildProseParts(prose: string | null) {
+    if (!prose) return null;
+    const isValue = this.mode() === 'value';
+    const lines = prose.split('\n');
+    if (lines.length > 1) {
+      return {
+        prefix: isValue
+          ? "La valeur par défaut correspond à la première condition vérifiée :"
+          : "Le paramètre est activé si au moins une de ces conditions est vraie :",
+        content: null,
+        branches: lines.map((l) => l.replace(/^• /, '')),
+      };
+    }
+    return {
+      prefix: isValue
+        ? "La valeur par défaut est :"
+        : "Le paramètre est activé si :",
+      content: prose,
+      branches: null,
+    };
   }
 
   private validateJson(val: string): void {
@@ -326,7 +977,6 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       this.validChange.emit(false);
       return;
     }
-    // JSON is valid — check JSONLogic structure (non-blocking, informational only)
     const logicErrors = validateJsonLogic(trimmed);
     if (logicErrors.length > 0) {
       this.hasError.set(false);

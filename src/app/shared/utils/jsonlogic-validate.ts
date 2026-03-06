@@ -2,6 +2,8 @@
  * Structural validator for JSONLogic rules.
  * Validates that JSON is well-formed JSONLogic (correct operators and structure),
  * not just valid JSON.
+ *
+ * @see docs/jsonlogic-prose-architecture.md
  */
 
 /** All operators supported by the JSONLogic spec (jsonlogic.com/operations.html) */

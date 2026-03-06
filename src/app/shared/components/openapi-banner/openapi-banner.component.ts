@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { LucideAngularModule, AlertTriangle, ChevronDown } from 'lucide-angular';
+import { LucideAngularModule, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-angular';
 
 import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi-watcher.service';
 
@@ -15,12 +15,6 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
             <span>Le schéma API a changé depuis la dernière synchronisation</span>
           </div>
           <div class="openapi-banner-actions">
-            <button
-              class="openapi-dismiss-btn"
-              (click)="onDismiss(); $event.stopPropagation()"
-            >
-              Ignorer
-            </button>
             <lucide-icon
               [img]="ChevronDownIcon"
               [size]="16"
@@ -37,9 +31,39 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
                 <h4 class="openapi-section-title">Endpoints ({{ pathChanges().length }})</h4>
                 <ul class="openapi-change-list">
                   @for (change of pathChanges(); track change.name) {
-                    <li class="openapi-change-item">
-                      <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
-                      <code>{{ change.name }}</code>
+                    <li class="openapi-change-item-wrapper">
+                      <button
+                        class="openapi-change-item"
+                        [class.expandable]="hasDetail(change)"
+                        (click)="hasDetail(change) && toggleDetail(change)"
+                      >
+                        <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
+                        <code>{{ change.name }}</code>
+                        @if (hasDetail(change)) {
+                          <lucide-icon
+                            [img]="ChevronRightIcon"
+                            [size]="12"
+                            class="detail-chevron"
+                            [class.rotated]="isDetailExpanded(change)"
+                          />
+                        }
+                      </button>
+                      @if (isDetailExpanded(change)) {
+                        <div class="openapi-detail">
+                          @if (change.before != null) {
+                            <div class="openapi-detail-panel detail-before">
+                              <span class="detail-label">Avant</span>
+                              <pre>{{ formatJson(change.before) }}</pre>
+                            </div>
+                          }
+                          @if (change.after != null) {
+                            <div class="openapi-detail-panel detail-after">
+                              <span class="detail-label">Après</span>
+                              <pre>{{ formatJson(change.after) }}</pre>
+                            </div>
+                          }
+                        </div>
+                      }
                     </li>
                   }
                 </ul>
@@ -50,9 +74,39 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
                 <h4 class="openapi-section-title">Schémas ({{ schemaChanges().length }})</h4>
                 <ul class="openapi-change-list">
                   @for (change of schemaChanges(); track change.name) {
-                    <li class="openapi-change-item">
-                      <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
-                      <code>{{ change.name }}</code>
+                    <li class="openapi-change-item-wrapper">
+                      <button
+                        class="openapi-change-item"
+                        [class.expandable]="hasDetail(change)"
+                        (click)="hasDetail(change) && toggleDetail(change)"
+                      >
+                        <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
+                        <code>{{ change.name }}</code>
+                        @if (hasDetail(change)) {
+                          <lucide-icon
+                            [img]="ChevronRightIcon"
+                            [size]="12"
+                            class="detail-chevron"
+                            [class.rotated]="isDetailExpanded(change)"
+                          />
+                        }
+                      </button>
+                      @if (isDetailExpanded(change)) {
+                        <div class="openapi-detail">
+                          @if (change.before != null) {
+                            <div class="openapi-detail-panel detail-before">
+                              <span class="detail-label">Avant</span>
+                              <pre>{{ formatJson(change.before) }}</pre>
+                            </div>
+                          }
+                          @if (change.after != null) {
+                            <div class="openapi-detail-panel detail-after">
+                              <span class="detail-label">Après</span>
+                              <pre>{{ formatJson(change.after) }}</pre>
+                            </div>
+                          }
+                        </div>
+                      }
                     </li>
                   }
                 </ul>
@@ -93,19 +147,6 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
       align-items: center;
       gap: 8px;
     }
-    .openapi-dismiss-btn {
-      padding: 2px 10px;
-      border-radius: 4px;
-      border: 1px solid #d97706;
-      background: transparent;
-      color: #92400e;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .openapi-dismiss-btn:hover {
-      background: #fde68a;
-    }
     .openapi-chevron {
       transition: transform 0.2s;
     }
@@ -113,7 +154,7 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
       transform: rotate(180deg);
     }
     .openapi-banner-body {
-      max-height: 300px;
+      max-height: 400px;
       overflow-y: auto;
       padding: 0 16px 12px;
       border-top: 1px solid #fcd34d;
@@ -132,14 +173,29 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
       margin: 0;
       padding: 0;
     }
+    .openapi-change-item-wrapper {
+      margin-bottom: 2px;
+    }
     .openapi-change-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 2px 0;
+      padding: 2px 4px;
       font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
       font-size: 12px;
       color: #78350f;
+      background: none;
+      border: none;
+      cursor: default;
+      width: 100%;
+      text-align: left;
+      border-radius: 3px;
+    }
+    .openapi-change-item.expandable {
+      cursor: pointer;
+    }
+    .openapi-change-item.expandable:hover {
+      background: rgba(0, 0, 0, 0.05);
     }
     .openapi-change-badge {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -163,6 +219,57 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
       background: #dbeafe;
       color: #1e40af;
     }
+    .detail-chevron {
+      margin-left: auto;
+      transition: transform 0.2s;
+    }
+    .detail-chevron.rotated {
+      transform: rotate(90deg);
+    }
+    .openapi-detail {
+      display: flex;
+      gap: 8px;
+      margin: 4px 0 8px 60px;
+    }
+    .openapi-detail-panel {
+      flex: 1;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .detail-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      letter-spacing: 0.5px;
+    }
+    .detail-before .detail-label {
+      background: #fca5a5;
+      color: #7f1d1d;
+    }
+    .detail-after .detail-label {
+      background: #6ee7b7;
+      color: #064e3b;
+    }
+    .openapi-detail-panel pre {
+      margin: 0;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .detail-before pre {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .detail-after pre {
+      background: #d1fae5;
+      color: #065f46;
+    }
   `],
 })
 export class OpenApiBannerComponent {
@@ -170,9 +277,11 @@ export class OpenApiBannerComponent {
 
   protected readonly AlertTriangleIcon = AlertTriangle;
   protected readonly ChevronDownIcon = ChevronDown;
+  protected readonly ChevronRightIcon = ChevronRight;
 
   readonly changes = this.watcher.changes;
   readonly isExpanded = signal(false);
+  readonly expandedItems = signal<Set<string>>(new Set());
 
   readonly pathChanges = computed(() =>
     (this.changes() ?? []).filter(c => c.category === 'path'),
@@ -190,7 +299,28 @@ export class OpenApiBannerComponent {
     }
   }
 
-  onDismiss(): void {
-    this.watcher.dismiss();
+  hasDetail(change: OpenApiChange): boolean {
+    return change.before != null || change.after != null;
+  }
+
+  isDetailExpanded(change: OpenApiChange): boolean {
+    return this.expandedItems().has(`${change.category}:${change.name}`);
+  }
+
+  toggleDetail(change: OpenApiChange): void {
+    const key = `${change.category}:${change.name}`;
+    this.expandedItems.update(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  formatJson(value: unknown): string {
+    return JSON.stringify(value, null, 2);
   }
 }
