@@ -25,6 +25,7 @@ import {
   AfterViewInit,
   OnDestroy,
   effect,
+  untracked,
   ChangeDetectorRef,
   inject,
 } from '@angular/core';
@@ -169,58 +170,6 @@ export const proseEditorTheme = EditorView.theme({
   },
   '.cm-diagnostic-warning': {
     borderLeftColor: 'var(--color-status-warning, #d97706)',
-  },
-  '.cm-tooltip-autocomplete': {
-    minWidth: '260px',
-    border: '1px solid var(--color-stroke-standard)',
-    borderRadius: '6px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-    overflow: 'hidden',
-  },
-  '.cm-tooltip-autocomplete ul': {
-    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-  },
-  '.cm-tooltip-autocomplete ul li:not(.cm-completionSection)': {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '7px 12px',
-    fontSize: '13px',
-    borderBottom: '1px solid var(--color-surface-subtle, #f0f0f0)',
-  },
-  '.cm-tooltip-autocomplete ul li:last-child:not(.cm-completionSection)': {
-    borderBottom: 'none',
-  },
-  '.cm-tooltip-autocomplete ul li[aria-selected]': {
-    background: 'var(--color-surface-active, #f0f0ff)',
-  },
-  '.cm-completionLabel': {
-    color: 'var(--color-text-primary)',
-    flex: '1',
-  },
-  '.cm-completionDetail': {
-    fontSize: '11px',
-    color: 'var(--color-text-tertiary, #888)',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-    fontStyle: 'normal',
-    background: 'var(--color-surface-muted, #f5f5f5)',
-    padding: '1px 6px',
-    borderRadius: '3px',
-    marginLeft: '8px',
-  },
-  '.cm-tooltip-autocomplete ul .cm-completionSection': {
-    fontSize: '10px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    color: 'var(--color-text-tertiary, #888)',
-    padding: '6px 12px 4px',
-    background: 'var(--color-surface-subtle, #f8f8f8)',
-    borderBottom: '1px solid var(--color-surface-light, #eeeeee)',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-  },
-  '.cm-completionIcon': {
-    display: 'none',
   },
 });
 
@@ -651,8 +600,8 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       const type = this.modelType();
       const id = this.modelId();
       if (type && id) {
-        const dictSignal = this.variableDictionary.getVariables(type, id);
-        // Track the dictionary signal — when it resolves, update variables
+        // Use untracked to avoid calling toSignal() inside a reactive context (NG0602)
+        const dictSignal = untracked(() => this.variableDictionary.getVariables(type, id));
         const vars = dictSignal();
         this.variables.set(vars);
       }

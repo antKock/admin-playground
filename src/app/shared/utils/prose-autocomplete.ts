@@ -151,14 +151,14 @@ function buildVariableCompletions(variables: ProseVariable[]): Completion[] {
   const groupRanks = new Map<string, number>();
   let rank = 0;
   for (const v of variables) {
-    const g = v.group || 'Indicateurs (directs)';
+    const g = v.group || 'Indicateurs';
     if (!groupRanks.has(g)) {
       groupRanks.set(g, rank++);
     }
   }
 
   return variables.map((variable): Completion => {
-    const groupName = variable.group || 'Indicateurs (directs)';
+    const groupName = variable.group || 'Indicateurs';
     return {
       label: variable.path,
       type: 'variable',
