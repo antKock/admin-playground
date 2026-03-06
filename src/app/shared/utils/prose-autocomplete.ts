@@ -40,6 +40,15 @@ const CONNECTOR_COMPLETIONS: Completion[] = [
   { label: 'ou', type: 'keyword', detail: 'au moins une condition', section: { name: 'Connecteurs', rank: 0 } },
 ];
 
+/** Arithmetic operator completions */
+const ARITHMETIC_COMPLETIONS: Completion[] = [
+  { label: '+', type: 'keyword', detail: 'addition', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+  { label: '-', type: 'keyword', detail: 'soustraction', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+  { label: '×', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+  { label: '÷', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+  { label: 'modulo', type: 'keyword', detail: 'reste de la division', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+];
+
 /**
  * Determines the context "phase" from text before the cursor.
  *
@@ -92,17 +101,22 @@ export function detectContext(
     }
   }
 
+  // After a number → connector context (allows arithmetic operators too)
+  if (/\b\d+(?:\.\d+)?\s*$/.test(trimmed)) {
+    return { phase: 'connector' };
+  }
+
   // If typing a partial word that could be a variable prefix → variable context
   const partialMatch = trimmed.match(/(?:^|\s)(\S+)$/);
   if (partialMatch) {
     const partial = partialMatch[1].toLowerCase();
     // Check if partial matches any variable prefix
-    const matchesVariable = variables.some((v) => v.path.toLowerCase().startsWith(partial));
+    const matchesVariable = variables.some((v) => v.path.toLowerCase().includes(partial));
     if (matchesVariable) {
       return { phase: 'variable' };
     }
-    // Check if partial matches an expression label prefix
-    const matchesExpression = EXPRESSION_COMPLETIONS.some((e) => e.label.toLowerCase().startsWith(partial));
+    // Check if partial matches an expression label substring
+    const matchesExpression = EXPRESSION_COMPLETIONS.some((e) => e.label.toLowerCase().includes(partial));
     if (matchesExpression) {
       return { phase: 'variable' };
     }
@@ -203,7 +217,8 @@ export function createProseCompletionSource(
       }
 
       case 'connector': {
-        return { from, options: filterOptions(CONNECTOR_COMPLETIONS), filter: false };
+        const options = filterOptions([...CONNECTOR_COMPLETIONS, ...ARITHMETIC_COMPLETIONS]);
+        return { from, options, filter: false };
       }
     }
   };

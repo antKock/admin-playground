@@ -334,6 +334,16 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
+    // Accept * and / as aliases for × and ÷
+    if (ch === '*' || ch === '/') {
+      const startPos = pos;
+      const startLine = line;
+      const startCol = col;
+      advance();
+      tokens.push(makeToken('operator', ch === '*' ? '×' : '÷', startPos, startLine, startCol));
+      continue;
+    }
+
     if (OPERATORS.includes(ch) && ch !== '-') {
       const startPos = pos;
       const startLine = line;

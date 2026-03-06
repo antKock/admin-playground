@@ -18,6 +18,8 @@ export interface ParseError {
   col: number;
   start: number;
   end: number;
+  /** True when the error is caused by unexpected end of input (incomplete expression) */
+  atEnd?: boolean;
 }
 
 /** Reverse map from prose operators to JSONLogic operators */
@@ -70,7 +72,7 @@ class Parser {
   private expect(type: TokenType, value?: string): Token | null {
     const tok = this.peek();
     if (!tok) {
-      this.addError(`Fin inattendue — ${type} attendu${value ? ` (${value})` : ''}`);
+      this.addError(`Fin inattendue — ${type} attendu${value ? ` (${value})` : ''}`, null, true);
       return null;
     }
     if (tok.type !== type || (value !== undefined && tok.value !== value)) {
@@ -92,7 +94,7 @@ class Parser {
     return this.peekValue() === value;
   }
 
-  private addError(message: string, tok?: Token | null): void {
+  private addError(message: string, tok?: Token | null, atEnd = false): void {
     const t = tok ?? this.peek();
     this.errors.push({
       message,
@@ -100,6 +102,7 @@ class Parser {
       col: t?.col ?? 0,
       start: t?.start ?? 0,
       end: t?.end ?? 0,
+      atEnd,
     });
   }
 
@@ -289,7 +292,7 @@ class Parser {
   private parseOperand(): unknown {
     const tok = this.peek();
     if (!tok) {
-      this.addError('Opérande attendu');
+      this.addError('Expression incomplète', null, true);
       return null;
     }
 

@@ -200,7 +200,8 @@ export const proseStreamParser: StreamParser<ProseHighlightState> = {
       return 'operator';
     }
     // + and - as operators (when not followed by digit — digit case handled above for -)
-    if (ch === '+' || ch === '-') {
+    // * and / as aliases for × and ÷
+    if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {
       stream.pos++;
       return 'operator';
     }

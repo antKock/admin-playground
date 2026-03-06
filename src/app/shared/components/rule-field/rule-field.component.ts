@@ -310,8 +310,8 @@ function extractVarPaths(jsonLogic: unknown): string[] {
               <span class="validation-badge warning">Avertissement — {{ unknownVarCount() }} variable(s) inconnue(s)</span>
             } @else if (result.success) {
               <span class="validation-badge valid">Valide{{ orBranchCount() > 1 ? ' — ' + orBranchCount() + ' branches OR' : '' }}</span>
-            } @else {
-              <span class="validation-badge error">{{ result.errors[0]?.message }}</span>
+            } @else if (result.errors.some(e => !e.atEnd)) {
+              <span class="validation-badge error">{{ result.errors.find(e => !e.atEnd)?.message }}</span>
             }
           </div>
         }
@@ -815,7 +815,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       const result = parseProse(text);
 
       if (!result.success) {
-        for (const error of result.errors) {
+        // Filter out end-of-input errors (incomplete expressions being typed)
+        const realErrors = result.errors.filter((e) => !e.atEnd);
+        for (const error of realErrors) {
           diagnostics.push({
             from: error.start,
             to: Math.max(error.end, error.start + 1),
