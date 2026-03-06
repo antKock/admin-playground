@@ -1,6 +1,14 @@
 /**
  * Translates a JSONLogic rule string into human-readable French prose.
  * Returns null if the input is invalid, un-translatable, or too deeply nested.
+ *
+ * Tokens are wrapped in semantic spans for syntax coloring:
+ *   - tk-var: variables (purple)
+ *   - tk-kw: keywords/operators (gray)
+ *   - tk-val: values (green)
+ *   - tk-pfx: prefix text (gray italic)
+ *
+ * @see docs/jsonlogic-prose-architecture.md
  */
 
 export type ProseMode = 'condition' | 'value';
@@ -26,8 +34,16 @@ function escapeQuotes(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-function bold(s: string): string {
-  return `<strong>${s}</strong>`;
+function wrapVar(s: string): string {
+  return `<span class="tk-var">${s}</span>`;
+}
+
+function wrapVal(s: string): string {
+  return `<span class="tk-val">${s}</span>`;
+}
+
+function wrapKw(s: string): string {
+  return `<span class="tk-kw">${s}</span>`;
 }
 
 function formatValue(val: unknown): string {
@@ -39,13 +55,13 @@ function formatValue(val: unknown): string {
 
 function resolveVar(node: Record<string, unknown>): string | null {
   const v = node['var'];
-  if (typeof v === 'string') return v === '' ? bold('(données)') : bold(escapeHtml(v));
-  if (typeof v === 'number') return bold(String(v));
+  if (typeof v === 'string') return v === '' ? wrapVar('(données)') : wrapVar(escapeHtml(v));
+  if (typeof v === 'number') return wrapVar(String(v));
   // Array syntax: {"var": ["name", default]}
   if (Array.isArray(v) && v.length >= 1) {
     const name = v[0];
-    if (typeof name === 'string') return bold(escapeHtml(name));
-    if (typeof name === 'number') return bold(String(name));
+    if (typeof name === 'string') return wrapVar(escapeHtml(name));
+    if (typeof name === 'number') return wrapVar(String(name));
   }
   return null;
 }
@@ -53,13 +69,13 @@ function resolveVar(node: Record<string, unknown>): string | null {
 function resolveOperand(node: unknown, depth: number, topLevel = false, mode: ProseMode = 'condition'): string | null {
   if (depth > MAX_DEPTH) return null;
 
-  if (node === null || node === undefined) return bold('null');
-  if (typeof node === 'string') return bold(`'${escapeQuotes(escapeHtml(node))}'`);
-  if (typeof node === 'number' || typeof node === 'boolean') return bold(String(node));
+  if (node === null || node === undefined) return wrapVal('null');
+  if (typeof node === 'string') return wrapVal(`'${escapeQuotes(escapeHtml(node))}'`);
+  if (typeof node === 'number' || typeof node === 'boolean') return wrapVal(String(node));
 
   if (Array.isArray(node)) {
     const items = node.map((item) => formatValue(item));
-    return bold(`[${items.join(', ')}]`);
+    return wrapVal(`[${items.join(', ')}]`);
   }
 
   if (typeof node === 'object') {
@@ -97,7 +113,7 @@ function tryNegate(innerNode: unknown, depth: number, topLevel: boolean): string
 
   // !missing → "aucun champ manquant parmi [...]"
   if (op === 'missing' && Array.isArray(innerArgs)) {
-    return `aucun champ manquant parmi ${bold(`[${innerArgs.map(formatValue).join(', ')}]`)}`;
+    return `${wrapKw('aucun champ manquant parmi')} ${wrapVal(`[${innerArgs.map(formatValue).join(', ')}]`)}`;
   }
 
   // !some → none phrasing
@@ -106,14 +122,14 @@ function tryNegate(innerNode: unknown, depth: number, topLevel: boolean): string
     if (arr === null) return null;
     const cond = resolveOperand(innerArgs[1], depth + 1);
     return cond
-      ? `aucun élément de ${arr} ne satisfait : ${cond}`
-      : `aucun élément de ${arr} ne satisfait la condition`;
+      ? `${wrapKw('aucun élément de')} ${arr} ${wrapKw('ne satisfait :')} ${cond}`
+      : `${wrapKw('aucun élément de')} ${arr} ${wrapKw('ne satisfait la condition')}`;
   }
 
   // !var → "x est absent"
   if (op === 'var') {
     const v = resolveVar(obj);
-    if (v) return `${v} est absent`;
+    if (v) return `${v} ${wrapKw('est absent')}`;
   }
 
   return null;
@@ -140,7 +156,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} ${OPERATOR_NAMES[operator]} ${right}`;
+    return `${left} ${wrapKw(OPERATOR_NAMES[operator])} ${right}`;
   }
 
   // Between: {"<": [a, var, b]} or {"<=": [a, var, b]}
@@ -149,7 +165,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     const mid = resolveOperand(args[1], depth);
     const high = resolveOperand(args[2], depth);
     if (low === null || mid === null || high === null) return null;
-    const op = OPERATOR_NAMES[operator];
+    const op = wrapKw(OPERATOR_NAMES[operator]);
     return `${low} ${op} ${mid} ${op} ${high}`;
   }
 
@@ -165,7 +181,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     }
     if (parts.length === 0) return null;
     if (operator === 'and') {
-      const result = parts.join(' et ');
+      const result = parts.join(` ${wrapKw('et')} `);
       return (depth > 0 && parts.length > 1 && !topLevel) ? `(${result})` : result;
     }
     // OR: bullet format only at top level; inline with parentheses when nested
@@ -173,7 +189,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
       return parts.map((p) => `• ${p}`).join('\n');
     }
     if (parts.length === 1) return parts[0];
-    return `(${parts.join(' ou ')})`;
+    return `(${parts.join(` ${wrapKw('ou')} `)})`;
   }
 
   // Negation: !
@@ -182,14 +198,14 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     if (negated) return negated;
     const inner = resolveOperand(args[0], depth);
     if (inner === null) return null;
-    return `non (${inner})`;
+    return `${wrapKw('non')} (${inner})`;
   }
   if (operator === '!') {
     const negated = tryNegate(args, depth, topLevel);
     if (negated) return negated;
     const inner = resolveOperand(args, depth);
     if (inner === null) return null;
-    return `non (${inner})`;
+    return `${wrapKw('non')} (${inner})`;
   }
 
   // Double negation: !!
@@ -197,7 +213,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     const target = Array.isArray(args) && args.length === 1 ? args[0] : args;
     const inner = resolveOperand(target, depth);
     if (inner === null) return null;
-    return `booléen(${inner})`;
+    return `${wrapKw('booléen')}(${inner})`;
   }
 
   // if / ternary — supports chained if/else-if: [cond1, val1, cond2, val2, ..., default]
@@ -210,10 +226,10 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
       const val = resolveOperand(args[i + 1], depth);
       if (cond === null || val === null) return null;
       if (useValueBullets) {
-        chunks.push(`• Si ${cond} ⇒ ${val}`);
+        chunks.push(`• ${wrapKw('Si')} ${cond} ${wrapKw('⇒')} ${val}`);
       } else {
-        const prefix = chunks.length === 0 ? 'Si' : 'sinon si';
-        chunks.push(`${prefix} ${cond} alors ${val}`);
+        const prefix = chunks.length === 0 ? wrapKw('Si') : wrapKw('sinon si');
+        chunks.push(`${prefix} ${cond} ${wrapKw('alors')} ${val}`);
       }
       i += 2;
     }
@@ -221,7 +237,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     if (i < args.length) {
       const fallback = resolveOperand(args[i], depth);
       if (fallback === null) return null;
-      chunks.push(useValueBullets ? `• Sinon ⇒ ${fallback}` : `sinon ${fallback}`);
+      chunks.push(useValueBullets ? `• ${wrapKw('Sinon')} ${wrapKw('⇒')} ${fallback}` : `${wrapKw('sinon')} ${fallback}`);
     }
     return useValueBullets ? chunks.join('\n') : chunks.join(' ');
   }
@@ -231,12 +247,12 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} fait partie de ${right}`;
+    return `${left} ${wrapKw('fait partie de')} ${right}`;
   }
 
   // missing
   if (operator === 'missing' && Array.isArray(args)) {
-    return `champs manquants parmi ${bold(`[${args.map(formatValue).join(', ')}]`)}`;
+    return `${wrapKw('champs manquants parmi')} ${wrapVal(`[${args.map(formatValue).join(', ')}]`)}`;
   }
 
   // missing_some: {"missing_some": [min, [fields]]}
@@ -244,7 +260,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     const min = args[0];
     const fields = args[1];
     if (typeof min === 'number' && Array.isArray(fields)) {
-      return `au moins ${bold(String(min))} champ(s) manquant(s) parmi ${bold(`[${fields.map(formatValue).join(', ')}]`)}`;
+      return `${wrapKw('au moins')} ${wrapVal(String(min))} ${wrapKw('champ(s) manquant(s) parmi')} ${wrapVal(`[${fields.map(formatValue).join(', ')}]`)}`;
     }
   }
 
@@ -253,47 +269,47 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     if (args.length === 0) return null;
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
-    return parts.join(' + ');
+    return parts.join(` ${wrapKw('+')} `);
   }
   if (operator === '-' && Array.isArray(args) && args.length === 1) {
     const operand = resolveOperand(args[0], depth);
     if (operand === null) return null;
-    return `-${operand}`;
+    return `${wrapKw('-')}${operand}`;
   }
   if (operator === '-' && Array.isArray(args) && args.length === 2) {
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} - ${right}`;
+    return `${left} ${wrapKw('-')} ${right}`;
   }
   if (operator === '*' && Array.isArray(args)) {
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
-    return parts.join(' × ');
+    return parts.join(` ${wrapKw('×')} `);
   }
   if (operator === '/' && Array.isArray(args) && args.length === 2) {
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} ÷ ${right}`;
+    return `${left} ${wrapKw('÷')} ${right}`;
   }
   if (operator === '%' && Array.isArray(args) && args.length === 2) {
     const left = resolveOperand(args[0], depth);
     const right = resolveOperand(args[1], depth);
     if (left === null || right === null) return null;
-    return `${left} modulo ${right}`;
+    return `${left} ${wrapKw('modulo')} ${right}`;
   }
 
   // min / max
   if (operator === 'min' && Array.isArray(args)) {
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
-    return `minimum de (${parts.join(', ')})`;
+    return `${wrapKw('minimum de')} (${parts.join(', ')})`;
   }
   if (operator === 'max' && Array.isArray(args)) {
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
-    return `maximum de (${parts.join(', ')})`;
+    return `${wrapKw('maximum de')} (${parts.join(', ')})`;
   }
 
   // cat (string concatenation)
@@ -301,45 +317,49 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     if (args.length === 0) return null;
     const parts = args.map((a) => resolveOperand(a, depth));
     if (parts.some((p) => p === null)) return null;
-    return parts.join(' + ');
+    return parts.join(` ${wrapKw('+')} `);
   }
 
   // Array operations: map, filter, reduce, all, some, none
   if (operator === 'map' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
-    return `transformer chaque élément de ${arr}`;
+    return `${wrapKw('transformer chaque élément de')} ${arr}`;
   }
   if (operator === 'filter' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
     const cond = resolveOperand(args[1], depth + 1);
-    return cond ? `filtrer ${arr} où ${cond}` : `filtrer ${arr}`;
+    return cond ? `${wrapKw('filtrer')} ${arr} ${wrapKw('où')} ${cond}` : `${wrapKw('filtrer')} ${arr}`;
   }
   if (operator === 'all' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
     const cond = resolveOperand(args[1], depth + 1);
     return cond
-      ? `tous les éléments de ${arr} satisfont : ${cond}`
-      : `tous les éléments de ${arr} satisfont la condition`;
+      ? `${wrapKw('tous les éléments de')} ${arr} ${wrapKw('satisfont :')} ${cond}`
+      : `${wrapKw('tous les éléments de')} ${arr} ${wrapKw('satisfont la condition')}`;
   }
   if (operator === 'some' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
     const cond = resolveOperand(args[1], depth + 1);
     return cond
-      ? `au moins un élément de ${arr} satisfait : ${cond}`
-      : `au moins un élément de ${arr} satisfait la condition`;
+      ? `${wrapKw('au moins un élément de')} ${arr} ${wrapKw('satisfait :')} ${cond}`
+      : `${wrapKw('au moins un élément de')} ${arr} ${wrapKw('satisfait la condition')}`;
   }
   if (operator === 'none' && Array.isArray(args) && args.length === 2) {
     const arr = resolveOperand(args[0], depth);
     if (arr === null) return null;
     const cond = resolveOperand(args[1], depth + 1);
     return cond
-      ? `aucun élément de ${arr} ne satisfait : ${cond}`
-      : `aucun élément de ${arr} ne satisfait la condition`;
+      ? `${wrapKw('aucun élément de')} ${arr} ${wrapKw('ne satisfait :')} ${cond}`
+      : `${wrapKw('aucun élément de')} ${arr} ${wrapKw('ne satisfait la condition')}`;
   }
+
+  // Note: "reduce" is intentionally not translated. The JSONLogic reduce operator
+  // is accepted by jsonlogic-validate.ts but expressing it in natural French prose
+  // would be confusing. Users can author reduce rules in JSON mode.
 
   return null;
 }
