@@ -118,23 +118,20 @@ describe('VariableDictionaryService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should assemble indicator variables from API response', () => {
+  it('should only include model-linked indicators as root-level (Indicateurs directs)', () => {
     const indicators: IndicatorModel[] = [
       makeIndicator({ id: 'im-1', technical_label: 'montant_ht', type: 'number' }),
       makeIndicator({ id: 'im-2', technical_label: 'commentaire', type: 'text' }),
+      makeIndicator({ id: 'im-3', technical_label: 'score', type: 'number' }),
     ];
 
     const sig = service.getVariables('action', 'am-1');
-
-    // Initially empty
     expect(sig()).toEqual([]);
 
-    // Respond to indicator models request (paginated, single page)
     flushIndicators(httpTesting, indicators);
 
-    // Respond to action model request
-    const actionReq = httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`);
-    actionReq.flush({
+    // Only im-1 and im-3 are linked to this model
+    httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`).flush({
       id: 'am-1',
       name: 'Test Action Model',
       description: 'A test',
@@ -144,25 +141,24 @@ describe('VariableDictionaryService', () => {
       action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' },
       action_theme: { id: 'at-1', name: 'AT' },
-      indicator_models: [],
+      indicator_models: [
+        { id: 'im-1', name: 'Montant HT', type: 'number', visibility_rule: 'true', required_rule: 'false', editable_rule: 'true', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+        { id: 'im-3', name: 'Score', type: 'number', visibility_rule: 'true', required_rule: 'false', editable_rule: 'true', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+      ],
     });
 
-    // Verify indicator variables
     const vars = sig();
-    const indicatorVars = vars.filter((v) => v.source === 'indicator');
-    expect(indicatorVars.length).toBe(2);
-    expect(indicatorVars[0]).toEqual({
-      path: 'montant_ht',
-      type: 'nombre',
-      group: '',
-      source: 'indicator',
-    });
-    expect(indicatorVars[1]).toEqual({
-      path: 'commentaire',
-      type: 'texte',
-      group: '',
-      source: 'indicator',
-    });
+    // Root-level indicators: only linked ones (im-1, im-3)
+    const rootIndicators = vars.filter((v) => v.source === 'indicator' && v.group === '');
+    expect(rootIndicators.length).toBe(2);
+    expect(rootIndicators.map((v) => v.path)).toEqual(['montant_ht', 'score']);
+
+    // Object-scoped indicators: ALL indicators (action.xxx)
+    const objectIndicators = vars.filter((v) => v.source === 'indicator' && v.group === 'action');
+    expect(objectIndicators.length).toBe(3);
+    expect(objectIndicators.map((v) => v.path)).toEqual([
+      'action.montant_ht', 'action.commentaire', 'action.score',
+    ]);
   });
 
   it('should paginate indicator fetching across multiple pages', () => {
@@ -207,9 +203,15 @@ describe('VariableDictionaryService', () => {
     });
 
     const vars = sig();
-    const indicatorVars = vars.filter((v) => v.source === 'indicator');
-    expect(indicatorVars.length).toBe(2);
-    expect(indicatorVars.map((v) => v.path)).toEqual(['score', 'label']);
+    // No indicator_models on entity → all indicators appear as root-level
+    const rootIndicators = vars.filter((v) => v.source === 'indicator' && v.group === '');
+    expect(rootIndicators.length).toBe(2);
+    expect(rootIndicators.map((v) => v.path)).toEqual(['score', 'label']);
+
+    // Object-scoped indicators also added
+    const objectIndicators = vars.filter((v) => v.source === 'indicator' && v.group === 'action');
+    expect(objectIndicators.length).toBe(2);
+    expect(objectIndicators.map((v) => v.path)).toEqual(['action.score', 'action.label']);
   });
 
   it('should prefix entity properties with model type group', () => {
@@ -264,6 +266,36 @@ describe('VariableDictionaryService', () => {
     const nameVar = propVars.find((v) => v.path === 'folder.name');
     expect(nameVar).toBeDefined();
     expect(nameVar!.group).toBe('folder');
+  });
+
+  it('should add folder-scoped indicator variables for folder models', () => {
+    const indicators: IndicatorModel[] = [
+      makeIndicator({ id: 'im-1', technical_label: 'score', type: 'number' }),
+      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text' }),
+    ];
+
+    const sig = service.getVariables('folder', 'fm-ind');
+
+    flushIndicators(httpTesting, indicators);
+
+    httpTesting.expectOne(`${FOLDER_MODELS_URL}fm-ind`).flush({
+      id: 'fm-ind',
+      name: 'Folder With Indicators',
+      description: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      funding_programs: [],
+    });
+
+    const vars = sig();
+    // Folder has no indicator_models field → all indicators appear as root-level
+    const rootIndicators = vars.filter((v) => v.source === 'indicator' && v.group === '');
+    expect(rootIndicators.length).toBe(2);
+
+    // Object-scoped indicators (folder.xxx) also added
+    const folderIndicators = vars.filter((v) => v.source === 'indicator' && v.group === 'folder');
+    expect(folderIndicators.length).toBe(2);
+    expect(folderIndicators.map((v) => v.path)).toEqual(['folder.score', 'folder.label']);
   });
 
   it('should return the same signal for the same modelType:modelId (caching)', () => {

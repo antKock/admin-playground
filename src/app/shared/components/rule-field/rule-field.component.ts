@@ -180,15 +180,15 @@ export const proseEditorTheme = EditorView.theme({
   '.cm-tooltip-autocomplete ul': {
     fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
   },
-  '.cm-tooltip-autocomplete ul li': {
+  '.cm-tooltip-autocomplete ul li:not(.cm-completionSection)': {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '7px 12px !important',
+    padding: '7px 12px',
     fontSize: '13px',
     borderBottom: '1px solid var(--color-surface-subtle, #f0f0f0)',
   },
-  '.cm-tooltip-autocomplete ul li:last-child': {
+  '.cm-tooltip-autocomplete ul li:last-child:not(.cm-completionSection)': {
     borderBottom: 'none',
   },
   '.cm-tooltip-autocomplete ul li[aria-selected]': {

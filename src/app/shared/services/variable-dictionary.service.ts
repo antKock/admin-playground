@@ -106,8 +106,17 @@ export class VariableDictionaryService {
       map(([indicators, entity]) => {
         const vars: ProseVariable[] = [];
 
-        // Indicator variables (root group)
+        // Build set of indicator IDs linked to this model (for filtering "Indicateurs directs")
+        const linkedIndicatorIds = new Set<string>();
+        if (entity && modelType === 'action') {
+          for (const im of (entity as ActionModel).indicator_models ?? []) {
+            linkedIndicatorIds.add(im.id);
+          }
+        }
+
+        // Root-level indicator variables — only those linked to this model
         for (const im of indicators) {
+          if (linkedIndicatorIds.size > 0 && !linkedIndicatorIds.has(im.id)) continue;
           vars.push({
             path: im.technical_label,
             type: mapIndicatorType(im.type),
@@ -116,7 +125,7 @@ export class VariableDictionaryService {
           });
         }
 
-        // Entity property variables
+        // Entity property variables + object.indicator variables
         if (entity) {
           const group = modelType;
           const entries = Object.entries(entity as Record<string, unknown>);
@@ -127,6 +136,19 @@ export class VariableDictionaryService {
               type: inferPropertyType(value),
               group,
               source: 'property',
+            });
+          }
+
+          // Object-scoped indicators (e.g. action.montant_ht) — all indicators, not just linked
+          const existingPaths = new Set(vars.map((v) => v.path));
+          for (const im of indicators) {
+            const path = `${group}.${im.technical_label}`;
+            if (existingPaths.has(path)) continue;
+            vars.push({
+              path,
+              type: mapIndicatorType(im.type),
+              group,
+              source: 'indicator',
             });
           }
         }
