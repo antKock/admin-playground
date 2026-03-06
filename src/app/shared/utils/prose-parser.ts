@@ -230,13 +230,23 @@ class Parser {
     const opToken = this.peekComparisonOrArithmeticOp();
     if (opToken && COMPARISON_OPS.has(opToken)) {
       const op = this.consumeOperator();
-      const right = this.parseOperand();
+      let right = this.parseOperand();
+
+      // Right-hand side may continue with arithmetic (e.g. a = b + 5)
+      let nextOp = this.peekComparisonOrArithmeticOp();
+      if (nextOp && ARITHMETIC_OPS.has(nextOp)) {
+        right = this.parseArithmeticChain(right);
+        nextOp = this.peekComparisonOrArithmeticOp();
+      }
 
       // Check for between: left op mid op right
-      const nextOp = this.peekComparisonOrArithmeticOp();
       if (nextOp && nextOp === op && (op === '<' || op === '≤')) {
         this.consumeOperator();
-        const high = this.parseOperand();
+        let high = this.parseOperand();
+        const highOp = this.peekComparisonOrArithmeticOp();
+        if (highOp && ARITHMETIC_OPS.has(highOp)) {
+          high = this.parseArithmeticChain(high);
+        }
         const jlOp = PROSE_TO_JSONLOGIC_OP[op];
         return { [jlOp]: [left, right, high] };
       }
@@ -253,7 +263,12 @@ class Parser {
       const cmpOp = this.peekComparisonOrArithmeticOp();
       if (cmpOp && COMPARISON_OPS.has(cmpOp)) {
         const op = this.consumeOperator();
-        const right = this.parseOperand();
+        let right = this.parseOperand();
+        // Right-hand side may also have arithmetic (e.g. a + 5 = b + 3)
+        const rightOp = this.peekComparisonOrArithmeticOp();
+        if (rightOp && ARITHMETIC_OPS.has(rightOp)) {
+          right = this.parseArithmeticChain(right);
+        }
         const jlOp = PROSE_TO_JSONLOGIC_OP[op];
         return { [jlOp]: [arithResult, right] };
       }
@@ -709,4 +724,28 @@ export function parseProse(input: string): ParseResult {
   }
 
   return { success: true, jsonLogic: result, warnings: warnings.length > 0 ? warnings : undefined };
+}
+
+/** Recursively extract all variable paths from a JSONLogic object */
+export function extractVarPaths(jsonLogic: unknown): string[] {
+  const paths: string[] = [];
+  function walk(node: unknown): void {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    if ('var' in obj) {
+      const v = obj['var'];
+      if (typeof v === 'string' && v) paths.push(v);
+      else if (Array.isArray(v) && typeof v[0] === 'string' && v[0]) paths.push(v[0]);
+      return;
+    }
+    for (const key of Object.keys(obj)) {
+      walk(obj[key]);
+    }
+  }
+  walk(jsonLogic);
+  return [...new Set(paths)];
 }

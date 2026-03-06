@@ -29,163 +29,23 @@ import {
   ChangeDetectorRef,
   inject,
 } from '@angular/core';
-import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
-import { json } from '@codemirror/lang-json';
-import { bracketMatching } from '@codemirror/language';
-import { indentWithTab } from '@codemirror/commands';
-import { history } from '@codemirror/commands';
-import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
-import { translateJsonLogicToProse, type ProseMode } from '../../utils/jsonlogic-prose';
+import { NgTemplateOutlet } from '@angular/common';
+import { EditorView } from '@codemirror/view';
+import { translateJsonLogicToProse, isAllSimpleOr, type ProseMode } from '../../utils/jsonlogic-prose';
 import { validateJsonLogic } from '../../utils/jsonlogic-validate';
-import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
-import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
-import { tokenize } from '../../utils/prose-tokenizer';
-import { autocompletion, startCompletion, acceptCompletion, closeCompletion } from '@codemirror/autocomplete';
-import { createProseCompletionSource } from '../../utils/prose-autocomplete';
+import { type ParseResult, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
 import { VariableDictionaryService } from '../../services/variable-dictionary.service';
+import { createProseEditorState, runInitialParse } from '../../utils/prose-editor-setup';
+import { createJsonEditorState } from '../../utils/json-editor-setup';
 
 export type RuleEditorState = 'texte-read' | 'texte-edit' | 'json-read' | 'json-edit';
 
-/** Custom JSON + JSONLogic linter for CodeMirror 6 */
-function jsonLogicLinter(): (view: EditorView) => Diagnostic[] {
-  return (view: EditorView): Diagnostic[] => {
-    const doc = view.state.doc.toString();
-    const trimmed = doc.trim();
-    if (!trimmed) return [];
-    try {
-      JSON.parse(trimmed);
-    } catch (e) {
-      const msg = e instanceof SyntaxError ? e.message : 'JSON invalide';
-      const posMatch = msg.match(/position\s+(\d+)/i);
-      let from = 0;
-      let to = doc.length;
-      if (posMatch) {
-        const leadingWhitespace = doc.length - doc.trimStart().length;
-        from = Math.min(parseInt(posMatch[1], 10) + leadingWhitespace, doc.length);
-        to = Math.min(from + 1, doc.length);
-      }
-      return [{ from, to, severity: 'error', message: msg }];
-    }
-
-    const logicErrors = validateJsonLogic(trimmed);
-    return logicErrors.map((err) => ({
-      from: 0,
-      to: doc.length,
-      severity: 'warning' as const,
-      message: err.message,
-    }));
-  };
-}
-
-/** Custom CM6 theme matching the app's design tokens */
-const ruleFieldTheme = EditorView.theme({
-  '&': {
-    fontSize: '13px',
-    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-    border: '1px solid var(--color-stroke-standard)',
-    borderRadius: '6px',
-    background: 'var(--color-surface-base)',
-  },
-  '&.cm-focused': {
-    outline: 'none',
-    borderColor: 'var(--color-brand, #1400cc)',
-    boxShadow: '0 0 0 3px rgba(20, 0, 204, 0.08)',
-  },
-  '.cm-content': {
-    padding: '8px',
-    caretColor: 'var(--color-text-primary)',
-    color: 'var(--color-text-primary)',
-  },
-  '.cm-gutters': {
-    background: 'var(--color-surface-muted)',
-    borderRight: '1px solid var(--color-stroke-standard)',
-    borderRadius: '6px 0 0 6px',
-    color: 'var(--color-text-tertiary)',
-  },
-  '.cm-activeLine': {
-    background: 'rgba(20, 0, 204, 0.03)',
-  },
-  '.cm-selectionBackground, ::selection': {
-    background: 'rgba(20, 0, 204, 0.08) !important',
-  },
-  '.cm-cursor': {
-    borderLeftColor: 'var(--color-brand, #1400cc)',
-  },
-  '.ͼc': {
-    color: 'var(--color-brand, #1400cc)',
-  },
-  '.cm-lintRange-error': {
-    backgroundImage: 'none',
-    textDecoration: 'underline wavy var(--color-text-error, #dc2626)',
-  },
-  '.cm-diagnostic-error': {
-    borderLeftColor: 'var(--color-text-error, #dc2626)',
-  },
-  '.cm-lintRange-warning': {
-    backgroundImage: 'none',
-    textDecoration: 'underline wavy var(--color-status-warning, #d97706)',
-  },
-  '.cm-diagnostic-warning': {
-    borderLeftColor: 'var(--color-status-warning, #d97706)',
-  },
-});
-
-/** Prose editor theme — neutralizes focus border/shadow for prose CM instances */
-export const proseEditorTheme = EditorView.theme({
-  '&': {
-    fontSize: '13px',
-    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-    border: '1px solid var(--color-stroke-standard)',
-    borderRadius: '6px',
-    background: 'var(--color-surface-base)',
-  },
-  '&.cm-focused': {
-    outline: 'none',
-    borderColor: 'var(--color-stroke-standard)',
-    boxShadow: 'none',
-  },
-  '.cm-content': {
-    padding: '8px',
-    caretColor: 'var(--color-text-primary)',
-    color: 'var(--color-text-primary)',
-    lineHeight: '1.6',
-  },
-  '.cm-cursor': {
-    borderLeftColor: 'var(--color-brand, #1400cc)',
-  },
-  '.cm-selectionBackground, ::selection': {
-    background: 'rgba(20, 0, 204, 0.08) !important',
-  },
-  '.cm-lintRange-error': {
-    backgroundImage: 'none',
-    textDecoration: 'underline wavy var(--color-text-error, #dc2626)',
-  },
-  '.cm-diagnostic-error': {
-    borderLeftColor: 'var(--color-text-error, #dc2626)',
-  },
-  '.cm-lintRange-warning': {
-    backgroundImage: 'none',
-    textDecoration: 'underline wavy var(--color-status-warning, #d97706)',
-  },
-  '.cm-diagnostic-warning': {
-    borderLeftColor: 'var(--color-status-warning, #d97706)',
-  },
-});
-
-/**
- * Convert HTML prose output (from translateJsonLogicToProse) to plain text
- * suitable for the prose CodeMirror editor.
- */
+/** Convert HTML prose output to plain text for the prose CodeMirror editor */
 function proseToPlainText(html: string): string {
   return decodeHtmlEntities(stripHtml(html));
 }
 
-/**
- * Convert bullet-prefixed prose lines to blank-line-separated blocks.
- * Input:  "• condition1 et condition2\n• condition3"
- * Output: "condition1 et condition2\n\ncondition3"
- */
+/** Convert bullet-prefixed prose lines to blank-line-separated blocks */
 function bulletsToBlankLines(prose: string): string {
   const lines = prose.split('\n');
   return lines
@@ -193,33 +53,25 @@ function bulletsToBlankLines(prose: string): string {
     .join('\n\n');
 }
 
-/** Recursively extract all variable paths from a JSONLogic object */
-function extractVarPaths(jsonLogic: unknown): string[] {
-  const paths: string[] = [];
-  function walk(node: unknown): void {
-    if (!node || typeof node !== 'object') return;
-    if (Array.isArray(node)) {
-      node.forEach(walk);
-      return;
-    }
-    const obj = node as Record<string, unknown>;
-    if ('var' in obj) {
-      const v = obj['var'];
-      if (typeof v === 'string' && v) paths.push(v);
-      else if (Array.isArray(v) && typeof v[0] === 'string' && v[0]) paths.push(v[0]);
-      return;
-    }
-    for (const key of Object.keys(obj)) {
-      walk(obj[key]);
-    }
-  }
-  walk(jsonLogic);
-  return [...new Set(paths)];
-}
-
 @Component({
   selector: 'app-rule-field',
+  imports: [NgTemplateOutlet],
   template: `
+    <!-- Reusable prose display block -->
+    <ng-template #proseDisplay let-parts>
+      <em class="tk-pfx">{{ parts.prefix }}</em>
+      @if (parts.content) {
+        <span [innerHTML]="parts.content"></span>
+      }
+      @if (parts.branches) {
+        <ul class="rule-or-list">
+          @for (branch of parts.branches; track branch) {
+            <li [innerHTML]="branch"></li>
+          }
+        </ul>
+      }
+    </ng-template>
+
     <div class="rule-field" [class.has-error]="hasBlockingErrors()">
       <div class="rule-field-header">
         <span class="rule-field-label">{{ label() }}</span>
@@ -235,17 +87,7 @@ function extractVarPaths(jsonLogic: unknown): string[] {
         @if (parts) {
           <div class="prose-read-zone" (click)="enterTexteEdit()">
             <button class="prose-edit-btn" type="button">Modifier</button>
-            <em class="tk-pfx">{{ parts.prefix }}</em>
-            @if (parts.content) {
-              <span [innerHTML]="parts.content"></span>
-            }
-            @if (parts.branches) {
-              <ul class="rule-or-list">
-                @for (branch of parts.branches; track branch) {
-                  <li [innerHTML]="branch"></li>
-                }
-              </ul>
-            }
+            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
           </div>
         }
       }
@@ -271,17 +113,7 @@ function extractVarPaths(jsonLogic: unknown): string[] {
         @let parts = proseParts();
         @if (parts) {
           <div class="prose-mirror read-only">
-            <em class="tk-pfx">{{ parts.prefix }}</em>
-            @if (parts.content) {
-              <span [innerHTML]="parts.content"></span>
-            }
-            @if (parts.branches) {
-              <ul class="rule-or-list">
-                @for (branch of parts.branches; track branch) {
-                  <li [innerHTML]="branch"></li>
-                }
-              </ul>
-            }
+            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
           </div>
         }
         <pre class="json-read-zone" (click)="enterJsonEdit()">{{ formattedJson() }}</pre>
@@ -292,17 +124,7 @@ function extractVarPaths(jsonLogic: unknown): string[] {
         @let parts = jsonEditProseParts();
         @if (parts) {
           <div class="prose-mirror read-only">
-            <em class="tk-pfx">{{ parts.prefix }}</em>
-            @if (parts.content) {
-              <span [innerHTML]="parts.content"></span>
-            }
-            @if (parts.branches) {
-              <ul class="rule-or-list">
-                @for (branch of parts.branches; track branch) {
-                  <li [innerHTML]="branch"></li>
-                }
-              </ul>
-            }
+            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
           </div>
         }
         @if (errorMessage()) {
@@ -530,12 +352,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     const jl = result.jsonLogic as Record<string, unknown>;
     if (jl && typeof jl === 'object' && 'or' in jl && Array.isArray(jl['or'])) {
       const branches = jl['or'] as unknown[];
-      // Bare variable OR (truthiness check) counts as a single condition
-      const allSimple = branches.every((a) =>
-        !a || typeof a !== 'object' || Array.isArray(a) ||
-        'var' in (a as Record<string, unknown>),
-      );
-      return allSimple ? 1 : branches.length;
+      return isAllSimpleOr(branches) ? 1 : branches.length;
     }
     return 1;
   });
@@ -559,9 +376,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   private proseCmHost = viewChild<ElementRef<HTMLElement>>('proseCmHost');
   private editorView: EditorView | null = null;
   private proseEditorView: EditorView | null = null;
+  private proseCleanup: (() => void) | null = null;
   private suppressEmit = false;
   private initialized = false;
-  private parseTimeout: ReturnType<typeof setTimeout> | null = null;
   private cdr = inject(ChangeDetectorRef);
   private variableDictionary = inject(VariableDictionaryService);
 
@@ -666,6 +483,8 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           this.proseEditorView.destroy();
           this.proseEditorView = null;
         }
+        this.proseCleanup?.();
+        this.proseCleanup = null;
         this.parseResult.set(null);
       }
     });
@@ -722,213 +541,59 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
 
   private initProseEditor(): void {
     const host = this.proseCmHost();
-    if (!host) return;
-    if (this.proseEditorView) return;
+    if (!host || this.proseEditorView) return;
 
     const doc = this.jsonLogicToProseText();
 
-    const updateListener = EditorView.updateListener.of((update) => {
-      if (update.docChanged) {
-        if (this.parseTimeout) clearTimeout(this.parseTimeout);
-        this.parseTimeout = setTimeout(() => {
-          const text = update.state.doc.toString();
-          if (!text.trim()) {
-            this.parseResult.set(null);
-            this.unknownVarCount.set(0);
-          } else {
-            const result = parseProse(text);
-            this.parseResult.set(result);
-            // Count unknown variables (only when indicators have loaded)
-            if (result.success) {
-              const varPaths = extractVarPaths(result.jsonLogic);
-              const knownPaths = new Set(this.variables().map((v) => v.path));
-              const unknowns = this.hasIndicators()
-                ? varPaths.filter((p) => !knownPaths.has(p))
-                : [];
-              this.unknownVarCount.set(unknowns.length);
-            } else {
-              this.unknownVarCount.set(0);
-            }
-          }
-        }, 300);
-      }
-      // Blur handling
-      if (update.focusChanged && !update.view.hasFocus) {
-        const text = update.view.state.doc.toString().trim();
-        if (!text) {
-          this.valueChange.emit('');
-          this.validChange.emit(true);
-          // Stay in texte-edit so the placeholder remains visible and clickable
-          return;
-        }
-        // Run parser immediately on blur (skip debounce)
-        const result = parseProse(text);
-        this.parseResult.set(result);
-        if (result.success) {
-          // Valid + any warnings → save and transition (warnings don't block)
-          const jsonStr = JSON.stringify(result.jsonLogic);
-          this.committedValue.set(jsonStr);
-          this.valueChange.emit(jsonStr);
-          this.validChange.emit(true);
-          // Defer state change to avoid destroying the editor mid-callback
+    const { state, cleanup } = createProseEditorState({
+      doc,
+      variables: this.variables,
+      hasIndicators: this.hasIndicators,
+      callbacks: {
+        onParseResult: (r) => this.parseResult.set(r),
+        onUnknownVarCount: (n) => this.unknownVarCount.set(n),
+        onSave: (jsonStr) => this.committedValue.set(jsonStr),
+        onValueChange: (val) => this.valueChange.emit(val),
+        onValidChange: (valid) => this.validChange.emit(valid),
+        onTransitionToRead: () => {
           setTimeout(() => {
             this.editorState.set('texte-read');
             this.cdr.detectChanges();
           }, 0);
-        }
-        // If errors → stay in texte-edit, errors remain visible
-      }
+        },
+      },
     });
+    this.proseCleanup = cleanup;
 
-    // Prose linter: inline error marks and unknown variable warnings
-    const proseLint = linter((view: EditorView): Diagnostic[] => {
-      const text = view.state.doc.toString().trim();
-      if (!text) return [];
+    this.proseEditorView = new EditorView({ state, parent: host.nativeElement });
+    this.proseEditorView.dispatch({ selection: { anchor: doc.length } });
 
-      const diagnostics: Diagnostic[] = [];
-      const result = parseProse(text);
-
-      if (!result.success) {
-        // Filter out end-of-input errors (incomplete expressions being typed)
-        const realErrors = result.errors.filter((e) => !e.atEnd);
-        for (const error of realErrors) {
-          diagnostics.push({
-            from: error.start,
-            to: Math.max(error.end, error.start + 1),
-            severity: 'error',
-            message: error.message,
-          });
-        }
-      } else {
-        // Unknown variable warnings (only when indicators have loaded successfully)
-        const varPaths = extractVarPaths(result.jsonLogic);
-        const knownPaths = new Set(this.variables().map((v) => v.path));
-        if (this.hasIndicators()) {
-          const tokens = tokenize(text);
-          for (const varPath of varPaths) {
-            if (!knownPaths.has(varPath)) {
-              const varToken = tokens.find((t) => t.type === 'variable' && t.value === varPath);
-              if (varToken) {
-                diagnostics.push({
-                  from: varToken.start,
-                  to: varToken.end,
-                  severity: 'warning',
-                  message: `Variable inconnue : '${varPath}'`,
-                });
-              }
-            }
-          }
-        }
-      }
-
-      return diagnostics;
-    }, { delay: 300 });
-
-    const startState = EditorState.create({
-      doc,
-      extensions: [
-        proseLanguageExtension,
-        bracketMatching(),
-        EditorView.lineWrapping,
-        history(),
-        cmPlaceholder("Saisir une règle… ex : statut fait partie de ['actif']"),
-        proseEditorTheme,
-        proseLint,
-        autocompletion({
-          override: [createProseCompletionSource(this.variables)],
-          activateOnTyping: true,
-          icons: false,
-        }),
-        keymap.of([
-          { key: 'Tab', run: acceptCompletion },
-          { key: 'Enter', run: closeCompletion },
-        ]),
-        EditorView.domEventHandlers({
-          focus: (_event, view) => { startCompletion(view); },
-          click: (_event, view) => { startCompletion(view); },
-        }),
-        updateListener,
-      ],
+    runInitialParse(doc, this.variables, this.hasIndicators, {
+      onParseResult: (r) => this.parseResult.set(r),
+      onUnknownVarCount: (n) => this.unknownVarCount.set(n),
     });
-
-    this.proseEditorView = new EditorView({
-      state: startState,
-      parent: host.nativeElement,
-    });
-
-    // Position cursor at end
-    this.proseEditorView.dispatch({
-      selection: { anchor: doc.length },
-    });
-    this.proseEditorView.focus();
-
-    // Run initial parse if there's content
-    if (doc.trim()) {
-      const result = parseProse(doc);
-      this.parseResult.set(result);
-      if (result.success) {
-        const varPaths = extractVarPaths(result.jsonLogic);
-        const knownPaths = new Set(this.variables().map((v) => v.path));
-        const unknowns = this.hasIndicators()
-          ? varPaths.filter((p) => !knownPaths.has(p))
-          : [];
-        this.unknownVarCount.set(unknowns.length);
-      }
-    }
   }
 
   private initJsonEditor(): void {
     const host = this.editorHost();
-    if (!host) return;
+    if (!host || this.editorView) return;
 
-    // Avoid double-init
-    if (this.editorView) return;
+    const formattedDoc = this.formattedJson() || this.value();
 
-    const jsonLint = linter(jsonLogicLinter(), { delay: 300 });
-
-    const updateListener = EditorView.updateListener.of((update) => {
-      if (update.docChanged && !this.suppressEmit) {
-        const val = update.state.doc.toString();
-        this.valueChange.emit(val);
-        this.validateJson(val);
-        this.jsonEditorValue.set(val);
-      }
-      // Blur → json-read
-      if (update.focusChanged && !update.view.hasFocus) {
-        const val = update.view.state.doc.toString().trim();
-        if (val) {
-          try {
-            JSON.parse(val);
-            this.editorState.set('json-read');
-          } catch {
-            // Invalid JSON — stay in json-edit
-          }
-        }
-      }
+    const state = createJsonEditorState({
+      doc: formattedDoc,
+      placeholder: this.placeholder(),
+      suppressEmit: () => this.suppressEmit,
+      callbacks: {
+        onValueChange: (val) => this.valueChange.emit(val),
+        onValidate: (val) => this.validateJson(val),
+        onJsonEditorValue: (val) => this.jsonEditorValue.set(val),
+        onBlurValid: () => this.editorState.set('json-read'),
+      },
     });
 
-    const startState = EditorState.create({
-      doc: this.value(),
-      extensions: [
-        json(),
-        bracketMatching(),
-        keymap.of([indentWithTab]),
-        jsonLint,
-        lintGutter(),
-        ruleFieldTheme,
-        cmPlaceholder(this.placeholder()),
-        updateListener,
-        EditorView.lineWrapping,
-      ],
-    });
-
-    this.editorView = new EditorView({
-      state: startState,
-      parent: host.nativeElement,
-    });
-
-    // Initialize live prose mirror value
-    this.jsonEditorValue.set(this.value());
+    this.editorView = new EditorView({ state, parent: host.nativeElement });
+    this.jsonEditorValue.set(formattedDoc);
   }
 
   ngOnDestroy(): void {
@@ -936,7 +601,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     this.editorView = null;
     this.proseEditorView?.destroy();
     this.proseEditorView = null;
-    if (this.parseTimeout) clearTimeout(this.parseTimeout);
+    this.proseCleanup?.();
   }
 
   private buildProseParts(prose: string | null) {

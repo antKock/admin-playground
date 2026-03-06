@@ -187,11 +187,7 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
     // OR: bullet format only at top level when children are complex conditions;
     // inline with parentheses for simple operands (variable truthiness checks)
     if (topLevel && parts.length > 1) {
-      const allSimple = args.every((a) =>
-        !a || typeof a !== 'object' || Array.isArray(a) ||
-        'var' in (a as Record<string, unknown>),
-      );
-      if (!allSimple) {
+      if (!isAllSimpleOr(args as unknown[])) {
         return parts.map((p) => `• ${p}`).join('\n');
       }
     }
@@ -369,6 +365,19 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
   // would be confusing. Users can author reduce rules in JSON mode.
 
   return null;
+}
+
+/**
+ * Returns true when every branch of an OR node is a simple operand
+ * (literal, array, or bare variable) — i.e. a truthiness check, not a
+ * complex condition.  Used to decide between bullet layout and inline
+ * parenthesised rendering.
+ */
+export function isAllSimpleOr(branches: unknown[]): boolean {
+  return branches.every((a) =>
+    !a || typeof a !== 'object' || Array.isArray(a) ||
+    'var' in (a as Record<string, unknown>),
+  );
 }
 
 export function translateJsonLogicToProse(jsonString: string, mode: ProseMode = 'condition'): string | null {

@@ -18,28 +18,39 @@ This subsystem lets users author and read JSONLogic rules in natural French pros
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    rule-field.component.ts                       │
-│              (orchestrator — 4-state machine)                    │
+│              (thin orchestrator — 4-state machine)               │
 │   texte-read ←→ texte-edit ←→ json-read ←→ json-edit           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌──────────────────┐     ┌──────────────────────────────────┐  │
-│  │  jsonlogic-prose  │     │  prose-tokenizer + prose-parser  │  │
-│  │  JSON → HTML      │     │  plain text → Token[] → JSON    │  │
-│  └────────┬─────────┘     └──────────┬───────────────────────┘  │
-│           │                          │                          │
-│           │   ┌──────────────────────┤                          │
-│           │   │                      │                          │
-│  ┌────────▼───▼────────┐  ┌─────────▼──────────────────────┐   │
-│  │ prose-codemirror-    │  │  prose-autocomplete            │   │
-│  │ language             │  │  context-aware completions     │   │
-│  │ (StreamParser for    │  │  (variables, operators,        │   │
-│  │  syntax highlighting)│  │   connectors)                  │   │
-│  └─────────────────────┘  └─────────┬──────────────────────┘   │
-│                                     │                          │
-│  ┌──────────────────┐    ┌──────────▼──────────────────────┐   │
-│  │ jsonlogic-validate│    │  variable-dictionary.service    │   │
-│  │ structural linter │    │  API → ProseVariable[]          │   │
-│  └──────────────────┘    └─────────────────────────────────┘   │
+│  ┌────────────────────────────┐  ┌───────────────────────────┐  │
+│  │  prose-editor-setup        │  │  json-editor-setup        │  │
+│  │  (EditorState factory +    │  │  (EditorState factory +   │  │
+│  │   parse/lint/autocomplete) │  │   JSON lint + blur logic) │  │
+│  └─────────────┬──────────────┘  └──────────┬────────────────┘  │
+│                │                             │                  │
+│       ┌────────┴────────────────┐   ┌───────┴───────────┐      │
+│       │                         │   │                   │      │
+│  ┌────▼─────────┐  ┌───────────▼───▼──────────────────┐ │      │
+│  │jsonlogic-prose│  │codemirror-themes                 │ │      │
+│  │JSON → HTML    │  │(shared base + json/prose themes) │ │      │
+│  └────┬─────────┘  └──────────────────────────────────┘ │      │
+│       │                                                  │      │
+│  ┌────▼───────────────────┐  ┌───────────────────────┐   │      │
+│  │prose-tokenizer +       │  │prose-autocomplete     │   │      │
+│  │prose-parser             │  │context-aware          │   │      │
+│  │(text → Token[] → JSON) │  │completions            │   │      │
+│  └────────┬───────────────┘  └───────────┬───────────┘   │      │
+│           │                              │               │      │
+│  ┌────────▼────────────┐   ┌─────────────▼───────────┐   │      │
+│  │prose-codemirror-     │   │variable-dictionary      │   │      │
+│  │language (StreamParser│   │.service                 │   │      │
+│  │for highlighting)     │   │API → ProseVariable[]    │   │      │
+│  └─────────────────────┘   └─────────────────────────┘   │      │
+│                                                          │      │
+│  ┌──────────────────┐                                    │      │
+│  │jsonlogic-validate│────────────────────────────────────┘      │
+│  │structural linter │                                           │
+│  └──────────────────┘                                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,14 +58,17 @@ This subsystem lets users author and read JSONLogic rules in natural French pros
 
 | File | Role |
 |------|------|
+| `shared/components/rule-field/rule-field.component.ts` | Thin orchestrator — 4-state machine, template, callbacks. Delegates editor setup to factories |
+| `shared/utils/prose-editor-setup.ts` | Factory: creates prose `EditorState` with language, linting, autocomplete, debounced parsing, blur-to-save |
+| `shared/utils/json-editor-setup.ts` | Factory: creates JSON `EditorState` with JSON language, JSONLogic linter, blur-to-read |
+| `shared/utils/codemirror-themes.ts` | Shared CM6 theme definitions (base styles + json/prose variants) |
 | `shared/utils/jsonlogic-prose.ts` | Translates JSONLogic JSON → French HTML prose with semantic `<span>` tokens |
 | `shared/utils/jsonlogic-validate.ts` | Validates JSONLogic structure (operators, shape) — not JSON syntax |
 | `shared/utils/prose-tokenizer.ts` | Tokenizes plain-text prose into `Token[]` for the parser. Also exports keyword/operator constants shared by the CodeMirror highlighter |
-| `shared/utils/prose-parser.ts` | Recursive descent parser: plain-text prose → JSONLogic JSON |
+| `shared/utils/prose-parser.ts` | Recursive descent parser: plain-text prose → JSONLogic JSON. Also exports `extractVarPaths()` for variable extraction from JSONLogic AST |
 | `shared/utils/prose-codemirror-language.ts` | CodeMirror `StreamParser` for syntax highlighting in the prose editor |
-| `shared/utils/prose-autocomplete.ts` | CodeMirror `CompletionSource` — suggests variables, operators, connectors based on cursor context |
+| `shared/utils/prose-autocomplete.ts` | CodeMirror `CompletionSource` — token-based context detection, suggests variables, operators, connectors |
 | `shared/services/variable-dictionary.service.ts` | Fetches indicator models + entity properties from API, builds `ProseVariable[]` |
-| `shared/components/rule-field/rule-field.component.ts` | Orchestrator component — manages 4-state UI, two CodeMirror instances, emits `valueChange`/`validChange` |
 
 ## Key Design Decisions
 
@@ -85,6 +99,14 @@ The `reduce` operator is accepted by `jsonlogic-validate.ts` but has no prose tr
 ### 6. Depth guard
 
 `MAX_DEPTH = 8` in `jsonlogic-prose.ts` prevents stack overflow on pathological or circular-like deeply nested rules. The translator returns `null` (untranslatable) rather than crashing.
+
+### 7. Extracted editor factories (separation of concerns)
+
+CodeMirror editor configuration is extracted into two factory modules (`prose-editor-setup.ts`, `json-editor-setup.ts`) and a shared theme file (`codemirror-themes.ts`). The component provides thin callback wrappers — all CM extension wiring, linting, autocomplete, and blur logic lives in the factories. This keeps the component focused on state machine orchestration and template rendering.
+
+### 8. Token-based autocomplete context detection
+
+`prose-autocomplete.ts` uses `extractTokens()` + `Set` lookups (O(1) per check) to determine the cursor context phase (variable / operator / connector). Multi-word operators like `fait partie de` are preserved as single tokens during extraction.
 
 ## State Machine (RuleFieldComponent)
 
@@ -192,10 +214,11 @@ The prose HTML output uses these span classes for syntax coloring:
 
 ## Testing Strategy
 
-- **`jsonlogic-prose.spec.ts`** (45 tests): Every operator, edge case, and mode
+- **`jsonlogic-prose.spec.ts`** (46 tests): Every operator, edge case, and mode
 - **`prose-parser.spec.ts`** (72 tests): Direct parsing + **27 round-trip tests** (JSON → prose → JSON)
 - **`jsonlogic-validate.spec.ts`** (13 tests): All operators, rejection cases
 - **`prose-codemirror-language.spec.ts`** (44 tests): Stream parser token output
-- **`prose-autocomplete.spec.ts`** (22 tests): Context detection + completion source
+- **`prose-autocomplete.spec.ts`** (27 tests): Token-based context detection + completion source
+- **`prose-tokenizer.spec.ts`** (81 tests): Tokenizer coverage for all token types and edge cases
 - **`variable-dictionary.service.spec.ts`** (16 tests): HTTP integration, caching, error handling
 - **`rule-field.component.spec.ts`** (46 tests): State machine, template rendering, mode switching

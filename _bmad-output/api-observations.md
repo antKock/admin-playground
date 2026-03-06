@@ -253,6 +253,16 @@ Up to you to find an agreement with backend dev. |
 - **Priority:** P2 MEDIUM
 - **Status:** NO-BRAINER — add filter param
 
+## Epic 7 Observations (Prose Editor)
+
+### Linked Entity Schemas Hardcoded in Variable Dictionary
+
+- **Observation:** `VariableDictionaryService` (lines 83-131) hardcodes linked entity schemas (community, beneficiaries, folder, community_creator, community_holder) with their property names and types. No API endpoint provides this metadata dynamically.
+- **Impact:** When a new linked entity type or property is added to the backend, the frontend variable dictionary will silently miss it — no autocomplete, no linting, no prose variable suggestions for the new fields.
+- **Suggestion:** Either (a) expose a metadata/schema endpoint (`GET /models/{type}/schema` or similar) that returns available properties per entity type, or (b) accept the hardcoded approach and document the sync requirement clearly (current choice).
+- **Priority:** P3 LOW — current hardcoded approach works for v1, entity schemas are stable
+- **Status:** ACKNOWLEDGED — revisit if entity schemas start changing frequently
+
 ---
 
 *Add new observations below as they arise during development.*
