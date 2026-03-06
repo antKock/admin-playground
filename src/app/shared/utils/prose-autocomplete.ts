@@ -64,7 +64,47 @@ const ARITHMETIC_COMPLETIONS: Completion[] = [
 ];
 
 /**
+ * Extract whitespace-delimited tokens from text, preserving multi-word operators.
+ * Returns tokens in order. Multi-word operators like "fait partie de" are kept as one token.
+ */
+function extractTokens(text: string): string[] {
+  const tokens: string[] = [];
+  const multiWordOps = ['ne contient pas', 'fait partie de'];
+
+  let remaining = text;
+  while (remaining.length > 0) {
+    remaining = remaining.trimStart();
+    if (!remaining) break;
+
+    // Try multi-word operator match
+    let matched = false;
+    for (const mw of multiWordOps) {
+      if (remaining.startsWith(mw)) {
+        const after = remaining[mw.length];
+        if (!after || /\s/.test(after)) {
+          tokens.push(mw);
+          remaining = remaining.slice(mw.length);
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (matched) continue;
+
+    // Single token (up to next whitespace)
+    const match = remaining.match(/^(\S+)/);
+    if (match) {
+      tokens.push(match[1]);
+      remaining = remaining.slice(match[1].length);
+    }
+  }
+  return tokens;
+}
+
+/**
  * Determines the context "phase" from text before the cursor.
+ *
+ * Uses token extraction + Set lookups (O(1)) instead of per-variable regex (O(n*m)).
  *
  * Returns:
  *  - 'variable'   → show variables + expressions
@@ -78,72 +118,72 @@ export function detectContext(
 ): { phase: 'variable' | 'operator' | 'connector'; variableName?: string } | null {
   const trimmed = textBefore.trimEnd();
 
-  // Empty or nothing typed yet → variable context
+  // Empty → variable context
   if (!trimmed) {
     return { phase: 'variable' };
   }
 
-  // After a connector (et / ou) at end → variable context
-  if (/\b(?:et|ou)\s*$/.test(trimmed)) {
+  const tokens = extractTokens(trimmed);
+  if (tokens.length === 0) {
     return { phase: 'variable' };
   }
 
-  // Build a set of variable paths for lookup
   const variablePaths = new Set(variables.map((v) => v.path));
+  const lastToken = tokens[tokens.length - 1];
+  const prevToken = tokens.length >= 2 ? tokens[tokens.length - 2] : null;
 
-  // Check if text ends with a known variable name → operator context
-  for (const path of variablePaths) {
-    // Variable at end of trimmed text, preceded by start-of-string or whitespace
-    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(`(?:^|\\s)${escaped}\\s*$`);
-    if (re.test(trimmed)) {
-      return { phase: 'operator', variableName: path };
-    }
+  // After a connector (et / ou) → variable context
+  if (lastToken === 'et' || lastToken === 'ou') {
+    return { phase: 'variable' };
   }
 
-  // Check if text ends with a known operator (after a variable) → variable context (value side)
-  for (const path of variablePaths) {
-    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    for (const op of ALL_OPERATORS) {
-      const opEscaped = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Pattern: variable operator (no value yet) → suggest variables for right-hand side
-      const reNoValue = new RegExp(`(?:^|\\s)${escaped}\\s+${opEscaped}\\s*$`);
-      if (reNoValue.test(trimmed)) {
-        return { phase: 'variable' };
-      }
-      // Pattern: variable operator value (value = at least one non-whitespace token after the operator)
-      const re = new RegExp(`(?:^|\\s)${escaped}\\s+${opEscaped}\\s+\\S+.*$`);
-      if (re.test(trimmed)) {
+  // Last token is a known variable → operator context
+  if (variablePaths.has(lastToken)) {
+    return { phase: 'operator', variableName: lastToken };
+  }
+
+  // Last token is a known operator and prev is a variable → variable context (right-hand side)
+  if (ALL_OPERATORS.has(lastToken) && prevToken && variablePaths.has(prevToken)) {
+    return { phase: 'variable' };
+  }
+
+  // Last token is a known operator (standalone, e.g. after another operator's value)
+  if (ALL_OPERATORS.has(lastToken)) {
+    return { phase: 'variable' };
+  }
+
+  // After arithmetic operator → variable context
+  if (/^[+\-*/×÷]$/.test(lastToken) || lastToken === 'modulo') {
+    return { phase: 'variable' };
+  }
+
+  // After a number → connector context
+  if (/^\d+(?:\.\d+)?$/.test(lastToken)) {
+    return { phase: 'connector' };
+  }
+
+  // Check for complete condition: variable operator value → connector
+  if (tokens.length >= 3) {
+    // Walk backwards: check if there's a variable + operator + value pattern ending at tokens
+    for (let i = tokens.length - 1; i >= 2; i--) {
+      const opCandidate = tokens[i - 1];
+      const varCandidate = tokens[i - 2];
+      if (variablePaths.has(varCandidate) && ALL_OPERATORS.has(opCandidate)) {
         return { phase: 'connector' };
       }
     }
   }
 
-  // Check if text ends with an arithmetic operator → variable context (next operand)
-  if (/[+\-*/]\s*$/.test(trimmed) || /\bmodulo\s*$/i.test(trimmed)) {
-    return { phase: 'variable' };
-  }
-
-  // After a number → connector context (allows arithmetic operators too)
-  if (/\b\d+(?:\.\d+)?\s*$/.test(trimmed)) {
-    return { phase: 'connector' };
-  }
-
-  // If typing a partial word that could be a variable prefix → variable context
+  // Partial word being typed → check if it matches variables or expressions
   const partialMatch = trimmed.match(/(?:^|\s)(\S+)$/);
   if (partialMatch) {
     const partial = partialMatch[1].toLowerCase();
-    // Check if partial matches any variable prefix
-    const matchesVariable = variables.some((v) => v.path.toLowerCase().includes(partial));
-    if (matchesVariable) {
+    if (variables.some((v) => v.path.toLowerCase().includes(partial))) {
       return { phase: 'variable' };
     }
-    // Check if partial matches an expression label substring
-    const matchesExpression = EXPRESSION_COMPLETIONS.some((e) => e.label.toLowerCase().includes(partial));
-    if (matchesExpression) {
+    if (EXPRESSION_COMPLETIONS.some((e) => e.label.toLowerCase().includes(partial))) {
       return { phase: 'variable' };
     }
-    // Check if partial matches a connector prefix
     if ('et'.startsWith(partial) || 'ou'.startsWith(partial)) {
       return { phase: 'connector' };
     }
