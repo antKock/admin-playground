@@ -694,7 +694,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     const html = translateJsonLogicToProse(val, this.mode());
     if (!html) return '';
     const plain = proseToPlainText(html);
-    return bulletsToBlankLines(plain);
+    // In condition mode, convert OR bullets to blank-line-separated blocks.
+    // In value mode, keep bullets — the parser needs them for • Si … ⇒ … syntax.
+    return this.mode() === 'value' ? plain : bulletsToBlankLines(plain);
   }
 
   private initProseEditor(): void {

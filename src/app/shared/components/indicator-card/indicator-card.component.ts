@@ -87,6 +87,8 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             @if (isOverridden('required_rule')) {
               <app-rule-field
                 [value]="isCustomRule(params().required_rule) ? params().required_rule! : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
                 (valueChange)="onRuleChange('required_rule', $event)"
               />
             }
@@ -103,6 +105,8 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             @if (isOverridden('editable_rule')) {
               <app-rule-field
                 [value]="isCustomRule(params().editable_rule) ? params().editable_rule! : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
                 (valueChange)="onRuleChange('editable_rule', $event)"
               />
             }
@@ -119,6 +123,8 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             @if (isOverridden('visibility_rule')) {
               <app-rule-field
                 [value]="isCustomRule(params().visibility_rule) ? params().visibility_rule! : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
                 (valueChange)="onRuleChange('visibility_rule', $event)"
               />
             }
@@ -136,6 +142,8 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
               <app-rule-field
                 mode="value"
                 [value]="params().default_value_rule ?? ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
                 (valueChange)="onDefaultValueInput($event)"
               />
             }
@@ -293,6 +301,8 @@ export class IndicatorCardComponent {
   readonly indicator = input.required<IndicatorCardData>();
   readonly params = input.required<IndicatorParams>();
   readonly modified = input(false);
+  readonly modelType = input<'action' | 'folder'>();
+  readonly modelId = input<string>();
 
   readonly remove = output<string>();
   readonly paramsChange = output<IndicatorParams>();
