@@ -154,7 +154,10 @@ export class VariableDictionaryService {
   }
 
   private buildVariables$(modelType: 'action' | 'folder', modelId: string): Observable<ProseVariable[]> {
-    const indicators$ = this.fetchAllIndicators$();
+    // Use server-side filtering for action models; fetch all indicators for folder models
+    const indicators$ = modelType === 'action'
+      ? this.fetchIndicators$(modelId)
+      : this.fetchIndicators$();
     const entity$ = modelType === 'action'
       ? this.fetchActionModel$(modelId)
       : this.fetchFolderModel$(modelId);
@@ -163,17 +166,8 @@ export class VariableDictionaryService {
       map(([indicators, entity]) => {
         const vars: ProseVariable[] = [];
 
-        // Build set of indicator IDs linked to this model (for filtering "Indicateurs directs")
-        const linkedIndicatorIds = new Set<string>();
-        if (entity && modelType === 'action') {
-          for (const im of (entity as ActionModel).indicator_models ?? []) {
-            linkedIndicatorIds.add(im.id);
-          }
-        }
-
-        // Root-level indicator variables — only those linked to this model
+        // Root-level indicator variables (already filtered server-side for action models)
         for (const im of indicators) {
-          if (linkedIndicatorIds.size > 0 && !linkedIndicatorIds.has(im.id)) continue;
           vars.push({
             path: im.technical_label,
             type: mapIndicatorType(im.type),
@@ -240,11 +234,14 @@ export class VariableDictionaryService {
     );
   }
 
-  private fetchAllIndicators$(): Observable<IndicatorModel[]> {
+  private fetchIndicators$(actionModelId?: string): Observable<IndicatorModel[]> {
     const fetchPage = (cursor: string | null): Observable<PaginatedResponse<IndicatorModel>> => {
       let params = new HttpParams().set('limit', String(INDICATOR_PAGE_SIZE));
       if (cursor) {
         params = params.set('cursor', cursor);
+      }
+      if (actionModelId) {
+        params = params.set('action_model_id', actionModelId);
       }
       return this.http.get<PaginatedResponse<IndicatorModel>>(INDICATOR_MODELS_URL, { params });
     };

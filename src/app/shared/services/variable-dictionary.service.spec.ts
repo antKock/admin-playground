@@ -40,9 +40,10 @@ function makeIndicator(overrides: Partial<IndicatorModel> = {}): IndicatorModel 
 }
 
 /** Flush a single-page indicator response (no next page). */
-function flushIndicators(httpTesting: HttpTestingController, indicators: IndicatorModel[]) {
+function flushIndicators(httpTesting: HttpTestingController, indicators: IndicatorModel[], actionModelId?: string) {
   const req = httpTesting.expectOne(
-    (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100',
+    (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100'
+      && (actionModelId ? r.params.get('action_model_id') === actionModelId : !r.params.has('action_model_id')),
   );
   req.flush({
     data: indicators,
@@ -118,19 +119,19 @@ describe('VariableDictionaryService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should only include model-linked indicators as root-level (Indicateurs directs)', () => {
-    const indicators: IndicatorModel[] = [
+  it('should use server-side filtering for action model indicators', () => {
+    // Server returns only indicators linked to this action model
+    const linkedIndicators: IndicatorModel[] = [
       makeIndicator({ id: 'im-1', technical_label: 'montant_ht', type: 'number' }),
-      makeIndicator({ id: 'im-2', technical_label: 'commentaire', type: 'text' }),
       makeIndicator({ id: 'im-3', technical_label: 'score', type: 'number' }),
     ];
 
     const sig = service.getVariables('action', 'am-1');
     expect(sig()).toEqual([]);
 
-    flushIndicators(httpTesting, indicators);
+    // Indicator request should include action_model_id filter
+    flushIndicators(httpTesting, linkedIndicators, 'am-1');
 
-    // Only im-1 and im-3 are linked to this model
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`).flush({
       id: 'am-1',
       name: 'Test Action Model',
@@ -148,16 +149,16 @@ describe('VariableDictionaryService', () => {
     });
 
     const vars = sig();
-    // Root-level indicators: only linked ones (im-1, im-3)
+    // Root-level indicators: server-filtered (im-1, im-3 only)
     const rootIndicators = vars.filter((v) => v.source === 'indicator' && v.group === '');
     expect(rootIndicators.length).toBe(2);
     expect(rootIndicators.map((v) => v.path)).toEqual(['montant_ht', 'score']);
 
-    // Object-scoped indicators: ALL indicators (action.xxx)
+    // Object-scoped indicators: same filtered set (action.xxx)
     const objectIndicators = vars.filter((v) => v.source === 'indicator' && v.group === 'action');
-    expect(objectIndicators.length).toBe(3);
+    expect(objectIndicators.length).toBe(2);
     expect(objectIndicators.map((v) => v.path)).toEqual([
-      'action.montant_ht', 'action.commentaire', 'action.score',
+      'action.montant_ht', 'action.score',
     ]);
   });
 
@@ -171,9 +172,10 @@ describe('VariableDictionaryService', () => {
 
     const sig = service.getVariables('action', 'am-pag');
 
-    // First page — has_next_page: true
+    // First page — has_next_page: true (filtered by action_model_id)
     const req1 = httpTesting.expectOne(
-      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100' && !r.params.has('cursor'),
+      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100'
+        && r.params.get('action_model_id') === 'am-pag' && !r.params.has('cursor'),
     );
     req1.flush({
       data: page1Indicators,
@@ -203,7 +205,6 @@ describe('VariableDictionaryService', () => {
     });
 
     const vars = sig();
-    // No indicator_models on entity → all indicators appear as root-level
     const rootIndicators = vars.filter((v) => v.source === 'indicator' && v.group === '');
     expect(rootIndicators.length).toBe(2);
     expect(rootIndicators.map((v) => v.path)).toEqual(['score', 'label']);
@@ -217,8 +218,8 @@ describe('VariableDictionaryService', () => {
   it('should prefix entity properties with model type group', () => {
     const sig = service.getVariables('action', 'am-2');
 
-    // Respond to indicator models
-    flushIndicators(httpTesting, []);
+    // Respond to indicator models (filtered by action_model_id)
+    flushIndicators(httpTesting, [], 'am-2');
 
     // Respond to action model with simple properties
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-2`).flush({
@@ -304,7 +305,7 @@ describe('VariableDictionaryService', () => {
     expect(sig1).toBe(sig2);
 
     // Only one set of HTTP requests should be made
-    flushIndicators(httpTesting, []);
+    flushIndicators(httpTesting, [], 'am-cache');
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-cache`).flush({
       id: 'am-cache',
       name: 'Cached',
@@ -323,12 +324,9 @@ describe('VariableDictionaryService', () => {
     const sig2 = service.getVariables('folder', 'fm-1');
     expect(sig1).not.toBe(sig2);
 
-    // Flush both sets of requests
-    const indicatorReqs = httpTesting.match(
-      (req) => req.url === INDICATOR_MODELS_URL && req.params.get('limit') === '100',
-    );
-    expect(indicatorReqs.length).toBe(2);
-    indicatorReqs.forEach((req) => req.flush({ data: [], pagination: mockPagination }));
+    // Action model request has action_model_id filter; folder model request does not
+    flushIndicators(httpTesting, [], 'am-1');
+    flushIndicators(httpTesting, []);
 
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`).flush({
       id: 'am-1', name: 'AM', description: null,
@@ -350,7 +348,7 @@ describe('VariableDictionaryService', () => {
 
     const sig = service.getVariables('action', 'am-linked');
 
-    flushIndicators(httpTesting, indicators);
+    flushIndicators(httpTesting, indicators, 'am-linked');
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-linked`).flush({
       id: 'am-linked', name: 'AM', description: null,
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
@@ -402,9 +400,10 @@ describe('VariableDictionaryService', () => {
 
     const sig = service.getVariables('action', 'am-err');
 
-    // Fail the indicator request
+    // Fail the indicator request (action model includes action_model_id filter)
     httpTesting.expectOne(
-      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100',
+      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100'
+        && r.params.get('action_model_id') === 'am-err',
     ).flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
 
     // Fail the action model request
