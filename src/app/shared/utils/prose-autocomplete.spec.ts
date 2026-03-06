@@ -52,6 +52,16 @@ describe('detectContext', () => {
     const result = detectContext('xyz123unknown ', SAMPLE_VARIABLES);
     expect(result).toBeNull();
   });
+
+  it('returns variable phase for partial expression prefix like "au"', () => {
+    const result = detectContext('au', SAMPLE_VARIABLES);
+    expect(result).toEqual({ phase: 'variable' });
+  });
+
+  it('returns variable phase for partial expression prefix like "tous"', () => {
+    const result = detectContext('tous', SAMPLE_VARIABLES);
+    expect(result).toEqual({ phase: 'variable' });
+  });
 });
 
 describe('TYPE_OPERATORS', () => {
@@ -170,12 +180,12 @@ describe('createProseCompletionSource', () => {
     expect(sections).toContain('Communauté');
   });
 
-  it('shows prop/ind detail for variables', () => {
+  it('shows only type in detail for variables', () => {
     const result = callSource('', SAMPLE_VARIABLES);
     expect(result).not.toBeNull();
     const statut = result!.options.find((o) => o.label === 'statut');
-    expect(statut?.detail).toContain('prop');
+    expect(statut?.detail).toBe('texte');
     const score = result!.options.find((o) => o.label === 'score');
-    expect(score?.detail).toContain('ind');
+    expect(score?.detail).toBe('nombre');
   });
 });

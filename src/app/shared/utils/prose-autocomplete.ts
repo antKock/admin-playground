@@ -95,10 +95,15 @@ export function detectContext(
   // If typing a partial word that could be a variable prefix → variable context
   const partialMatch = trimmed.match(/(?:^|\s)(\S+)$/);
   if (partialMatch) {
-    const partial = partialMatch[1];
+    const partial = partialMatch[1].toLowerCase();
     // Check if partial matches any variable prefix
-    const matchesVariable = variables.some((v) => v.path.startsWith(partial));
+    const matchesVariable = variables.some((v) => v.path.toLowerCase().startsWith(partial));
     if (matchesVariable) {
+      return { phase: 'variable' };
+    }
+    // Check if partial matches an expression label prefix
+    const matchesExpression = EXPRESSION_COMPLETIONS.some((e) => e.label.toLowerCase().startsWith(partial));
+    if (matchesExpression) {
       return { phase: 'variable' };
     }
     // Check if partial matches a connector prefix
@@ -126,11 +131,10 @@ function buildVariableCompletions(variables: ProseVariable[]): Completion[] {
 
   return variables.map((variable): Completion => {
     const groupName = variable.group || 'Indicateurs (directs)';
-    const sourceLabel = variable.source === 'property' ? '  prop' : variable.group ? '  ind' : '';
     return {
       label: variable.path,
       type: 'variable',
-      detail: `${variable.type}${sourceLabel}`,
+      detail: variable.type,
       section: { name: groupName, rank: groupRanks.get(groupName) ?? 99 },
     };
   });

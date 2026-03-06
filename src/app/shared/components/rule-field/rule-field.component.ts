@@ -40,7 +40,7 @@ import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
 import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
 import { tokenize } from '../../utils/prose-tokenizer';
-import { autocompletion } from '@codemirror/autocomplete';
+import { autocompletion, startCompletion } from '@codemirror/autocomplete';
 import { createProseCompletionSource } from '../../utils/prose-autocomplete';
 import { VariableDictionaryService } from '../../services/variable-dictionary.service';
 
@@ -209,10 +209,12 @@ export const proseEditorTheme = EditorView.theme({
     marginLeft: '8px',
   },
   '.cm-completionSection': {
+    display: 'block',
     fontSize: '10px',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.8px',
+    lineHeight: '1',
     color: 'var(--color-text-tertiary, #888)',
     padding: '6px 12px 4px',
     background: 'var(--color-surface-subtle, #f8f8f8)',
@@ -862,6 +864,11 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           override: [createProseCompletionSource(this.variables)],
           activateOnTyping: true,
           icons: false,
+        }),
+        EditorView.domEventHandlers({
+          focus: (_event, view) => {
+            startCompletion(view);
+          },
         }),
         updateListener,
       ],
