@@ -58,8 +58,8 @@ const CONNECTOR_COMPLETIONS: Completion[] = [
 const ARITHMETIC_COMPLETIONS: Completion[] = [
   { label: '+', type: 'keyword', detail: 'addition', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('+') },
   { label: '-', type: 'keyword', detail: 'soustraction', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('-') },
-  { label: '*', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('*') },
-  { label: '/', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('/') },
+  { label: '×', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('×') },
+  { label: '÷', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('÷') },
   { label: 'modulo', type: 'keyword', detail: 'reste de la division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('modulo') },
 ];
 
@@ -103,8 +103,8 @@ export function detectContext(
 
   // Check if text ends with a known operator (after a variable) → variable context (value side)
   for (const path of variablePaths) {
+    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     for (const op of ALL_OPERATORS) {
-      const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const opEscaped = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       // Pattern: variable operator (no value yet) → suggest variables for right-hand side
       const reNoValue = new RegExp(`(?:^|\\s)${escaped}\\s+${opEscaped}\\s*$`);

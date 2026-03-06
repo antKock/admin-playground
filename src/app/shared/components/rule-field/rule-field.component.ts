@@ -36,7 +36,7 @@ import { bracketMatching } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { history } from '@codemirror/commands';
 import { linter, type Diagnostic, lintGutter } from '@codemirror/lint';
-import { translateJsonLogicToProse, type ProseMode } from '../../utils/jsonlogic-prose';
+import { translateJsonLogicToProse, isAllSimpleOr, type ProseMode } from '../../utils/jsonlogic-prose';
 import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
 import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
@@ -530,12 +530,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     const jl = result.jsonLogic as Record<string, unknown>;
     if (jl && typeof jl === 'object' && 'or' in jl && Array.isArray(jl['or'])) {
       const branches = jl['or'] as unknown[];
-      // Bare variable OR (truthiness check) counts as a single condition
-      const allSimple = branches.every((a) =>
-        !a || typeof a !== 'object' || Array.isArray(a) ||
-        'var' in (a as Record<string, unknown>),
-      );
-      return allSimple ? 1 : branches.length;
+      return isAllSimpleOr(branches) ? 1 : branches.length;
     }
     return 1;
   });
