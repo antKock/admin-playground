@@ -343,6 +343,60 @@ describe('VariableDictionaryService', () => {
     });
   });
 
+  it('should include linked entity variables for action models (community, beneficiaries, folder)', () => {
+    const indicators: IndicatorModel[] = [
+      makeIndicator({ id: 'im-1', technical_label: 'montant_ht', type: 'number' }),
+    ];
+
+    const sig = service.getVariables('action', 'am-linked');
+
+    flushIndicators(httpTesting, indicators);
+    httpTesting.expectOne(`${ACTION_MODELS_URL}am-linked`).flush({
+      id: 'am-linked', name: 'AM', description: null,
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      funding_program_id: 'fp-1', action_theme_id: 'at-1',
+      funding_program: { id: 'fp-1', name: 'FP' }, action_theme: { id: 'at-1', name: 'AT' },
+    });
+
+    const vars = sig();
+
+    // Community properties
+    const communityProps = vars.filter((v) => v.group === 'community' && v.source === 'property');
+    expect(communityProps.map((v) => v.path)).toEqual(['community.siret', 'community.name', 'community.unique_id']);
+
+    // Beneficiaries properties (same schema as community)
+    const benefProps = vars.filter((v) => v.group === 'beneficiaries' && v.source === 'property');
+    expect(benefProps.map((v) => v.path)).toEqual(['beneficiaries.siret', 'beneficiaries.name', 'beneficiaries.unique_id']);
+
+    // Folder properties
+    const folderProps = vars.filter((v) => v.group === 'folder' && v.source === 'property');
+    expect(folderProps.map((v) => v.path)).toContain('folder.name');
+    expect(folderProps.map((v) => v.path)).toContain('folder.start_date');
+
+    // Linked entity indicators (e.g. community.montant_ht)
+    const communityInds = vars.filter((v) => v.group === 'community' && v.source === 'indicator');
+    expect(communityInds.map((v) => v.path)).toEqual(['community.montant_ht']);
+  });
+
+  it('should include linked entity variables for folder models (community_creator, community_holder)', () => {
+    const sig = service.getVariables('folder', 'fm-linked');
+
+    flushIndicators(httpTesting, []);
+    httpTesting.expectOne(`${FOLDER_MODELS_URL}fm-linked`).flush({
+      id: 'fm-linked', name: 'FM', description: null,
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      funding_programs: [],
+    });
+
+    const vars = sig();
+
+    const creatorProps = vars.filter((v) => v.group === 'community_creator' && v.source === 'property');
+    expect(creatorProps.map((v) => v.path)).toEqual(['community_creator.siret', 'community_creator.name', 'community_creator.unique_id']);
+
+    const holderProps = vars.filter((v) => v.group === 'community_holder' && v.source === 'property');
+    expect(holderProps.map((v) => v.path)).toEqual(['community_holder.siret', 'community_holder.name', 'community_holder.unique_id']);
+  });
+
   it('should return empty array signal on API error', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

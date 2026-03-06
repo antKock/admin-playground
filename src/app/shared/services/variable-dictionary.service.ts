@@ -71,7 +71,64 @@ const SKIP_PROPERTIES = new Set([
   'indicator_model_ids', 'indicator_model_associations',
   'indicator_models', 'funding_program', 'action_theme',
   'funding_programs', 'funding_program_ids',
+  'community', 'community_id', 'beneficiaries',
+  'folder', 'folder_id', 'folder_model', 'folder_model_id',
+  'community_creator', 'community_creator_id',
+  'community_holder', 'community_holder_id',
+  'action_model', 'action_model_id',
+  'actions', 'next_possible_statuses',
 ]);
+
+/** Static schemas for linked entity types (derived from API types, no extra API calls needed). */
+const LINKED_ENTITIES: Record<'action' | 'folder', { group: string; properties: [string, ProseVariable['type']][] }[]> = {
+  action: [
+    {
+      group: 'community',
+      properties: [
+        ['siret', 'texte'],
+        ['name', 'texte'],
+        ['unique_id', 'texte'],
+      ],
+    },
+    {
+      group: 'beneficiaries',
+      properties: [
+        ['siret', 'texte'],
+        ['name', 'texte'],
+        ['unique_id', 'texte'],
+      ],
+    },
+    {
+      group: 'folder',
+      properties: [
+        ['name', 'texte'],
+        ['label', 'texte'],
+        ['status', 'texte'],
+        ['start_date', 'date'],
+        ['end_date', 'date'],
+        ['unique_id', 'texte'],
+      ],
+    },
+  ],
+  folder: [
+    {
+      group: 'community_creator',
+      properties: [
+        ['siret', 'texte'],
+        ['name', 'texte'],
+        ['unique_id', 'texte'],
+      ],
+    },
+    {
+      group: 'community_holder',
+      properties: [
+        ['siret', 'texte'],
+        ['name', 'texte'],
+        ['unique_id', 'texte'],
+      ],
+    },
+  ],
+};
 
 @Injectable({ providedIn: 'root' })
 export class VariableDictionaryService {
@@ -148,6 +205,27 @@ export class VariableDictionaryService {
               path,
               type: mapIndicatorType(im.type),
               group,
+              source: 'indicator',
+            });
+          }
+        }
+
+        // Linked entity variables (community, beneficiaries, folder, etc.)
+        if (!entity) return vars;
+        for (const linked of LINKED_ENTITIES[modelType]) {
+          for (const [prop, type] of linked.properties) {
+            vars.push({
+              path: `${linked.group}.${prop}`,
+              type,
+              group: linked.group,
+              source: 'property',
+            });
+          }
+          for (const im of indicators) {
+            vars.push({
+              path: `${linked.group}.${im.technical_label}`,
+              type: mapIndicatorType(im.type),
+              group: linked.group,
               source: 'indicator',
             });
           }
