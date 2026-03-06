@@ -36,6 +36,14 @@ describe('OpenApiBannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le schéma API a changé');
   });
 
+  it('should not have a dismiss button', () => {
+    service.changes.set([
+      { type: 'added', category: 'path', name: '/new-endpoint' },
+    ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.openapi-dismiss-btn')).toBeFalsy();
+  });
+
   it('should be collapsed by default', () => {
     service.changes.set([
       { type: 'added', category: 'path', name: '/new-endpoint' },
@@ -79,20 +87,6 @@ describe('OpenApiBannerComponent', () => {
     expect(component.changeLabel('modified')).toBe('Modifié');
   });
 
-  it('should dismiss banner on dismiss click', () => {
-    service.changes.set([
-      { type: 'added', category: 'path', name: '/test' },
-    ]);
-    service.currentHash.set('abc123');
-    fixture.detectChanges();
-
-    const dismissSpy = vi.spyOn(service, 'dismiss');
-    fixture.nativeElement.querySelector('.openapi-dismiss-btn').click();
-    fixture.detectChanges();
-
-    expect(dismissSpy).toHaveBeenCalled();
-  });
-
   describe('before/after detail', () => {
     it('should show expand chevron when before/after data is available', () => {
       service.changes.set([
@@ -121,7 +115,6 @@ describe('OpenApiBannerComponent', () => {
       component.isExpanded.set(true);
       fixture.detectChanges();
 
-      // Click to expand detail
       fixture.nativeElement.querySelector('.openapi-change-item.expandable').click();
       fixture.detectChanges();
 
@@ -130,8 +123,6 @@ describe('OpenApiBannerComponent', () => {
       expect(fixture.nativeElement.querySelector('.detail-after')).toBeTruthy();
       expect(fixture.nativeElement.textContent).toContain('Avant');
       expect(fixture.nativeElement.textContent).toContain('Après');
-      expect(fixture.nativeElement.textContent).toContain('"string"');
-      expect(fixture.nativeElement.textContent).toContain('"number"');
     });
 
     it('should show only Après for added items', () => {

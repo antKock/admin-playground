@@ -15,12 +15,6 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
             <span>Le schéma API a changé depuis la dernière synchronisation</span>
           </div>
           <div class="openapi-banner-actions">
-            <button
-              class="openapi-dismiss-btn"
-              (click)="onDismiss(); $event.stopPropagation()"
-            >
-              Ignorer
-            </button>
             <lucide-icon
               [img]="ChevronDownIcon"
               [size]="16"
@@ -152,19 +146,6 @@ import { OpenApiWatcherService, OpenApiChange } from '@app/core/services/openapi
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-    .openapi-dismiss-btn {
-      padding: 2px 10px;
-      border-radius: 4px;
-      border: 1px solid #d97706;
-      background: transparent;
-      color: #92400e;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .openapi-dismiss-btn:hover {
-      background: #fde68a;
     }
     .openapi-chevron {
       transition: transform 0.2s;
@@ -341,9 +322,5 @@ export class OpenApiBannerComponent {
 
   formatJson(value: unknown): string {
     return JSON.stringify(value, null, 2);
-  }
-
-  onDismiss(): void {
-    this.watcher.dismiss();
   }
 }
