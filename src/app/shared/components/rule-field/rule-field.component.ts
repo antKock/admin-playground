@@ -499,6 +499,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly mode = input<ProseMode>('condition');
   readonly modelType = input<'action' | 'folder' | undefined>(undefined);
   readonly modelId = input<string | undefined>(undefined);
+  readonly excludeIndicator = input<string | undefined>(undefined);
 
   readonly valueChange = output<string>();
   readonly validChange = output<boolean>();
@@ -599,10 +600,15 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const type = this.modelType();
       const id = this.modelId();
+      const exclude = this.excludeIndicator();
       if (type && id) {
         // Use untracked to avoid calling toSignal() inside a reactive context (NG0602)
         const dictSignal = untracked(() => this.variableDictionary.getVariables(type, id));
-        const vars = dictSignal();
+        let vars = dictSignal();
+        // Exclude the indicator being edited (its own rule shouldn't reference itself)
+        if (exclude) {
+          vars = vars.filter((v) => v.path !== exclude);
+        }
         this.variables.set(vars);
       }
     });

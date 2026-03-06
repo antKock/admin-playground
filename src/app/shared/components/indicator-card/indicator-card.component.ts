@@ -89,6 +89,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
                 [value]="isCustomRule(params().required_rule) ? params().required_rule! : ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
                 (valueChange)="onRuleChange('required_rule', $event)"
               />
             }
@@ -107,6 +108,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
                 [value]="isCustomRule(params().editable_rule) ? params().editable_rule! : ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
                 (valueChange)="onRuleChange('editable_rule', $event)"
               />
             }
@@ -125,6 +127,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
                 [value]="isCustomRule(params().visibility_rule) ? params().visibility_rule! : ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
                 (valueChange)="onRuleChange('visibility_rule', $event)"
               />
             }
@@ -144,6 +147,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
                 [value]="params().default_value_rule ?? ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
                 (valueChange)="onDefaultValueInput($event)"
               />
             }
