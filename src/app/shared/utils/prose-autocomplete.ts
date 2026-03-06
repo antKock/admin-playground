@@ -101,18 +101,27 @@ export function detectContext(
     }
   }
 
-  // Check if text ends with a known operator → might be in value entry or connector
-  // We look for: variable + operator + something (a value token) → connector context
+  // Check if text ends with a known operator (after a variable) → variable context (value side)
   for (const path of variablePaths) {
     for (const op of ALL_OPERATORS) {
       const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const opEscaped = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Pattern: variable operator (no value yet) → suggest variables for right-hand side
+      const reNoValue = new RegExp(`(?:^|\\s)${escaped}\\s+${opEscaped}\\s*$`);
+      if (reNoValue.test(trimmed)) {
+        return { phase: 'variable' };
+      }
       // Pattern: variable operator value (value = at least one non-whitespace token after the operator)
       const re = new RegExp(`(?:^|\\s)${escaped}\\s+${opEscaped}\\s+\\S+.*$`);
       if (re.test(trimmed)) {
         return { phase: 'connector' };
       }
     }
+  }
+
+  // Check if text ends with an arithmetic operator → variable context (next operand)
+  if (/[+\-×÷]\s*$/.test(trimmed) || /\bmodulo\s*$/i.test(trimmed)) {
+    return { phase: 'variable' };
   }
 
   // After a number → connector context (allows arithmetic operators too)
@@ -201,6 +210,11 @@ export function createProseCompletionSource(
     // Get all text before cursor on the current line
     const line = context.state.doc.lineAt(context.pos);
     const textBefore = line.text.slice(0, context.pos - line.from);
+
+    // Don't trigger on empty lines unless explicitly requested (e.g. focus/click)
+    if (!textBefore.trim() && !context.explicit) {
+      return null;
+    }
 
     const detected = detectContext(textBefore, vars);
     if (!detected) {

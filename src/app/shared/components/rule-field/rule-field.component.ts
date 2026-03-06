@@ -41,7 +41,7 @@ import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
 import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
 import { tokenize } from '../../utils/prose-tokenizer';
-import { autocompletion, startCompletion, acceptCompletion } from '@codemirror/autocomplete';
+import { autocompletion, startCompletion, acceptCompletion, closeCompletion } from '@codemirror/autocomplete';
 import { createProseCompletionSource } from '../../utils/prose-autocomplete';
 import { VariableDictionaryService } from '../../services/variable-dictionary.service';
 
@@ -827,7 +827,10 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           activateOnTyping: true,
           icons: false,
         }),
-        keymap.of([{ key: 'Tab', run: acceptCompletion }]),
+        keymap.of([
+          { key: 'Tab', run: acceptCompletion },
+          { key: 'Enter', run: closeCompletion },
+        ]),
         EditorView.domEventHandlers({
           focus: (_event, view) => { startCompletion(view); },
           click: (_event, view) => { startCompletion(view); },
