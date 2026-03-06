@@ -172,6 +172,55 @@ export const proseEditorTheme = EditorView.theme({
   },
   '.cm-tooltip-autocomplete': {
     minWidth: '260px',
+    border: '1px solid var(--color-stroke-standard)',
+    borderRadius: '6px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+    overflow: 'hidden',
+  },
+  '.cm-tooltip-autocomplete ul': {
+    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+  },
+  '.cm-tooltip-autocomplete ul li': {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '7px 12px !important',
+    fontSize: '13px',
+    borderBottom: '1px solid var(--color-surface-subtle, #f0f0f0)',
+  },
+  '.cm-tooltip-autocomplete ul li:last-child': {
+    borderBottom: 'none',
+  },
+  '.cm-tooltip-autocomplete ul li[aria-selected]': {
+    background: 'var(--color-surface-active, #f0f0ff)',
+  },
+  '.cm-completionLabel': {
+    color: 'var(--color-text-primary)',
+    flex: '1',
+  },
+  '.cm-completionDetail': {
+    fontSize: '11px',
+    color: 'var(--color-text-tertiary, #888)',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    fontStyle: 'normal',
+    background: 'var(--color-surface-muted, #f5f5f5)',
+    padding: '1px 6px',
+    borderRadius: '3px',
+    marginLeft: '8px',
+  },
+  '.cm-completionSection': {
+    fontSize: '10px',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.8px',
+    color: 'var(--color-text-tertiary, #888)',
+    padding: '6px 12px 4px',
+    background: 'var(--color-surface-subtle, #f8f8f8)',
+    borderBottom: '1px solid var(--color-surface-subtle, #f0f0f0)',
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  },
+  '.cm-completionIcon': {
+    display: 'none',
   },
 });
 
@@ -544,6 +593,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   /** Known variable paths for linting (populated by variable dictionary when modelType/modelId are provided) */
   readonly variables = signal<import('../../services/variable-dictionary.service').ProseVariable[]>([]);
 
+  /** Whether the variable dictionary has indicator entries (used to suppress false unknown-variable warnings) */
+  readonly hasIndicators = computed(() => this.variables().some((v) => v.source === 'indicator'));
+
   private editorHost = viewChild<ElementRef<HTMLElement>>('editorHost');
   private proseCmHost = viewChild<ElementRef<HTMLElement>>('proseCmHost');
   private editorView: EditorView | null = null;
@@ -717,11 +769,11 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           } else {
             const result = parseProse(text);
             this.parseResult.set(result);
-            // Count unknown variables
+            // Count unknown variables (only when indicators have loaded)
             if (result.success) {
               const varPaths = extractVarPaths(result.jsonLogic);
               const knownPaths = new Set(this.variables().map((v) => v.path));
-              const unknowns = knownPaths.size > 0
+              const unknowns = this.hasIndicators()
                 ? varPaths.filter((p) => !knownPaths.has(p))
                 : [];
               this.unknownVarCount.set(unknowns.length);
@@ -737,7 +789,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         if (!text) {
           this.valueChange.emit('');
           this.validChange.emit(true);
-          this.editorState.set('texte-read');
+          // Stay in texte-edit so the placeholder remains visible and clickable
           return;
         }
         // Run parser immediately on blur (skip debounce)
@@ -772,10 +824,10 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           });
         }
       } else {
-        // Unknown variable warnings
+        // Unknown variable warnings (only when indicators have loaded successfully)
         const varPaths = extractVarPaths(result.jsonLogic);
         const knownPaths = new Set(this.variables().map((v) => v.path));
-        if (knownPaths.size > 0) {
+        if (this.hasIndicators()) {
           const tokens = tokenize(text);
           for (const varPath of varPaths) {
             if (!knownPaths.has(varPath)) {
@@ -809,6 +861,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         autocompletion({
           override: [createProseCompletionSource(this.variables)],
           activateOnTyping: true,
+          icons: false,
         }),
         updateListener,
       ],
@@ -832,7 +885,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       if (result.success) {
         const varPaths = extractVarPaths(result.jsonLogic);
         const knownPaths = new Set(this.variables().map((v) => v.path));
-        const unknowns = knownPaths.size > 0
+        const unknowns = this.hasIndicators()
           ? varPaths.filter((p) => !knownPaths.has(p))
           : [];
         this.unknownVarCount.set(unknowns.length);

@@ -7,8 +7,8 @@
 import { Injectable, inject, Injector, Signal, runInInjectionContext } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Observable, of, forkJoin } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of, forkJoin, EMPTY } from 'rxjs';
+import { map, catchError, expand, reduce } from 'rxjs/operators';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -58,8 +58,11 @@ const INDICATOR_MODELS_URL = `${environment.apiBaseUrl}/indicator-models/`;
 const ACTION_MODELS_URL = `${environment.apiBaseUrl}/action-models/`;
 const FOLDER_MODELS_URL = `${environment.apiBaseUrl}/folder-models/`;
 
-/** Limit for fetching all indicators in a single page. */
-const ALL_INDICATORS_LIMIT = 200;
+/** Page size for paginated indicator fetching. */
+const INDICATOR_PAGE_SIZE = 100;
+
+/** Maximum pages to fetch before stopping (safety cap against infinite loops). */
+const MAX_INDICATOR_PAGES = 20;
 
 /** Properties to skip when building entity property variables. */
 const SKIP_PROPERTIES = new Set([
@@ -138,9 +141,23 @@ export class VariableDictionaryService {
   }
 
   private fetchAllIndicators$(): Observable<IndicatorModel[]> {
-    const params = new HttpParams().set('limit', String(ALL_INDICATORS_LIMIT));
-    return this.http.get<PaginatedResponse<IndicatorModel>>(INDICATOR_MODELS_URL, { params }).pipe(
-      map((res) => res.data),
+    const fetchPage = (cursor: string | null): Observable<PaginatedResponse<IndicatorModel>> => {
+      let params = new HttpParams().set('limit', String(INDICATOR_PAGE_SIZE));
+      if (cursor) {
+        params = params.set('cursor', cursor);
+      }
+      return this.http.get<PaginatedResponse<IndicatorModel>>(INDICATOR_MODELS_URL, { params });
+    };
+
+    let pageCount = 0;
+    return fetchPage(null).pipe(
+      expand((res) => {
+        pageCount++;
+        return res.pagination.has_next_page && res.pagination.cursors.end_cursor && pageCount < MAX_INDICATOR_PAGES
+          ? fetchPage(res.pagination.cursors.end_cursor)
+          : EMPTY;
+      }),
+      reduce((acc, res) => acc.concat(res.data), [] as IndicatorModel[]),
       catchError((err) => {
         console.error('VariableDictionaryService: failed to fetch indicators', err);
         return of([]);

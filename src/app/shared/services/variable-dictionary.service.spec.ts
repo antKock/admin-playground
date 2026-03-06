@@ -18,7 +18,7 @@ const FOLDER_MODELS_URL = `${environment.apiBaseUrl}/folder-models/`;
 
 const mockPagination = {
   total_count: 0,
-  page_size: 200,
+  page_size: 100,
   has_next_page: false,
   has_previous_page: false,
   cursors: { start_cursor: null, end_cursor: null },
@@ -37,6 +37,17 @@ function makeIndicator(overrides: Partial<IndicatorModel> = {}): IndicatorModel 
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
   };
+}
+
+/** Flush a single-page indicator response (no next page). */
+function flushIndicators(httpTesting: HttpTestingController, indicators: IndicatorModel[]) {
+  const req = httpTesting.expectOne(
+    (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100',
+  );
+  req.flush({
+    data: indicators,
+    pagination: { ...mockPagination, total_count: indicators.length },
+  } as PaginatedResponse<IndicatorModel>);
 }
 
 describe('mapIndicatorType', () => {
@@ -118,14 +129,8 @@ describe('VariableDictionaryService', () => {
     // Initially empty
     expect(sig()).toEqual([]);
 
-    // Respond to indicator models request
-    const indicatorReq = httpTesting.expectOne(
-      (req) => req.url === INDICATOR_MODELS_URL && req.params.get('limit') === '200',
-    );
-    indicatorReq.flush({
-      data: indicators,
-      pagination: { ...mockPagination, total_count: 2 },
-    } as PaginatedResponse<IndicatorModel>);
+    // Respond to indicator models request (paginated, single page)
+    flushIndicators(httpTesting, indicators);
 
     // Respond to action model request
     const actionReq = httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`);
@@ -160,14 +165,58 @@ describe('VariableDictionaryService', () => {
     });
   });
 
+  it('should paginate indicator fetching across multiple pages', () => {
+    const page1Indicators = [
+      makeIndicator({ id: 'im-1', technical_label: 'score', type: 'number' }),
+    ];
+    const page2Indicators = [
+      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text' }),
+    ];
+
+    const sig = service.getVariables('action', 'am-pag');
+
+    // First page — has_next_page: true
+    const req1 = httpTesting.expectOne(
+      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100' && !r.params.has('cursor'),
+    );
+    req1.flush({
+      data: page1Indicators,
+      pagination: {
+        ...mockPagination,
+        total_count: 2,
+        has_next_page: true,
+        cursors: { start_cursor: 'c0', end_cursor: 'c1' },
+      },
+    });
+
+    // Second page — has_next_page: false
+    const req2 = httpTesting.expectOne(
+      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('cursor') === 'c1',
+    );
+    req2.flush({
+      data: page2Indicators,
+      pagination: { ...mockPagination, total_count: 2 },
+    });
+
+    // Flush entity
+    httpTesting.expectOne(`${ACTION_MODELS_URL}am-pag`).flush({
+      id: 'am-pag', name: 'AM', description: null,
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      funding_program_id: 'fp-1', action_theme_id: 'at-1',
+      funding_program: { id: 'fp-1', name: 'FP' }, action_theme: { id: 'at-1', name: 'AT' },
+    });
+
+    const vars = sig();
+    const indicatorVars = vars.filter((v) => v.source === 'indicator');
+    expect(indicatorVars.length).toBe(2);
+    expect(indicatorVars.map((v) => v.path)).toEqual(['score', 'label']);
+  });
+
   it('should prefix entity properties with model type group', () => {
     const sig = service.getVariables('action', 'am-2');
 
     // Respond to indicator models
-    httpTesting.expectOne((req) => req.url === INDICATOR_MODELS_URL).flush({
-      data: [],
-      pagination: mockPagination,
-    });
+    flushIndicators(httpTesting, []);
 
     // Respond to action model with simple properties
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-2`).flush({
@@ -199,10 +248,7 @@ describe('VariableDictionaryService', () => {
   it('should prefix folder model properties with "folder" group', () => {
     const sig = service.getVariables('folder', 'fm-1');
 
-    httpTesting.expectOne((req) => req.url === INDICATOR_MODELS_URL).flush({
-      data: [],
-      pagination: mockPagination,
-    });
+    flushIndicators(httpTesting, []);
 
     httpTesting.expectOne(`${FOLDER_MODELS_URL}fm-1`).flush({
       id: 'fm-1',
@@ -226,10 +272,7 @@ describe('VariableDictionaryService', () => {
     expect(sig1).toBe(sig2);
 
     // Only one set of HTTP requests should be made
-    httpTesting.expectOne((req) => req.url === INDICATOR_MODELS_URL).flush({
-      data: [],
-      pagination: mockPagination,
-    });
+    flushIndicators(httpTesting, []);
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-cache`).flush({
       id: 'am-cache',
       name: 'Cached',
@@ -249,7 +292,9 @@ describe('VariableDictionaryService', () => {
     expect(sig1).not.toBe(sig2);
 
     // Flush both sets of requests
-    const indicatorReqs = httpTesting.match((req) => req.url === INDICATOR_MODELS_URL);
+    const indicatorReqs = httpTesting.match(
+      (req) => req.url === INDICATOR_MODELS_URL && req.params.get('limit') === '100',
+    );
     expect(indicatorReqs.length).toBe(2);
     indicatorReqs.forEach((req) => req.flush({ data: [], pagination: mockPagination }));
 
@@ -272,10 +317,9 @@ describe('VariableDictionaryService', () => {
     const sig = service.getVariables('action', 'am-err');
 
     // Fail the indicator request
-    httpTesting.expectOne((req) => req.url === INDICATOR_MODELS_URL).flush(
-      'Server Error',
-      { status: 500, statusText: 'Internal Server Error' },
-    );
+    httpTesting.expectOne(
+      (r) => r.url === INDICATOR_MODELS_URL && r.params.get('limit') === '100',
+    ).flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
 
     // Fail the action model request
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-err`).flush(
