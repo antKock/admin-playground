@@ -147,8 +147,13 @@ describe('createProseCompletionSource', () => {
     const result = callSource('score ', SAMPLE_VARIABLES);
     expect(result).not.toBeNull();
     const labels = result!.options.map((o) => o.label);
-    // score is type 'nombre' → should get 6 operators
-    expect(labels).toEqual(['=', '≠', '>', '<', '≥', '≤']);
+    // score is type 'nombre' → comparison operators + arithmetic + connectors
+    expect(labels).toContain('=');
+    expect(labels).toContain('>');
+    expect(labels).toContain('+');
+    expect(labels).toContain('×');
+    expect(labels).toContain('et');
+    expect(labels).toContain('ou');
   });
 
   it('returns only "fait partie de" for liste type', () => {

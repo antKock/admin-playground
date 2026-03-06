@@ -228,12 +228,16 @@ export function createProseCompletionSource(
       case 'operator': {
         const variable = vars.find((v) => v.path === detected.variableName);
         const varType = variable?.type ?? 'texte';
-        const options = filterOptions(buildOperatorCompletions(varType));
+        const compOps = buildOperatorCompletions(varType);
+        // Number-type variables also get arithmetic operators and connectors
+        const extras = varType === 'nombre' ? [...ARITHMETIC_COMPLETIONS, ...CONNECTOR_COMPLETIONS] : [];
+        const options = filterOptions([...compOps, ...extras]);
         return { from, options, filter: false };
       }
 
       case 'connector': {
-        const options = filterOptions([...CONNECTOR_COMPLETIONS, ...ARITHMETIC_COMPLETIONS]);
+        const compOps = buildOperatorCompletions('nombre');
+        const options = filterOptions([...compOps, ...CONNECTOR_COMPLETIONS, ...ARITHMETIC_COMPLETIONS]);
         return { from, options, filter: false };
       }
     }
