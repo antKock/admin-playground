@@ -151,7 +151,7 @@ describe('createProseCompletionSource', () => {
     expect(labels).toContain('=');
     expect(labels).toContain('>');
     expect(labels).toContain('+');
-    expect(labels).toContain('×');
+    expect(labels).toContain('*');
     expect(labels).toContain('et');
     expect(labels).toContain('ou');
   });

@@ -58,8 +58,8 @@ const CONNECTOR_COMPLETIONS: Completion[] = [
 const ARITHMETIC_COMPLETIONS: Completion[] = [
   { label: '+', type: 'keyword', detail: 'addition', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('+') },
   { label: '-', type: 'keyword', detail: 'soustraction', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('-') },
-  { label: '×', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('×') },
-  { label: '÷', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('÷') },
+  { label: '*', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('*') },
+  { label: '/', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('/') },
   { label: 'modulo', type: 'keyword', detail: 'reste de la division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('modulo') },
 ];
 
@@ -120,7 +120,7 @@ export function detectContext(
   }
 
   // Check if text ends with an arithmetic operator → variable context (next operand)
-  if (/[+\-×÷]\s*$/.test(trimmed) || /\bmodulo\s*$/i.test(trimmed)) {
+  if (/[+\-*/]\s*$/.test(trimmed) || /\bmodulo\s*$/i.test(trimmed)) {
     return { phase: 'variable' };
   }
 
