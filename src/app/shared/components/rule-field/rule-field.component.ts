@@ -40,7 +40,7 @@ import { validateJsonLogic } from '../../utils/jsonlogic-validate';
 import { parseProse, type ParseResult, type ParseError, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
 import { proseLanguageExtension } from '../../utils/prose-codemirror-language';
 import { tokenize } from '../../utils/prose-tokenizer';
-import { autocompletion, startCompletion } from '@codemirror/autocomplete';
+import { autocompletion, startCompletion, acceptCompletion } from '@codemirror/autocomplete';
 import { createProseCompletionSource } from '../../utils/prose-autocomplete';
 import { VariableDictionaryService } from '../../services/variable-dictionary.service';
 
@@ -216,7 +216,7 @@ export const proseEditorTheme = EditorView.theme({
     color: 'var(--color-text-tertiary, #888)',
     padding: '6px 12px 4px',
     background: 'var(--color-surface-subtle, #f8f8f8)',
-    borderBottom: '1px solid var(--color-surface-subtle, #f0f0f0)',
+    borderBottom: '1px solid var(--color-surface-light, #eeeeee)',
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
   },
   '.cm-completionIcon': {
@@ -567,6 +567,9 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   /** Live JSON editor value signal — tracks CM content during json-edit for live prose mirror */
   readonly jsonEditorValue = signal('');
 
+  /** Locally committed value — set on blur before parent round-trips the input */
+  private readonly committedValue = signal<string | null>(null);
+
   /** Parse result from prose editor (texte-edit mode) */
   readonly parseResult = signal<ParseResult | null>(null);
 
@@ -606,7 +609,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private variableDictionary = inject(VariableDictionaryService);
 
-  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.value(), this.mode()));
+  readonly proseTranslation = computed(() => translateJsonLogicToProse(this.committedValue() ?? this.value(), this.mode()));
 
   /** Prose parts for json-edit mode — reacts to live editor content */
   readonly jsonEditProseTranslation = computed(() => translateJsonLogicToProse(this.jsonEditorValue(), this.mode()));
@@ -617,7 +620,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
 
   /** Formatted JSON for the json-read display */
   readonly formattedJson = computed(() => {
-    const val = this.value();
+    const val = this.committedValue() ?? this.value();
     if (!val?.trim()) return '';
     try {
       return JSON.stringify(JSON.parse(val), null, 2);
@@ -628,6 +631,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     // Initialize editor state based on whether value is empty
+    // Clear committedValue once the parent input catches up
     effect(() => {
       const val = this.value();
       if (!this.initialized) {
@@ -635,6 +639,10 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         if (!val?.trim()) {
           this.editorState.set('texte-edit');
         }
+      }
+      // Clear local override once parent input matches
+      if (this.committedValue() !== null && val === this.committedValue()) {
+        this.committedValue.set(null);
       }
     });
 
@@ -798,9 +806,14 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
         if (result.success) {
           // Valid + any warnings → save and transition (warnings don't block)
           const jsonStr = JSON.stringify(result.jsonLogic);
+          this.committedValue.set(jsonStr);
           this.valueChange.emit(jsonStr);
           this.validChange.emit(true);
-          this.editorState.set('texte-read');
+          // Defer state change to avoid destroying the editor mid-callback
+          setTimeout(() => {
+            this.editorState.set('texte-read');
+            this.cdr.detectChanges();
+          }, 0);
         }
         // If errors → stay in texte-edit, errors remain visible
       }
@@ -865,6 +878,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
           activateOnTyping: true,
           icons: false,
         }),
+        keymap.of([{ key: 'Tab', run: acceptCompletion }]),
         EditorView.domEventHandlers({
           focus: (_event, view) => { startCompletion(view); },
           click: (_event, view) => { startCompletion(view); },

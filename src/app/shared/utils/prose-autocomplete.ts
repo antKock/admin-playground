@@ -10,6 +10,7 @@
  * @see docs/jsonlogic-prose-architecture.md
  */
 import type { CompletionContext, CompletionResult, Completion } from '@codemirror/autocomplete';
+import { startCompletion } from '@codemirror/autocomplete';
 import type { ProseVariable } from '../services/variable-dictionary.service';
 import type { Signal } from '@angular/core';
 
@@ -27,26 +28,39 @@ const ALL_OPERATORS = new Set(
   Object.values(TYPE_OPERATORS).flat()
 );
 
+/**
+ * Creates an apply function that inserts label + space and re-triggers autocomplete.
+ */
+function applyWithSpace(label: string): (view: import('@codemirror/view').EditorView, completion: Completion, from: number, to: number) => void {
+  return (view, _completion, from, to) => {
+    view.dispatch({
+      changes: { from, to, insert: label + ' ' },
+      selection: { anchor: from + label.length + 1 },
+    });
+    setTimeout(() => startCompletion(view), 0);
+  };
+}
+
 /** Expression completions (quantifier keywords) */
 const EXPRESSION_COMPLETIONS: Completion[] = [
-  { label: 'au moins un élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
-  { label: 'tous les éléments de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
-  { label: 'aucun élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 } },
+  { label: 'au moins un élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 }, apply: applyWithSpace('au moins un élément de …') },
+  { label: 'tous les éléments de …', type: 'keyword', section: { name: 'Expressions', rank: 99 }, apply: applyWithSpace('tous les éléments de …') },
+  { label: 'aucun élément de …', type: 'keyword', section: { name: 'Expressions', rank: 99 }, apply: applyWithSpace('aucun élément de …') },
 ];
 
 /** Connector completions */
 const CONNECTOR_COMPLETIONS: Completion[] = [
-  { label: 'et', type: 'keyword', detail: 'toutes les conditions', section: { name: 'Connecteurs', rank: 0 } },
-  { label: 'ou', type: 'keyword', detail: 'au moins une condition', section: { name: 'Connecteurs', rank: 0 } },
+  { label: 'et', type: 'keyword', detail: 'toutes les conditions', section: { name: 'Connecteurs', rank: 0 }, apply: applyWithSpace('et') },
+  { label: 'ou', type: 'keyword', detail: 'au moins une condition', section: { name: 'Connecteurs', rank: 0 }, apply: applyWithSpace('ou') },
 ];
 
 /** Arithmetic operator completions */
 const ARITHMETIC_COMPLETIONS: Completion[] = [
-  { label: '+', type: 'keyword', detail: 'addition', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
-  { label: '-', type: 'keyword', detail: 'soustraction', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
-  { label: '×', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
-  { label: '÷', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
-  { label: 'modulo', type: 'keyword', detail: 'reste de la division', section: { name: 'Opérateurs arithmétiques', rank: 1 } },
+  { label: '+', type: 'keyword', detail: 'addition', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('+') },
+  { label: '-', type: 'keyword', detail: 'soustraction', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('-') },
+  { label: '×', type: 'keyword', detail: 'multiplication', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('×') },
+  { label: '÷', type: 'keyword', detail: 'division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('÷') },
+  { label: 'modulo', type: 'keyword', detail: 'reste de la division', section: { name: 'Opérateurs arithmétiques', rank: 1 }, apply: applyWithSpace('modulo') },
 ];
 
 /**
@@ -150,6 +164,7 @@ function buildVariableCompletions(variables: ProseVariable[]): Completion[] {
       type: 'variable',
       detail: variable.type,
       section: { name: groupName, rank: groupRanks.get(groupName) ?? 99 },
+      apply: applyWithSpace(variable.path),
     };
   });
 }
@@ -164,6 +179,7 @@ function buildOperatorCompletions(variableType: string): Completion[] {
     type: 'keyword',
     detail: 'opérateur',
     section: { name: 'Opérateurs', rank: 0 },
+    apply: applyWithSpace(op),
   }));
 }
 
