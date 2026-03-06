@@ -247,7 +247,18 @@ class Parser {
 
     // Check for arithmetic
     if (opToken && ARITHMETIC_OPS.has(opToken)) {
-      return this.parseArithmeticChain(left);
+      const arithResult = this.parseArithmeticChain(left);
+
+      // After arithmetic, check for a trailing comparison operator (e.g. 12 * 24 = 43)
+      const cmpOp = this.peekComparisonOrArithmeticOp();
+      if (cmpOp && COMPARISON_OPS.has(cmpOp)) {
+        const op = this.consumeOperator();
+        const right = this.parseOperand();
+        const jlOp = PROSE_TO_JSONLOGIC_OP[op];
+        return { [jlOp]: [arithResult, right] };
+      }
+
+      return arithResult;
     }
 
     return left;

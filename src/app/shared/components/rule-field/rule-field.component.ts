@@ -523,13 +523,19 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   /** Parse result from prose editor (texte-edit mode) */
   readonly parseResult = signal<ParseResult | null>(null);
 
-  /** Count top-level OR branches in parse result */
+  /** Count top-level OR branches in parse result (excludes simple variable truthiness checks) */
   readonly orBranchCount = computed(() => {
     const result = this.parseResult();
     if (!result || !result.success) return 0;
     const jl = result.jsonLogic as Record<string, unknown>;
     if (jl && typeof jl === 'object' && 'or' in jl && Array.isArray(jl['or'])) {
-      return jl['or'].length;
+      const branches = jl['or'] as unknown[];
+      // Bare variable OR (truthiness check) counts as a single condition
+      const allSimple = branches.every((a) =>
+        !a || typeof a !== 'object' || Array.isArray(a) ||
+        'var' in (a as Record<string, unknown>),
+      );
+      return allSimple ? 1 : branches.length;
     }
     return 1;
   });

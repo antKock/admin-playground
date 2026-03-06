@@ -196,6 +196,22 @@ describe('parseProse', () => {
       }
     });
 
+    it('parses arithmetic followed by comparison (12 * 24 = 43)', () => {
+      const result = parseProse('12 × 24 = 43');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.jsonLogic).toEqual({ '===': [{ '*': [12, 24] }, 43] });
+      }
+    });
+
+    it('parses arithmetic followed by comparison with variables', () => {
+      const result = parseProse('a + b > 100');
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.jsonLogic).toEqual({ '>': [{ '+': [{ var: 'a' }, { var: 'b' }] }, 100] });
+      }
+    });
+
     it('parses modulo', () => {
       const result = parseProse('a modulo 3');
       expect(result.success).toBe(true);
@@ -459,6 +475,11 @@ describe('parseProse', () => {
     it('round-trips arithmetic ÷', () => {
       const result = roundTrip('{"/":[{"var":"a"},{"var":"b"}]}');
       expect(result).toEqual({ '/': [{ var: 'a' }, { var: 'b' }] });
+    });
+
+    it('round-trips arithmetic with comparison (=== over *)', () => {
+      const result = roundTrip('{"===":[{"*":[12,24]},43]}');
+      expect(result).toEqual({ '===': [{ '*': [12, 24] }, 43] });
     });
 
     it('round-trips modulo', () => {

@@ -45,6 +45,11 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse(rule)).toBe(`• ${v('x')} ${kw('contient')} ${val('1')}\n• ${v('y')} ${kw('contient')} ${val('2')}`);
   });
 
+  it('translates or of bare variables inline (truthiness check)', () => {
+    const rule = '{"or": [{"var": "indicator_a"}, {"var": "indicator_b"}]}';
+    expect(translateJsonLogicToProse(rule)).toBe(`(${v('indicator_a')} ${kw('ou')} ${v('indicator_b')})`);
+  });
+
   it('translates not by inverting comparison', () => {
     const rule = '{"!": [{"==": [{"var": "x"}, "y"]}]}';
     expect(translateJsonLogicToProse(rule)).toBe(`${v('x')} ${kw('ne contient pas')} ${val("'y'")}`);

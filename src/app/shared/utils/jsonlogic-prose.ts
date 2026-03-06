@@ -184,9 +184,16 @@ function translateNode(node: unknown, depth: number, topLevel = false, mode: Pro
       const result = parts.join(` ${wrapKw('et')} `);
       return (depth > 0 && parts.length > 1 && !topLevel) ? `(${result})` : result;
     }
-    // OR: bullet format only at top level; inline with parentheses when nested
+    // OR: bullet format only at top level when children are complex conditions;
+    // inline with parentheses for simple operands (variable truthiness checks)
     if (topLevel && parts.length > 1) {
-      return parts.map((p) => `• ${p}`).join('\n');
+      const allSimple = args.every((a) =>
+        !a || typeof a !== 'object' || Array.isArray(a) ||
+        'var' in (a as Record<string, unknown>),
+      );
+      if (!allSimple) {
+        return parts.map((p) => `• ${p}`).join('\n');
+      }
     }
     if (parts.length === 1) return parts[0];
     return `(${parts.join(` ${wrapKw('ou')} `)})`;
