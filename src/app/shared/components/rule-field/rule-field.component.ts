@@ -851,11 +851,10 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       parent: host.nativeElement,
     });
 
-    // Position cursor at end
+    // Position cursor at end (without stealing focus)
     this.proseEditorView.dispatch({
       selection: { anchor: doc.length },
     });
-    this.proseEditorView.focus();
 
     // Run initial parse if there's content
     if (doc.trim()) {
@@ -902,8 +901,10 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
       }
     });
 
+    const formattedDoc = this.formattedJson() || this.value();
+
     const startState = EditorState.create({
-      doc: this.value(),
+      doc: formattedDoc,
       extensions: [
         json(),
         bracketMatching(),
@@ -923,7 +924,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     });
 
     // Initialize live prose mirror value
-    this.jsonEditorValue.set(this.value());
+    this.jsonEditorValue.set(formattedDoc);
   }
 
   ngOnDestroy(): void {
