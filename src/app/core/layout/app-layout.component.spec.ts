@@ -24,12 +24,12 @@ describe('AppLayoutComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render 7 navigation items', async () => {
+  it('should render 8 navigation items', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const navItems = compiled.querySelectorAll('.nav-item');
-    expect(navItems.length).toBe(7);
+    expect(navItems.length).toBe(8);
   });
 
   it('should render section labels for Configuration and Administration', async () => {
@@ -65,8 +65,9 @@ describe('AppLayoutComponent', () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    const logoutBtn = compiled.querySelector('button');
-    expect(logoutBtn?.textContent).toContain('Déconnexion');
+    const buttons = compiled.querySelectorAll('.header button');
+    const logoutBtn = Array.from(buttons).find((b) => b.textContent?.includes('Déconnexion'));
+    expect(logoutBtn).toBeTruthy();
   });
 
   it('should render skip-to-content link', async () => {
@@ -93,7 +94,8 @@ describe('AppLayoutComponent', () => {
     const spy = vi.spyOn(authService, 'logout');
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    const logoutBtn = compiled.querySelector('button') as HTMLButtonElement;
+    const buttons = compiled.querySelectorAll('.header button');
+    const logoutBtn = Array.from(buttons).find((b) => b.textContent?.includes('Déconnexion')) as HTMLButtonElement;
     logoutBtn.click();
     expect(spy).toHaveBeenCalled();
   });
