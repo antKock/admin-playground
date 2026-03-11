@@ -13,5 +13,6 @@ export function createFundingProgramForm(
     is_active: [initial?.is_active ?? true],
     start_date: [initial?.start_date ?? null as string | null],
     end_date: [initial?.end_date ?? null as string | null],
+    folder_model_id: [initial?.folder_model_id ?? null as string | null],
   });
 }

@@ -45,6 +45,7 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   readonly data = input.required<Record<string, unknown>[]>();
   readonly isLoading = input(false);
   readonly hasMore = input(false);
+  readonly totalCount = input<number | null>(null);
   readonly actions = input<RowAction[]>([]);
   readonly emptyMessage = input<string | null>(null);
 
@@ -110,9 +111,9 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
     const key = col.filterKey || col.key;
     const filters = { ...this.activeFilters() };
     if (values.length === 0) {
-      delete filters[col.key];
+      delete filters[key];
     } else {
-      filters[col.key] = values;
+      filters[key] = values;
     }
     this.activeFilters.set(filters);
     this.filterChange.emit({ key, values });

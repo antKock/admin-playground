@@ -24,6 +24,7 @@ export const AgentFeatureStore = signalStore(
       detailError: computed(() => domainStore.detailError()),
       isEmpty: computed(() => domainStore.isEmpty()),
       totalLoaded: computed(() => domainStore.totalLoaded()),
+      totalCount: computed(() => domainStore.totalCount()),
 
       // Cross-domain signals for community selector
       communityOptions: computed(() =>

@@ -25,6 +25,7 @@ export class ActionThemeFacade {
   readonly error = this.featureStore.error;
   readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
+  readonly totalCount = this.featureStore.totalCount;
 
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;

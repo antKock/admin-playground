@@ -20,6 +20,7 @@ export interface CursorPaginationState {
   hasMore: boolean;
   isLoading: boolean;
   error: string | null;
+  totalCount: number | null;
 }
 
 export interface CursorPaginationConfig<T> {
@@ -37,6 +38,7 @@ const initialState: CursorPaginationState = {
   hasMore: false,
   isLoading: false,
   error: null,
+  totalCount: null,
 };
 
 export const DEFAULT_PAGE_SIZE = 20;
@@ -82,6 +84,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                     cursor: response.pagination.cursors.end_cursor,
                     hasMore: response.pagination.has_next_page,
                     isLoading: false,
+                    totalCount: response.pagination.total_count ?? null,
                   });
                 }),
                 catchError((err) => {
@@ -110,6 +113,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                     cursor: response.pagination.cursors.end_cursor,
                     hasMore: response.pagination.has_next_page,
                     isLoading: false,
+                    totalCount: response.pagination.total_count ?? null,
                   });
                 }),
                 catchError((err) => {
@@ -152,6 +156,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
                     cursor: response.pagination.cursors.end_cursor,
                     hasMore: response.pagination.has_next_page,
                     isLoading: false,
+                    totalCount: response.pagination.total_count ?? null,
                   });
                 }),
                 catchError((err) => {

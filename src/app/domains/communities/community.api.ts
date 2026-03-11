@@ -56,3 +56,12 @@ export function assignUserRequest(params: { communityId: string; userId: string 
 export function removeUserRequest(params: { communityId: string; userId: string }) {
   return { url: `${BASE_URL}${params.communityId}/users/${params.userId}`, method: 'DELETE' };
 }
+
+// Hierarchy endpoints — return raw arrays (not paginated)
+export function loadCommunityParents(http: HttpClient, communityId: string): Observable<CommunityRead[]> {
+  return http.get<CommunityRead[]>(`${BASE_URL}${communityId}/parents`);
+}
+
+export function loadCommunityChildren(http: HttpClient, communityId: string): Observable<CommunityRead[]> {
+  return http.get<CommunityRead[]>(`${BASE_URL}${communityId}/children`);
+}

@@ -15,14 +15,14 @@
                 @if (col.filterable) {
                   <button
                     class="filter-icon-btn"
-                    [class.filter-active]="hasActiveFilter(col.key)"
+                    [class.filter-active]="hasActiveFilter(col.filterKey || col.key)"
                     [attr.aria-label]="'Filtrer ' + col.label"
                     [attr.aria-expanded]="openFilterColumn() === col.key"
                     (click)="onFilterIconClick($event, col)"
                   >
                     <lucide-icon [img]="ListFilterIcon" [size]="14" />
-                    @if (hasActiveFilter(col.key)) {
-                      <span class="filter-badge">{{ getActiveFilterValues(col.key).length }}</span>
+                    @if (hasActiveFilter(col.filterKey || col.key)) {
+                      <span class="filter-badge">{{ getActiveFilterValues(col.filterKey || col.key).length }}</span>
                     }
                   </button>
                 }
@@ -44,7 +44,7 @@
             @if (col.filterable && openFilterColumn() === col.key && col.filterOptions) {
               <app-column-filter-popover
                 [options]="col.filterOptions"
-                [selected]="getActiveFilterValues(col.key)"
+                [selected]="getActiveFilterValues(col.filterKey || col.key)"
                 (selectionChange)="onFilterSelectionChange(col, $event)"
                 (closePopover)="closeFilter()"
               />
@@ -138,6 +138,16 @@
       }
     </tbody>
   </table>
+
+  @if (data().length > 0) {
+    <div class="table-footer" role="status" aria-live="polite" aria-atomic="true">
+      @if (totalCount() !== null) {
+        Affichage de {{ data().length }} sur {{ totalCount() }}
+      } @else {
+        Affichage de {{ data().length }}
+      }
+    </div>
+  }
 
   @if (isLoading() && data().length > 0) {
     <div class="loading-more">

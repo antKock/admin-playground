@@ -25,7 +25,7 @@ describe('IndicatorModelListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns.map(c => c.key)).toEqual([
-      'name', 'type_display', 'unit_display', 'updated_at',
+      'name', 'type_display', 'unit_display', 'children_count', 'updated_at',
     ]);
   });
 
@@ -41,6 +41,7 @@ describe('IndicatorModelListComponent', () => {
     expect(typeCol?.filterOptions).toEqual([
       { id: 'text', label: 'Texte' },
       { id: 'number', label: 'Nombre' },
+      { id: 'group', label: 'Groupe' },
     ]);
   });
 

@@ -20,6 +20,7 @@ import {
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { ParamState } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
+import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { ActionModelFacade } from '../action-model.facade';
 
 @Component({
@@ -34,6 +35,7 @@ import { ActionModelFacade } from '../action-model.facade';
     SectionAnchorsComponent,
     CdkDropList,
     CdkDrag,
+    ActivityListComponent,
   ],
   template: `
     <div class="p-6" [class.pb-20]="facade.unsavedCount() > 0">
@@ -124,6 +126,12 @@ import { ActionModelFacade } from '../action-model.facade';
           />
         </div>
 
+        @if (model()) {
+          <div id="section-activity">
+            <app-activity-list entityType="ActionModel" [entityId]="model()!.id" />
+          </div>
+        }
+
         <div id="section-api-inspector">
           <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
         </div>
@@ -165,6 +173,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   readonly sectionDefs = computed<SectionDef[]>(() => [
     { label: 'Métadonnées', targetId: 'section-metadata' },
     { label: 'Indicateurs', targetId: 'section-indicators', count: this.indicatorCards().length },
+    { label: 'Activité', targetId: 'section-activity' },
     { label: 'Inspecteur API', targetId: 'section-api-inspector' },
   ]);
 

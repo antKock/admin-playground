@@ -102,3 +102,9 @@ development_status:
   6-3-openapi-change-detection-banner: review
   6-4-table-filter-ux-layout-fixes-header-polish: done
   epic-6-retrospective: optional
+
+  # Epic 12: Global Activity Feed
+  epic-12: in-progress
+  12-1-funding-program-folder-model-navigation: merged-into-9.2-and-9.4
+  12-2-global-activity-feed: review
+  epic-12-retrospective: optional

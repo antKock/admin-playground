@@ -39,13 +39,6 @@
     <header class="header">
       <div class="flex-1"></div>
       <div class="flex items-center gap-3">
-        <button
-          (click)="activityPanelOpen.set(!activityPanelOpen())"
-          class="flex items-center gap-1 rounded px-2 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary"
-          aria-label="Activité récente"
-        >
-          <lucide-icon [img]="Bell" [size]="16"></lucide-icon>
-        </button>
         @if (userEmail(); as email) {
           <span class="text-sm text-text-primary">{{ email }}</span>
         }
@@ -74,8 +67,3 @@
     </main>
   </div>
 </div>
-
-<app-global-activity-feed
-  [isOpen]="activityPanelOpen()"
-  (closed)="activityPanelOpen.set(false)"
-/>

@@ -93,6 +93,20 @@ import { FundingProgramFacade } from '../funding-program.facade';
           </div>
         </div>
 
+        <div>
+          <label for="folder_model_id" class="block text-sm font-medium text-text-primary mb-1">Modèle de dossier</label>
+          <select
+            id="folder_model_id"
+            formControlName="folder_model_id"
+            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+          >
+            <option [ngValue]="null">Aucun</option>
+            @for (option of facade.fmOptions(); track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
         <div class="flex gap-3 pt-4">
           <button
             type="submit"
@@ -117,7 +131,7 @@ export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly facade = inject(FundingProgramFacade);
+  readonly facade = inject(FundingProgramFacade);
   private readonly el = inject(ElementRef);
 
   isEditMode = false;
@@ -139,8 +153,9 @@ export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
           description: item.description ?? null,
           budget: item.budget ?? null,
           is_active: item.is_active,
-          start_date: item.start_date ?? null,
-          end_date: item.end_date ?? null,
+          start_date: item.start_date?.substring(0, 10) ?? null,
+          end_date: item.end_date?.substring(0, 10) ?? null,
+          folder_model_id: item.folder_model_id ?? null,
         });
       }
     });
@@ -149,6 +164,8 @@ export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
+
+    this.facade.loadAssociationData();
 
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);

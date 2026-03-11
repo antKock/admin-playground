@@ -90,13 +90,24 @@ describe('CommunityFacade', () => {
   });
 
   describe('select', () => {
-    it('should trigger selectById and populate selectedItem', () => {
+    it('should trigger selectById, loadParents, and loadChildren', () => {
       facade.select('comm-1');
 
-      const req = httpTesting.expectOne((r) => r.url.includes('communities/comm-1'));
-      req.flush(mockCommunity);
+      const reqs = httpTesting.match((r) => r.url.includes('communities'));
+      expect(reqs.length).toBe(3);
+
+      const detailReq = reqs.find((r) => r.request.url.endsWith('/comm-1'));
+      const parentsReq = reqs.find((r) => r.request.url.includes('/comm-1/parents'));
+      const childrenReq = reqs.find((r) => r.request.url.includes('/comm-1/children'));
+
+      detailReq!.flush(mockCommunity);
+      parentsReq!.flush([{ ...mockCommunity, id: 'parent-1', name: 'Parent Community' }]);
+      childrenReq!.flush([]);
 
       expect(facade.selectedItem()).toEqual(mockCommunity);
+      expect(facade.parents().length).toBe(1);
+      expect(facade.parents()[0].name).toBe('Parent Community');
+      expect(facade.children().length).toBe(0);
     });
   });
 

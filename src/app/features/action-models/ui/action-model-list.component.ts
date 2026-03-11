@@ -26,6 +26,7 @@ import { ActionModelFacade } from '../action-model.facade';
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="emptyMessage()"
         (rowClick)="onRowClick($event)"
         (linkClick)="onLinkClick($event)"

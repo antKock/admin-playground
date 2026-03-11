@@ -25,6 +25,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
         [data]="facade.items()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="emptyMessage()"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"

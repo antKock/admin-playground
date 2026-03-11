@@ -25,6 +25,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="emptyMessage()"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"
@@ -53,6 +54,7 @@ export class IndicatorModelListComponent implements OnInit {
       ...item,
       type_display: item.type,
       unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
+      children_count: item.type === 'group' ? (item.children?.length?.toString() ?? '—') : '',
     })),
   );
 
@@ -76,9 +78,11 @@ export class IndicatorModelListComponent implements OnInit {
       filterOptions: [
         { id: 'text', label: 'Texte' },
         { id: 'number', label: 'Nombre' },
+        { id: 'group', label: 'Groupe' },
       ],
     },
     { key: 'unit_display', label: 'Unité', sortable: true, width: '100px' },
+    { key: 'children_count', label: 'Enfants', width: '100px' },
     { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '175px' },
   ];
 
