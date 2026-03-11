@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://laureatv2-api-staging.osc-fr1.scalingo.io",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api": "" }
+  }
+}

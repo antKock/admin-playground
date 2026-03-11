@@ -54,18 +54,15 @@ import { FolderModelFacade } from '../folder-model.facade';
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1">Programmes de financement *</label>
+          <label class="block text-sm font-medium text-text-primary mb-1">Programmes de financement</label>
           <app-multi-selector
             [options]="facade.fpOptions()"
             [selectedIds]="fpIds"
             [loading]="facade.fpLoading()"
-            [hasError]="showError('funding_program_ids')"
+            [hasError]="false"
             placeholder="Sélectionner des programmes de financement..."
             (selectionChange)="onFpSelectionChange($event)"
           />
-          @if (showError('funding_program_ids')) {
-            <p class="mt-1 text-sm text-error">Au moins un programme de financement est obligatoire.</p>
-          }
         </div>
 
         <div class="flex gap-3 pt-4">

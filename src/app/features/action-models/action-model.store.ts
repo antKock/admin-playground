@@ -30,6 +30,7 @@ export const ActionModelFeatureStore = signalStore(
       detailError: computed(() => domainStore.detailError()),
       isEmpty: computed(() => domainStore.isEmpty()),
       totalLoaded: computed(() => domainStore.totalLoaded()),
+      totalCount: computed(() => domainStore.totalCount()),
 
       // Per-mutation status signals
       createIsPending: computed(() => domainStore.createMutationIsPending()),

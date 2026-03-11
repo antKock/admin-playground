@@ -75,3 +75,38 @@ Reject type changes on indicator models when they are published or have existing
 
 - **Indicator subtypes & list_values** — will be handled by human dev later
 - **Full-text search** — backlog, filters cover current needs
+
+---
+
+## Epic 8-12 UAT — OpenAPI Verification (2026-03-11)
+
+After UAT testing of Epics 8-12, several issues were suspected to be backend/API problems. We verified each against the live OpenAPI spec (`/openapi.json`). **All endpoints exist in the spec** — no new backend endpoints are needed for Epics 8-12.
+
+### Findings
+
+| UAT Issue | API Endpoint | In Spec? | Verdict |
+|-----------|-------------|----------|---------|
+| `total_count` missing from paginated responses | `PaginationMeta.total_count` | Yes (integer, min 0) | **Runtime issue** — field exists in schema but may not be populated. Backend should confirm it returns a value. |
+| Community hierarchy (parents/children) not showing | `GET /communities/{id}/parents`, `GET /communities/{id}/children` | Yes | **Runtime/data issue** — endpoints exist. May be empty in test environment or API errors being swallowed by frontend. |
+| Activity history not loading (entity-scoped) | `GET /history/activities`, `GET /history/{entity_type}/{entity_id}/activities` | Yes | **Runtime issue** — endpoints exist. Check if history records are being created. |
+| Global activity feed empty | `GET /history/activities` with filters (`entity_type`, `action`, `since`) | Yes | Same as above — check if history is being recorded. |
+| Users list not loading | `GET /users/` | Yes | **Runtime issue** — endpoint exists. Frontend correctly uses `/auth/register` for create. |
+| Folder model detail missing funding programs | `FolderModelRead.funding_programs` (array of `FundingProgramRead`) | Yes | **Runtime/data issue** — field exists in schema. May be empty for test data. |
+| FP `active_only` filter not working | `GET /funding-programs/` with `active_only` param | Yes | **Needs backend investigation** — param exists in spec but may not be filtering correctly. |
+| Indicator "group" type not available | `IndicatorModelType` enum includes `"group"` | Yes | **Runtime issue** — value exists in enum. Check if UI is reading the correct field. |
+| Indicator children not showing | `IndicatorModelRead.children` (array or null) | Yes | **Runtime/data issue** — field exists. May require group-type indicators to exist in test data. |
+
+### Summary
+
+**No new backend work is required for Epics 8-12.** All APIs are correctly specified. The UAT failures are likely caused by:
+
+1. **Missing test data** — hierarchy, history records, and associations may not exist in the test environment
+2. **Runtime errors being swallowed** — frontend may not be surfacing API errors (check browser console Network tab)
+3. **`active_only` filter** — the only item worth a backend check; the filter parameter exists but may not be implemented correctly
+
+### Recommended Next Steps
+
+1. Test each failing endpoint directly via Swagger UI or curl to isolate frontend vs backend
+2. Check browser console for HTTP errors on each failing page
+3. Seed test data (community hierarchies, history records, indicator groups) and retest
+4. If `total_count` is consistently 0 or missing, open a backend ticket

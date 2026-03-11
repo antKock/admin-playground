@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
+import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
@@ -13,7 +14,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
 
 @Component({
   selector: 'app-agent-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent, ActivityListComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -71,6 +72,8 @@ import { AgentStatus } from '@domains/agents/agent.models';
         </div>
 
         <app-metadata-grid [fields]="fields()" />
+
+        <app-activity-list entityType="Agent" [entityId]="agent()!.id" />
 
         <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }

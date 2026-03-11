@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
@@ -11,7 +12,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
 
 @Component({
   selector: 'app-funding-program-detail',
-  imports: [MetadataGridComponent, ApiInspectorComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -57,6 +58,8 @@ import { FundingProgramFacade } from '../funding-program.facade';
 
         <app-metadata-grid [fields]="fields()" />
 
+        <app-activity-list entityType="FundingProgram" [entityId]="program()!.id" />
+
         <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
@@ -81,16 +84,31 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
     ];
   });
 
+  private readonly currencyFmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
+  readonly folderModelName = computed(() => {
+    const p = this.program();
+    if (!p?.folder_model_id) return null;
+    const options = this.facade.fmOptions();
+    return options.find(o => o.id === p.folder_model_id)?.label ?? null;
+  });
+
   readonly fields = computed<MetadataField[]>(() => {
     const p = this.program();
     if (!p) return [];
     return [
       { label: 'Nom', value: p.name, type: 'text' as const },
       { label: 'Description', value: p.description ?? '—', type: 'text' as const },
-      { label: 'Budget', value: p.budget != null ? `${p.budget}` : '—', type: 'text' as const },
-      { label: 'Actif', value: p.is_active ? 'Oui' : 'Non', type: 'text' as const },
+      { label: 'Budget', value: p.budget != null ? this.currencyFmt.format(p.budget) : '—', type: 'text' as const },
+      { label: 'Statut', value: p.is_active ? 'Actif' : 'Inactif', type: 'status' as const },
       { label: 'Date de début', value: p.start_date ?? '—', type: 'date' as const },
       { label: 'Date de fin', value: p.end_date ?? '—', type: 'date' as const },
+      {
+        label: 'Modèle de dossier',
+        value: this.folderModelName() ?? '—',
+        type: p.folder_model_id ? 'linked' as const : 'text' as const,
+        linkedRoute: p.folder_model_id ? '/folder-models/' + p.folder_model_id : undefined,
+      },
       { label: 'Créé le', value: p.created_at, type: 'date' as const },
       { label: 'Mis à jour le', value: p.updated_at, type: 'date' as const },
     ];
@@ -101,6 +119,7 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
     if (id) {
       this.facade.select(id);
     }
+    this.facade.loadAssociationData();
   }
 
   // Required: clear stale selection so navigating to a different item doesn't briefly show the old one.

@@ -25,6 +25,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun programme de financement ne correspond à vos filtres.' : 'Aucun programme de financement trouvé.') : null"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"
@@ -64,10 +65,9 @@ export class FundingProgramListComponent implements OnInit {
       label: 'Statut',
       width: '120px',
       filterable: true,
-      filterKey: 'is_active',
+      filterKey: 'active_only',
       filterOptions: [
         { id: 'true', label: 'Actif' },
-        { id: 'false', label: 'Inactif' },
       ],
     },
     { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },

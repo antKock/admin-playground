@@ -7,6 +7,7 @@
 **Source:** Architecture workflow + OpenAPI spec analysis (`/openapi.json`)
 **Date started:** 2026-03-03
 **Backend review:** 2026-03-05 (branch LV2-162) — 13/14 observations confirmed, 1 resolved
+**API spec review:** 2026-03-06 — 4 observations resolved by API changes, 6 new capabilities discovered
 
 ---
 
@@ -48,8 +49,7 @@ Ideally, session remains active 15 days (if that makes sense) |
 | 4+5 | **Indicator subtypes + list_values** | **P1** | Which subtypes are v1 scope? (list, yes/no, date, upload, etc.) This drives backend schema design AND frontend form complexity. Points 4 and 5 are linked — subtype determines if list_values is needed. | This will be handled by human dev later on. No action on this for now |
 | 6 | **`updated_by` field** | **P2** | Architecture choice: `updated_by_id` (resolve via user endpoint) vs embedded `{ id, name }` (denormalized)? Apply to all entities or subset? | Up to backend dev to decide. The simpliest and more consistent solution is the right one.; to be applie to all entities |
 | 7 | **Full-text search** | **P3** | Is this v1 scope? Backend says backlog. Filter dropdowns cover primary use case. Product call on priority. | To be decided later on, no decision for now |
-| 12 | **Indicator reverse-lookup** | **P2** | Endpoint (`GET /indicator-models/{id}/action-models`) vs filter param (`GET /action-models/?indicator_model_id=X`)? Backend notes the inverse already exists (`GET /indicator-models/by-action-model/{id}`). | Showing models attached to indicators model, in the indicator model view is important. 
-Up to you to find an agreement with backend dev. |
+| 12 | **Indicator reverse-lookup** | ~~P2~~ | ~~Endpoint vs filter param~~ | **RESOLVED (2026-03-06)** — `IndicatorModelRead` now embeds `action_models[]` directly. No separate endpoint needed. |
 
 ---
 
@@ -78,7 +78,8 @@ Up to you to find an agreement with backend dev. |
 
 - **Observation:** All list endpoints use cursor-based pagination (`cursor` + `limit` params, response: `{ items, cursor, limit }`). Confirmed working.
 - **Question:** Is `total_count` available? UX wants “Showing X of Y” in table footers.
-- **Status:** OPEN (not addressed in backend review)
+- **API spec review (2026-03-06):** **RESOLVED.** `PaginatedResponse_T_` now includes `total_count (integer|null)`. Frontend can implement “Showing X of Y” table footers.
+- **Status:** RESOLVED
 
 ### Status Workflow
 
@@ -97,13 +98,15 @@ Up to you to find an agreement with backend dev. |
 
 - **Observation:** `GET /auth/users` returns flat `UserRead[]` array (not paginated). `GET /users/` returns `PaginatedResponse_UserRead_`. Two endpoints for the same resource.
 - **Backend review (2026-03-05):** Backend flagged this as a source of confusion. Recommends deprecating `/auth/users` in favor of `/users/` with a `community_id` filter.
-- **Status:** NO-BRAINER — deprecate `/auth/users`
+- **API spec review (2026-03-06):** Partial progress — `GET /auth/users` now accepts `cursor` + `limit` pagination params, but still returns flat array (not `PaginatedResponse`). Both endpoints still exist. Deprecation not yet done.
+- **Status:** NO-BRAINER — deprecate `/auth/users` (still pending)
 
 ### `UserRead.communities` Field
 
 - **Observation:** `communities` is optional on `UserRead`. Frontend relies on it for community membership.
 - **Question:** Always populated from `/auth/users`?
-- **Status:** OPEN (not addressed in backend review)
+- **API spec review (2026-03-06):** **WARNING.** `communities` field no longer appears in `UserRead` schema. Only: `id, email, full_name, role, created_at, updated_at`. Needs backend verification — could be spec generation issue or intentional removal. If removed, community-user assignment UX needs adjustment.
+- **Status:** NEEDS VERIFICATION (potential regression)
 
 ### Agent Status Transitions via PUT
 
@@ -130,7 +133,8 @@ Up to you to find an agreement with backend dev. |
 ### Action Model Status — BLOCKER (Story 1-3 blocked)
 
 - **Observation:** `ActionModelRead` has NO `status` field, no status enum, no transition endpoints.
-- **Confirmed (both sides):** Only fields: `name`, `description`, `id`, `created_at`, `updated_at`, `funding_program_id`, `action_theme_id`.
+- **Confirmed (both sides):** Only fields: `name`, `description`, `id`, `created_at`, `updated_at`, `action_theme_id`, `funding_programs[]`.
+- **API spec review (2026-03-06):** Schema change — `funding_program_id` replaced by `funding_programs: FundingProgramRead[]` (multi-program support). Same for `FolderModelRead`. Frontend schemas need updating.
 - **Impact:** Story 1-3 blocked. Epic 1 cannot be closed.
 - **Options:**
     - **Option A:** Add `status` field (draft/published/disabled) + transition endpoints, following ActionTheme pattern.
@@ -211,15 +215,17 @@ Up to you to find an agreement with backend dev. |
 
 - **Observation:** Embedded schema omits `technical_label` present on `IndicatorModelRead`.
 - **Backend review (2026-03-05):** Confirmed missing.
-- **Priority:** P2 LOW
-- **Status:** NO-BRAINER — add field to schema
+- **API spec review (2026-03-06):** **ESCALATED.** `technical_label` appears to be missing from `IndicatorModelRead` itself now (only: `id, name, description, type, unit, action_models, created_at, updated_at`). Needs backend verification — could be spec generation bug or intentional removal.
+- **Priority:** P2 LOW → **NEEDS VERIFICATION**
+- **Status:** NEEDS VERIFICATION (potential regression)
 
-### Indicator Model Usage Reverse-Lookup — No Endpoint
+### Indicator Model Usage Reverse-Lookup — RESOLVED
 
 - **Observation:** No `GET /indicator-models/{id}/action-models`. Frontend fetches first 100 action models and filters client-side.
 - **Backend review (2026-03-05):** Inverse exists (`GET /indicator-models/by-action-model/{action_model_id}`), but not the needed direction.
-- **Priority:** P2 MEDIUM
-- **Status:** DECISION REQUIRED (endpoint vs filter param approach)
+- **API spec review (2026-03-06):** **RESOLVED.** `IndicatorModelRead` now embeds `action_models: ActionModelRead[]` directly. The reverse-lookup data comes with the model — no separate endpoint needed. Frontend client-side filtering can be removed.
+- **Priority:** ~~P2 MEDIUM~~ N/A
+- **Status:** RESOLVED
 
 ## UX Gap Analysis Observations (2026-03-04)
 
@@ -262,6 +268,100 @@ Up to you to find an agreement with backend dev. |
 - **Suggestion:** Either (a) expose a metadata/schema endpoint (`GET /models/{type}/schema` or similar) that returns available properties per entity type, or (b) accept the hardcoded approach and document the sync requirement clearly (current choice).
 - **Priority:** P3 LOW — current hardcoded approach works for v1, entity schemas are stable
 - **Status:** ACKNOWLEDGED — revisit if entity schemas start changing frequently
+
+## API Spec Review — New Capabilities (2026-03-06)
+
+*New endpoints and features discovered in the latest staging OpenAPI spec that were not present during original observations.*
+
+### History & Activity Log System (NEW — HIGH VALUE)
+
+Complete audit trail and versioning system now available:
+- `GET /history/activities` — paginated activity log with filters (`user_id`, `entity_type`, `entity_id`, `action`, `since`)
+- `GET /history/activities/since` — notification-style feed (excludes current user's actions)
+- `GET /history/activities/count` — badge counts (`exclude_current_user` param)
+- `GET /history/{entity_type}/{entity_id}/activities` — per-entity activity timeline
+- `GET /history/{entity_type}/{entity_id}/versions` — snapshot versions with `SnapshotMetadata` (includes `user_name`)
+- `GET /history/{entity_type}/{entity_id}/version/latest` — latest snapshot
+- `GET /history/{entity_type}/{entity_id}/at/{date}` — entity state at point-in-time
+- `GET /history/{entity_type}/{entity_id}/compare` — diff between two versions (`VersionComparison` with `added_fields`, `removed_fields`, `modified_fields`)
+- `GET /history/folders/{folder_id}/timeline` — dedicated folder timeline
+- **Schemas:** `ActivityResponse` (includes `user_name`), `SnapshotMetadata`, `EntityHistoricalState`, `VersionComparison`, `CountResponse`
+- **Impact for admin-playground:**
+    - Activity feed / notification panel in shell
+    - "History" tab on entity detail views
+    - Version comparison / audit diff feature
+    - Partially addresses `updated_by` gap — activity log shows who last touched an entity
+- **Status:** NEW — available for frontend integration
+
+### OAuth2 Client Credentials (NEW)
+
+Machine-to-machine auth flow:
+- `POST /oauth/token` — client credentials token endpoint
+- `GET /oauth/clients` — list OAuth clients (admin only)
+- `POST /oauth/clients` — create client (returns `OAuthClientWithSecret`)
+- `GET /oauth/clients/{client_id}` — get client details
+- `DELETE /oauth/clients/{client_id}` — revoke client
+- `POST /oauth/tokens/{access_token}/revoke` — revoke specific token
+- `POST /oauth/cleanup` — clean expired tokens
+- **Impact:** Potential admin feature for managing API integrations. Does NOT solve user session refresh (#1).
+- **Status:** NEW — needs product decision on admin scope
+
+### Admin Role Management (NEW)
+
+User role CRUD:
+- `GET /admin/roles/` — list available roles (`RoleType` enum)
+- `PUT /admin/roles/user/{user_id}` — assign role to user
+- `GET /admin/roles/user/{user_id}` — get user role
+- **Impact:** Enables user role management UI. Could integrate into community-users tab or dedicated view.
+- **Status:** NEW — needs product decision on admin scope
+
+### Sites & Buildings (NEW DOMAIN)
+
+New entities with full CRUD:
+- Sites: CRUD + `community_id` filter on list
+- Buildings: CRUD + `site_id` filter on list + RNB (national building registry) linking
+- **Impact:** Two new feature modules if in admin scope. Follow existing ACTEE pattern.
+- **Status:** NEW — needs product decision on admin scope
+
+### Actions & Folders Instance Management (NEW)
+
+Operational-level CRUD for instances:
+- Actions: full CRUD, beneficiary management, indicators access, validation context
+- Folders: full CRUD, status transitions with `next_possible_statuses` field
+- Indicators: individual CRUD + `POST /indicators/{id}/duplicate` (requires `duplicable_enabled`)
+- **Impact:** Primarily collectivité-facing. `next_possible_statuses` pattern interesting if ActionModel gets status (Decision #2).
+- **Status:** NEW — likely not admin scope, but validates backend status workflow patterns
+
+### ActionTheme Duplication (NEW)
+
+- `POST /action-themes/{id}/duplicate` — copies an action theme
+- **Impact:** Low-effort "Duplicate" action for action-theme list/detail. High UX value for admins.
+- **Status:** NEW — ready for frontend integration
+
+### FundingProgram Active Flag (NEW)
+
+- `FundingProgramRead` now has `is_active: boolean`
+- `GET /funding-programs/` accepts `active_only: boolean` filter
+- **Impact:** Active/inactive toggle and filter in funding programs list.
+- **Status:** NEW — ready for frontend integration
+
+### Schema Changes (2026-03-06)
+
+| Entity | Change | Impact |
+|---|---|---|
+| `ActionModelRead` | `funding_program_id` → `funding_programs: FundingProgramRead[]` | Multi-program support. Frontend schema + forms need update. |
+| `FolderModelRead` | Same as above | Same. |
+| `IndicatorModelRead` | Now embeds `action_models: ActionModelRead[]` | Reverse-lookup resolved. Remove client-side filtering. |
+| `GET /indicator-models/` | New `type: IndicatorModelType` filter param | Add type filter to indicator list UI. |
+| `PaginatedResponse` | Now includes `total_count: integer\|null` | "Showing X of Y" in table footers. |
+| `GET /auth/users` | Now accepts `cursor` + `limit` params | Partial progress on consolidation. |
+| `UserRead` | `communities` field possibly removed | **NEEDS VERIFICATION** — potential regression. |
+| `IndicatorModelRead` | `technical_label` possibly removed | **NEEDS VERIFICATION** — potential regression. |
+
+### Items Needing Backend Verification (2026-03-06)
+
+1. **`technical_label` on `IndicatorModelRead`** — field not visible in latest spec. Regression or spec generation bug?
+2. **`communities` on `UserRead`** — field not visible in latest spec. Same question.
 
 ---
 

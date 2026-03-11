@@ -1,17 +1,18 @@
 import { Component, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule, ArrowUpRight } from 'lucide-angular';
 import { formatDateFr } from '@app/shared/utils/format-date';
 
 export interface MetadataField {
   label: string;
   value: string;
-  type?: 'text' | 'mono' | 'linked' | 'date';
+  type?: 'text' | 'mono' | 'linked' | 'date' | 'status';
   linkedRoute?: string;
 }
 
 @Component({
   selector: 'app-metadata-grid',
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, RouterLink],
   template: `
     <dl class="metadata-grid">
       @for (field of fields(); track field.label) {
@@ -21,13 +22,21 @@ export interface MetadataField {
             @if (field.type === 'linked' && field.linkedRoute) {
               <a
                 class="inline-flex items-center gap-1 text-text-link hover:text-text-link-hover no-underline"
-                [href]="field.linkedRoute"
-                target="_blank"
-                rel="noopener noreferrer"
+                [routerLink]="field.linkedRoute"
               >
                 {{ field.value }}
                 <lucide-icon [img]="ArrowUpRight" [size]="14"></lucide-icon>
               </a>
+            } @else if (field.type === 'status') {
+              <span
+                class="inline-block px-2 py-0.5 text-xs font-medium rounded-full"
+                [class.bg-green-100]="field.value === 'Actif'"
+                [class.text-green-800]="field.value === 'Actif'"
+                [class.bg-red-100]="field.value !== 'Actif'"
+                [class.text-red-800]="field.value !== 'Actif'"
+              >
+                {{ field.value }}
+              </span>
             } @else if (field.type === 'date') {
               {{ formatDate(field.value) }}
             } @else {

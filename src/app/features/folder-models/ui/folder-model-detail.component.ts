@@ -1,7 +1,8 @@
 import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
@@ -11,7 +12,7 @@ import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-detail',
-  imports: [MetadataGridComponent, ApiInspectorComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, RouterLink],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -57,6 +58,28 @@ import { FolderModelFacade } from '../folder-model.facade';
 
         <app-metadata-grid [fields]="fields()" />
 
+        <div class="mt-6">
+          <h2 class="text-sm font-medium text-text-secondary mb-2">Programmes de financement</h2>
+          @if (model()!.funding_programs?.length) {
+            <ul class="space-y-1">
+              @for (fp of model()!.funding_programs!; track fp.id) {
+                <li>
+                  <a
+                    [routerLink]="['/funding-programs', fp.id]"
+                    class="text-sm text-brand hover:underline"
+                  >
+                    {{ fp.name }}
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-sm text-text-secondary">Aucun programme de financement associé</p>
+          }
+        </div>
+
+        <app-activity-list entityType="FolderModel" [entityId]="model()!.id" />
+
         <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }
     </div>
@@ -84,11 +107,9 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   readonly fields = computed<MetadataField[]>(() => {
     const m = this.model();
     if (!m) return [];
-    const fpNames = m.funding_programs?.map(fp => fp.name).join(', ') || 'Aucun';
     return [
       { label: 'Nom', value: m.name, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
-      { label: 'Programmes de financement', value: fpNames, type: 'text' as const },
       { label: 'Créé le', value: m.created_at, type: 'date' as const },
       { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
     ];

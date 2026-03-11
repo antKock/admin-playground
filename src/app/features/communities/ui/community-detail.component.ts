@@ -1,18 +1,21 @@
 import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { RouterLink } from '@angular/router';
+
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
+import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { CommunityFacade } from '../community.facade';
 import { CommunityUsersComponent } from './community-users.component';
 
 @Component({
   selector: 'app-community-detail',
-  imports: [MetadataGridComponent, CommunityUsersComponent, ApiInspectorComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, CommunityUsersComponent, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, RouterLink],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -58,7 +61,51 @@ import { CommunityUsersComponent } from './community-users.component';
 
         <app-metadata-grid [fields]="fields()" />
 
+        <section class="mt-6">
+          <h2 class="text-lg font-semibold text-text-primary mb-3">Communautés parentes</h2>
+          @if (facade.isLoadingParents()) {
+            <div class="animate-pulse h-4 bg-surface-muted rounded w-48"></div>
+          } @else if (facade.parentsError()) {
+            <p class="text-sm text-error">{{ facade.parentsError() }}</p>
+          } @else if (facade.parents().length === 0) {
+            <p class="text-sm text-text-tertiary">Aucune communauté parente.</p>
+          } @else {
+            <ul class="space-y-1">
+              @for (parent of facade.parents(); track parent.id) {
+                <li>
+                  <a [routerLink]="['/communities', parent.id]" class="text-brand hover:underline text-sm">
+                    {{ parent.name }}
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section class="mt-6">
+          <h2 class="text-lg font-semibold text-text-primary mb-3">Communautés enfants</h2>
+          @if (facade.isLoadingChildren()) {
+            <div class="animate-pulse h-4 bg-surface-muted rounded w-48"></div>
+          } @else if (facade.childrenError()) {
+            <p class="text-sm text-error">{{ facade.childrenError() }}</p>
+          } @else if (facade.children().length === 0) {
+            <p class="text-sm text-text-tertiary">Aucune communauté enfant.</p>
+          } @else {
+            <ul class="space-y-1">
+              @for (child of facade.children(); track child.id) {
+                <li>
+                  <a [routerLink]="['/communities', child.id]" class="text-brand hover:underline text-sm">
+                    {{ child.name }}
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
         <app-community-users />
+
+        <app-activity-list entityType="Community" [entityId]="community()!.id" />
 
         <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
       }

@@ -98,7 +98,7 @@ describe('IndicatorModelFacade', () => {
       detailReq.flush(mockIndicatorModel);
 
       const usageReq = httpTesting.expectOne((r) => r.url.includes('action-models') && r.method === 'GET');
-      usageReq.flush({ data: [], pagination: mockPaginatedResponse.pagination });
+      usageReq.flush({ data: [], pagination: { ...mockPaginatedResponse.pagination, has_next_page: false } });
 
       expect(facade.selectedItem()).toEqual(mockIndicatorModel);
       expect(facade.usageCount()).toBe(0);

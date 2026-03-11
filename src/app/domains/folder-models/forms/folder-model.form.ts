@@ -9,6 +9,6 @@ export function createFolderModelForm(
   return fb.group({
     name: [initial?.name ?? '', Validators.required],
     description: [initial?.description ?? null as string | null],
-    funding_program_ids: new FormControl<string[]>([], { validators: Validators.required }),
+    funding_program_ids: new FormControl<string[]>([]),
   });
 }

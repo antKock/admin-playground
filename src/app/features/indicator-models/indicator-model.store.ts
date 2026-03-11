@@ -20,6 +20,7 @@ export const IndicatorModelFeatureStore = signalStore(
       detailError: computed(() => domainStore.detailError()),
       isEmpty: computed(() => domainStore.isEmpty()),
       totalLoaded: computed(() => domainStore.totalLoaded()),
+      totalCount: computed(() => domainStore.totalCount()),
 
       // Per-mutation status signals
       createIsPending: computed(() => domainStore.createMutationIsPending()),
@@ -30,6 +31,7 @@ export const IndicatorModelFeatureStore = signalStore(
       usedInModels: computed(() => domainStore.usedInActionModels()),
       usageCount: computed(() => domainStore.usedInActionModels().length),
       isLoadingUsage: computed(() => domainStore.isLoadingUsage()),
+      usageError: computed(() => domainStore.usageError()),
     };
   }),
 );

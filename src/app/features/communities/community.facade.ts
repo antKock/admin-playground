@@ -25,10 +25,19 @@ export class CommunityFacade {
   readonly error = this.featureStore.error;
   readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
+  readonly totalCount = this.featureStore.totalCount;
 
   // User assignment signals
   readonly allUsers = this.featureStore.allUsers;
   readonly isLoadingUsers = this.featureStore.isLoadingUsers;
+
+  // Hierarchy signals
+  readonly parents = this.featureStore.parents;
+  readonly children = this.featureStore.children;
+  readonly isLoadingParents = this.featureStore.isLoadingParents;
+  readonly isLoadingChildren = this.featureStore.isLoadingChildren;
+  readonly parentsError = this.featureStore.parentsError;
+  readonly childrenError = this.featureStore.childrenError;
 
   // Computed: users assigned to the currently selected community
   readonly communityUsers = computed<UserRead[]>(() => {
@@ -62,10 +71,13 @@ export class CommunityFacade {
 
   select(id: string): void {
     this.domainStore.selectById(id);
+    this.domainStore.loadParents(id);
+    this.domainStore.loadChildren(id);
   }
 
   clearSelection(): void {
     this.domainStore.clearSelection();
+    this.domainStore.clearHierarchy();
   }
 
   loadUsers(): void {

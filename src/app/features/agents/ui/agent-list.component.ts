@@ -26,7 +26,8 @@ import { AgentFacade } from '../agent.facade';
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
-        [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun agent ne correspond à vos filtres.' : 'Aucun agent trouvé.') : null"
+        [totalCount]="facade.totalCount()"
+        [emptyMessage]="emptyMessage()"
         (rowClick)="onRowClick($event)"
         (linkClick)="onLinkClick($event)"
         (loadMore)="onLoadMore()"
@@ -42,6 +43,13 @@ export class AgentListComponent implements OnInit {
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun agent ne correspond à vos filtres.'
+      : 'Aucun agent trouvé.';
+  });
 
   constructor() {
     effect(() => {

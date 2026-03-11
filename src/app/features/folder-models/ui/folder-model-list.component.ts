@@ -25,6 +25,7 @@ import { FolderModelFacade } from '../folder-model.facade';
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun modèle de dossier ne correspond à vos filtres.' : 'Aucun modèle de dossier trouvé.') : null"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"

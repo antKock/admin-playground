@@ -25,6 +25,7 @@ import { CommunityFacade } from '../community.facade';
         [data]="facade.items()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
+        [totalCount]="facade.totalCount()"
         [emptyMessage]="hasLoaded() ? 'Aucune communauté trouvée.' : null"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"

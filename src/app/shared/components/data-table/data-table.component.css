@@ -275,6 +275,14 @@ td {
   }
 }
 
+/* Table footer */
+.table-footer {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  border-top: 1px solid var(--color-stroke-standard);
+}
+
 .loading-more {
   display: flex;
   justify-content: center;

@@ -146,6 +146,32 @@ describe('FundingProgramFacade', () => {
     });
   });
 
+  describe('cross-domain: loadAssociationData', () => {
+    const mockFmResponse: PaginatedResponse<{ id: string; name: string }> = {
+      data: [{ id: 'fm-1', name: 'Test FM' }],
+      pagination: {
+        total_count: 1, page_size: 20, has_next_page: false, has_previous_page: false,
+        cursors: { start_cursor: null, end_cursor: null },
+        _links: { self: '/', next: null, prev: null, first: '/' },
+      },
+    };
+
+    it('should trigger FM domain store load and populate fmOptions', () => {
+      facade.loadAssociationData();
+
+      const fmReq = httpTesting.expectOne((r) => r.url.includes('folder-models') && r.method === 'GET');
+      fmReq.flush(mockFmResponse);
+
+      expect(facade.fmOptions().length).toBe(1);
+      expect(facade.fmOptions()[0]).toEqual({ id: 'fm-1', label: 'Test FM' });
+    });
+
+    it('should expose fmOptions as empty initially', () => {
+      expect(facade.fmOptions()).toEqual([]);
+      expect(facade.fmLoading()).toBe(false);
+    });
+  });
+
   describe('error handling', () => {
     it('should show error toast on mutation error', async () => {
       const createPromise = facade.create({ name: 'Bad', is_active: true });

@@ -418,6 +418,85 @@ describe('DataTableComponent', () => {
     expect(emptyRow.textContent).toContain('No results found.');
   });
 
+  // Total count footer tests
+  it('should render footer with "Affichage de X sur Y" when totalCount is set', async () => {
+    @Component({
+      imports: [DataTableComponent],
+      template: `
+        <app-data-table
+          [columns]="columns"
+          [data]="data"
+          [totalCount]="20"
+        />
+      `,
+    })
+    class TotalCountTestHost {
+      columns: ColumnDef[] = [
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Name' },
+      ];
+      data: TestRow[] = [
+        { id: '1', name: 'A' },
+        { id: '2', name: 'B' },
+        { id: '3', name: 'C' },
+        { id: '4', name: 'D' },
+        { id: '5', name: 'E' },
+      ];
+    }
+
+    await TestBed.configureTestingModule({ imports: [TotalCountTestHost] }).compileComponents();
+    const fixture = TestBed.createComponent(TotalCountTestHost);
+    fixture.detectChanges();
+
+    const footer = fixture.nativeElement.querySelector('.table-footer');
+    expect(footer).toBeTruthy();
+    expect(footer.textContent).toContain('Affichage de 5 sur 20');
+  });
+
+  it('should render footer with "Affichage de X" when totalCount is null', async () => {
+    @Component({
+      imports: [DataTableComponent],
+      template: `
+        <app-data-table
+          [columns]="columns"
+          [data]="data"
+          [totalCount]="null"
+        />
+      `,
+    })
+    class NullCountTestHost {
+      columns: ColumnDef[] = [
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Name' },
+      ];
+      data: TestRow[] = [
+        { id: '1', name: 'A' },
+        { id: '2', name: 'B' },
+        { id: '3', name: 'C' },
+        { id: '4', name: 'D' },
+        { id: '5', name: 'E' },
+      ];
+    }
+
+    await TestBed.configureTestingModule({ imports: [NullCountTestHost] }).compileComponents();
+    const fixture = TestBed.createComponent(NullCountTestHost);
+    fixture.detectChanges();
+
+    const footer = fixture.nativeElement.querySelector('.table-footer');
+    expect(footer).toBeTruthy();
+    expect(footer.textContent).toContain('Affichage de 5');
+    expect(footer.textContent).not.toContain('sur');
+  });
+
+  it('should hide footer when data is empty', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.componentInstance.data = [];
+    fixture.detectChanges();
+
+    const footer = fixture.nativeElement.querySelector('.table-footer');
+    expect(footer).toBeNull();
+  });
+
   it('should emit clearFiltersClick and reset internal activeFilters when clear button is clicked', async () => {
     @Component({
       imports: [DataTableComponent],

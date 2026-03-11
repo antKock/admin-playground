@@ -25,11 +25,13 @@ export class IndicatorModelFacade {
   readonly error = this.featureStore.error;
   readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
+  readonly totalCount = this.featureStore.totalCount;
 
   // Usage visibility signals
   readonly usedInModels = this.featureStore.usedInModels;
   readonly usageCount = this.featureStore.usageCount;
   readonly isLoadingUsage = this.featureStore.isLoadingUsage;
+  readonly usageError = this.featureStore.usageError;
 
   // Per-mutation CRUD status signals (projected through feature store)
   readonly createIsPending = this.featureStore.createIsPending;

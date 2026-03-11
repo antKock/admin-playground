@@ -27,6 +27,7 @@ export class AgentFacade {
   readonly error = this.featureStore.error;
   readonly detailError = this.featureStore.detailError;
   readonly isEmpty = this.featureStore.isEmpty;
+  readonly totalCount = this.featureStore.totalCount;
 
   // Cross-domain signals for community selector
   readonly communityOptions = this.featureStore.communityOptions;

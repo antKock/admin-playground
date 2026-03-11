@@ -2978,6 +2978,8 @@ export interface components {
             action_model_ids?: string[] | null;
             /** Action Model Associations */
             action_model_associations?: components["schemas"]["ActionModelAssociationInput"][] | null;
+            /** Children Ids */
+            children_ids?: string[] | null;
         };
         /**
          * IndicatorModelRead
@@ -2993,6 +2995,11 @@ export interface components {
             type: components["schemas"]["IndicatorModelType"];
             /** Unit */
             unit?: string | null;
+            /**
+             * Children
+             * @description Child indicator models (only for group type)
+             */
+            children?: components["schemas"]["IndicatorModelRead"][] | null;
             /**
              * Id
              * Format: uuid
@@ -3014,7 +3021,7 @@ export interface components {
          * @description Type of indicator: text or numeric.
          * @enum {string}
          */
-        IndicatorModelType: "text" | "number";
+        IndicatorModelType: "text" | "number" | "group";
         /**
          * IndicatorModelUpdate
          * @description Model for updating indicator models.
@@ -3033,6 +3040,8 @@ export interface components {
             action_model_ids?: string[] | null;
             /** Action Model Associations */
             action_model_associations?: components["schemas"]["ActionModelAssociationInput"][] | null;
+            /** Children Ids */
+            children_ids?: string[] | null;
         };
         /**
          * IndicatorModelWithAssociation

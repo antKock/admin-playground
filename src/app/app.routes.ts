@@ -57,6 +57,16 @@ export const routes: Routes = [
             (m) => m.indicatorModelsRoutes,
           ),
       },
+      {
+        path: 'users',
+        loadChildren: () =>
+          import('./pages/users/users.routes').then((m) => m.usersRoutes),
+      },
+      {
+        path: 'activity',
+        loadChildren: () =>
+          import('./pages/activity/activity.routes').then((m) => m.activityRoutes),
+      },
     ],
   },
 ];

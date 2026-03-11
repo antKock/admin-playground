@@ -15,6 +15,8 @@ import {
   communityListLoader,
   loadCommunity,
   loadAllUsers,
+  loadCommunityParents,
+  loadCommunityChildren,
   createCommunityRequest,
   updateCommunityRequest,
   deleteCommunityRequest,
@@ -31,6 +33,12 @@ export const CommunityDomainStore = signalStore(
     allUsers: [] as UserRead[],
     isLoadingUsers: false,
     usersError: null as string | null,
+    parents: [] as CommunityRead[],
+    children: [] as CommunityRead[],
+    isLoadingParents: false,
+    isLoadingChildren: false,
+    parentsError: null as string | null,
+    childrenError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   // Provides: load, loadMore, refresh, reset + items, cursor, hasMore, isLoading, isEmpty, totalLoaded
@@ -97,5 +105,36 @@ export const CommunityDomainStore = signalStore(
         ),
       ),
     ),
+    loadParents: rxMethod<string>(
+      pipe(
+        tap(() => patch(store, { isLoadingParents: true, parentsError: null })),
+        switchMap((id) =>
+          loadCommunityParents(store._http, id).pipe(
+            tap((parents) => patch(store, { parents, isLoadingParents: false })),
+            catchError((err) => {
+              patch(store, { isLoadingParents: false, parents: [], parentsError: err?.message ?? 'Échec du chargement des parents' });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+    loadChildren: rxMethod<string>(
+      pipe(
+        tap(() => patch(store, { isLoadingChildren: true, childrenError: null })),
+        switchMap((id) =>
+          loadCommunityChildren(store._http, id).pipe(
+            tap((children) => patch(store, { children, isLoadingChildren: false })),
+            catchError((err) => {
+              patch(store, { isLoadingChildren: false, children: [], childrenError: err?.message ?? 'Échec du chargement des enfants' });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+    clearHierarchy(): void {
+      patch(store, { parents: [], children: [], parentsError: null, childrenError: null });
+    },
   })),
 );
