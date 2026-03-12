@@ -91,7 +91,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           } @else if (facade.usageError()) {
             <p class="text-sm text-error">{{ facade.usageError() }}</p>
           } @else if (facade.usageCount() === 0) {
-            <p class="text-text-secondary text-sm">Non utilisé dans aucun modèle d'action.</p>
+            <p class="text-text-secondary text-sm">Utilisé dans aucun modèle d'action.</p>
           } @else {
             <ul class="space-y-1">
               @for (am of facade.usedInModels(); track am.id) {

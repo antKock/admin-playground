@@ -276,11 +276,12 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
 
     const raw = this.form.getRawValue();
     const data = {
-      ...raw,
       name: raw.name!,
       technical_label: raw.technical_label!,
-      type: raw.type!,
-      children_ids: raw.type === 'group' ? this.attachedChildren().map(c => c.id) : [],
+      description: raw.description,
+      type: raw.type! as 'text' | 'number' | 'group',
+      unit: raw.type === 'group' ? null : raw.unit,
+      children_ids: raw.type === 'group' ? this.attachedChildren().map(c => c.id) : null,
     };
     this.form.markAsPristine();
 

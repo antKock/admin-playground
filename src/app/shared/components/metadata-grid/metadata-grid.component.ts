@@ -23,6 +23,8 @@ export interface MetadataField {
               <a
                 class="inline-flex items-center gap-1 text-text-link hover:text-text-link-hover no-underline"
                 [routerLink]="field.linkedRoute"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {{ field.value }}
                 <lucide-icon [img]="ArrowUpRight" [size]="14"></lucide-icon>

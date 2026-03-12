@@ -34,6 +34,7 @@ export class UserFacade {
   // Community signals
   readonly allCommunities = this.featureStore.allCommunities;
   readonly isLoadingCommunities = this.featureStore.isLoadingCommunities;
+  readonly communitiesError = this.featureStore.communitiesError;
 
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;

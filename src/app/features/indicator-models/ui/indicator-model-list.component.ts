@@ -54,7 +54,6 @@ export class IndicatorModelListComponent implements OnInit {
       ...item,
       type_display: item.type,
       unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
-      children_count: item.type === 'group' ? (item.children?.length?.toString() ?? '—') : '',
     })),
   );
 
@@ -82,7 +81,6 @@ export class IndicatorModelListComponent implements OnInit {
       ],
     },
     { key: 'unit_display', label: 'Unité', sortable: true, width: '100px' },
-    { key: 'children_count', label: 'Enfants', width: '100px' },
     { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '175px' },
   ];
 

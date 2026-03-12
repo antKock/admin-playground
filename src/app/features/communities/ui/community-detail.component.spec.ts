@@ -2,12 +2,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 
 import { CommunityDetailComponent } from './community-detail.component';
 
 describe('CommunityDetailComponent', () => {
   let component: CommunityDetailComponent;
   let fixture: ComponentFixture<CommunityDetailComponent>;
+
+  const fakeParamMap = { get: (key: string) => key === 'id' ? 'comm-1' : null };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -18,7 +21,10 @@ describe('CommunityDetailComponent', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: () => 'comm-1' } } },
+          useValue: {
+            snapshot: { paramMap: fakeParamMap },
+            paramMap: of(fakeParamMap),
+          },
         },
       ],
     }).compileComponents();

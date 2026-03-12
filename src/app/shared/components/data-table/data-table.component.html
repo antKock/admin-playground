@@ -149,6 +149,14 @@
     </div>
   }
 
+  @if (hasMore() && !isLoading()) {
+    <div class="load-more-container">
+      <button class="load-more-btn" (click)="loadMore.emit()">
+        Charger plus
+      </button>
+    </div>
+  }
+
   @if (isLoading() && data().length > 0) {
     <div class="loading-more">
       <div class="loading-spinner"></div>

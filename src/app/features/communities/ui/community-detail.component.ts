@@ -1,7 +1,6 @@
-import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-
-import { RouterLink } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
@@ -115,6 +114,7 @@ import { CommunityUsersComponent } from './community-users.component';
 export class CommunityDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly facade = inject(CommunityFacade);
   readonly inspectorService = inject(ApiInspectorService);
   readonly router = inject(Router);
@@ -145,11 +145,13 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.facade.select(id);
-      this.facade.loadUsers();
-    }
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.facade.select(id);
+        this.facade.loadUsers();
+      }
+    });
   }
 
   // Required: clear stale selection so navigating to a different item doesn't briefly show the old one.

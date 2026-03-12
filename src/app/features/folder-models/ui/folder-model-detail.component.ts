@@ -66,6 +66,8 @@ import { FolderModelFacade } from '../folder-model.facade';
                 <li>
                   <a
                     [routerLink]="['/funding-programs', fp.id]"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     class="text-sm text-brand hover:underline"
                   >
                     {{ fp.name }}

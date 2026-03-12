@@ -25,6 +25,7 @@ export const UserFeatureStore = signalStore(
       isLoadingRoles: computed(() => domainStore.isLoadingRoles()),
       allCommunities: computed(() => domainStore.allCommunities()),
       isLoadingCommunities: computed(() => domainStore.isLoadingCommunities()),
+      communitiesError: computed(() => domainStore.communitiesError()),
     };
   }),
 );
