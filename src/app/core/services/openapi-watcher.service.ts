@@ -1,7 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 
-import { environment } from '../../../environments/environment';
-
 export interface OpenApiChange {
   type: 'added' | 'removed' | 'modified';
   category: 'path' | 'schema';
@@ -16,23 +14,11 @@ export class OpenApiWatcherService {
 
   async check(): Promise<void> {
     try {
-      const specUrl = `${environment.apiBaseUrl}/openapi.json`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10_000);
-      const response = await fetch(specUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        console.warn(`[OpenAPI Watcher] Fetch failed with status ${response.status}`);
-        return;
-      }
-
-      const specText = await response.text();
-
-      let liveSpec: Record<string, unknown>;
+      let latestSpec: Record<string, unknown>;
       try {
-        liveSpec = JSON.parse(specText);
+        latestSpec = (await import('@core/api/generated/openapi-spec.json')).default as Record<string, unknown>;
       } catch {
-        console.warn('[OpenAPI Watcher] Failed to parse spec as JSON');
+        console.warn('[OpenAPI Watcher] Latest spec not found — run: npm run api:generate');
         return;
       }
 
@@ -40,11 +26,11 @@ export class OpenApiWatcherService {
       try {
         baseline = (await import('@core/api/generated/openapi-baseline.json')).default as Record<string, unknown>;
       } catch {
-        console.warn('[OpenAPI Watcher] Baseline not found — run scripts/generate-api-types.sh');
+        console.warn('[OpenAPI Watcher] Baseline not found — run: npm run api:acknowledge');
         return;
       }
 
-      const changes = this.diffSpecs(baseline, liveSpec);
+      const changes = this.diffSpecs(baseline, latestSpec);
       this.changes.set(changes.length > 0 ? changes : null);
     } catch (err) {
       console.warn('[OpenAPI Watcher] Check failed:', err);
