@@ -24,7 +24,8 @@ export interface OpenApiChange {
   after?: unknown;
 }
 
-const OPENAPI_URL = 'https://laureatv2-api-staging.osc-fr1.scalingo.io/openapi.json';
+/** Uses the same /api proxy as the rest of the app to avoid CORS issues. */
+const OPENAPI_URL = '/api/openapi.json';
 
 @Injectable({ providedIn: 'root' })
 export class OpenApiWatcherService {
