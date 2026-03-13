@@ -43,6 +43,12 @@ export class AuthService {
     return (payload['email'] as string) ?? null;
   });
 
+  readonly userId = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['sub'] as string) ?? (payload['id'] as string) ?? null;
+  });
+
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, { email, password })

@@ -18,7 +18,7 @@ export const ENTITY_TYPES = [
 
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
-export type EntityTypeCategory = 'all' | 'models' | 'instances';
+export type ActivityScope = 'admin' | 'user';
 
 export interface ActivityFilters {
   entity_type?: string;
@@ -43,9 +43,14 @@ export interface TimeGroup {
   hiddenCount: number;
 }
 
-/** A parent-child group: a parent activity with its cascade children. */
-export interface ParentChildGroup {
-  key: string;
-  primary: ActivityResponse;
-  children: ActivityResponse[];
+/** An activity card with optional rolled-up indicator children. */
+export interface ActivityWithChildren extends ActivityResponse {
+  children?: { label: string; count: number }[];
+}
+
+/** A day group for the timeline feed. */
+export interface DayGroup {
+  label: string;
+  date: string;
+  activities: ActivityWithChildren[];
 }

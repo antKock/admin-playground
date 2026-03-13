@@ -1,5 +1,14 @@
 import { ActivityResponse } from './history.models';
-import { entityRoute, actionLabel, actionBadgeClass, isModelEntityType, filterByCategory, groupByParent, groupByTime } from './history.utils';
+import {
+  entityRoute,
+  actionLabel,
+  actionBadgeClass,
+  isModelEntityType,
+  filterByScope,
+  groupByDay,
+  rollupIndicators,
+  groupByTime,
+} from './history.utils';
 
 function makeActivity(overrides: Partial<ActivityResponse> = {}): ActivityResponse {
   return {
@@ -108,62 +117,148 @@ describe('isModelEntityType', () => {
   });
 });
 
-describe('filterByCategory', () => {
+describe('filterByScope', () => {
   const activities = [
     makeActivity({ id: '1', entity_type: 'ActionModel' }),
     makeActivity({ id: '2', entity_type: 'Action' }),
     makeActivity({ id: '3', entity_type: 'FundingProgram' }),
     makeActivity({ id: '4', entity_type: 'Folder' }),
+    makeActivity({ id: '5', entity_type: 'Indicator' }),
   ];
 
-  it('should return all activities for "all"', () => {
-    expect(filterByCategory(activities, 'all')).toHaveLength(4);
-  });
-
-  it('should return only model types for "models"', () => {
-    const result = filterByCategory(activities, 'models');
+  it('should return only admin entity types for "admin" scope', () => {
+    const result = filterByScope(activities, 'admin');
     expect(result).toHaveLength(2);
     expect(result.map((a) => a.entity_type)).toEqual(['ActionModel', 'FundingProgram']);
   });
 
-  it('should return only instance types for "instances"', () => {
-    const result = filterByCategory(activities, 'instances');
-    expect(result).toHaveLength(2);
-    expect(result.map((a) => a.entity_type)).toEqual(['Action', 'Folder']);
+  it('should return only user entity types for "user" scope', () => {
+    const result = filterByScope(activities, 'user');
+    expect(result).toHaveLength(3);
+    expect(result.map((a) => a.entity_type)).toEqual(['Action', 'Folder', 'Indicator']);
+  });
+
+  it('should return empty array when no matching types exist', () => {
+    const onlyAdmin = [makeActivity({ entity_type: 'User' })];
+    expect(filterByScope(onlyAdmin, 'user')).toHaveLength(0);
   });
 });
 
-describe('groupByParent', () => {
-  it('should group children under their parent', () => {
-    const parent = makeActivity({ id: 'p1', entity_type: 'ActionModel', entity_id: 'am1' });
-    const child1 = makeActivity({ id: 'c1', entity_type: 'IndicatorModel', entity_id: 'im1', parent_entity_id: 'am1', parent_entity_name: 'Parent Action' });
-    const child2 = makeActivity({ id: 'c2', entity_type: 'IndicatorModel', entity_id: 'im2', parent_entity_id: 'am1', parent_entity_name: 'Parent Action' });
+describe('groupByDay', () => {
+  const today = new Date('2026-03-13T15:00:00Z');
 
-    const groups = groupByParent([parent, child1, child2]);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].primary.id).toBe('p1');
-    expect(groups[0].children).toHaveLength(2);
-  });
+  it('should group activities by calendar day', () => {
+    const activities = [
+      makeActivity({ id: '1', created_at: '2026-03-13T14:00:00Z' }),
+      makeActivity({ id: '2', created_at: '2026-03-13T10:00:00Z' }),
+      makeActivity({ id: '3', created_at: '2026-03-12T16:00:00Z' }),
+    ];
 
-  it('should keep standalone activities ungrouped', () => {
-    const a1 = makeActivity({ id: '1', entity_id: 'e1' });
-    const a2 = makeActivity({ id: '2', entity_id: 'e2' });
-
-    const groups = groupByParent([a1, a2]);
+    const groups = groupByDay(activities, today);
     expect(groups).toHaveLength(2);
-    expect(groups[0].children).toHaveLength(0);
-    expect(groups[1].children).toHaveLength(0);
+    expect(groups[0].label).toBe("Aujourd'hui");
+    expect(groups[0].activities).toHaveLength(2);
+    expect(groups[1].label).toBe('Hier');
+    expect(groups[1].activities).toHaveLength(1);
   });
 
-  it('should handle orphan children whose parent is not in the list', () => {
-    const child1 = makeActivity({ id: 'c1', parent_entity_id: 'missing-parent' });
-    const child2 = makeActivity({ id: 'c2', parent_entity_id: 'missing-parent' });
+  it('should use French-formatted date for older days', () => {
+    const activities = [
+      makeActivity({ id: '1', created_at: '2026-03-10T10:00:00Z' }),
+    ];
 
-    const groups = groupByParent([child1, child2]);
+    const groups = groupByDay(activities, today);
     expect(groups).toHaveLength(1);
-    expect(groups[0].key).toContain('orphan');
-    expect(groups[0].primary.id).toBe('c1');
-    expect(groups[0].children).toHaveLength(1);
+    // Should be a French date like "Mardi 10 mars"
+    expect(groups[0].label).toMatch(/^\w.+\d+\s+\w+$/);
+  });
+
+  it('should return empty array for empty input', () => {
+    expect(groupByDay([], today)).toEqual([]);
+  });
+
+  it('should sort day groups by date descending even with unordered input', () => {
+    const activities = [
+      makeActivity({ id: '1', created_at: '2026-03-10T10:00:00Z' }),
+      makeActivity({ id: '2', created_at: '2026-03-13T14:00:00Z' }),
+      makeActivity({ id: '3', created_at: '2026-03-12T16:00:00Z' }),
+    ];
+
+    const groups = groupByDay(activities, today);
+    expect(groups).toHaveLength(3);
+    expect(groups[0].label).toBe("Aujourd'hui");
+    expect(groups[1].label).toBe('Hier');
+    // Third group is the oldest day
+    expect(groups[2].date).toBe('2026-03-10');
+  });
+});
+
+describe('rollupIndicators', () => {
+  it('should roll up indicator activities under parent Action', () => {
+    const parentAction = makeActivity({
+      id: 'p1',
+      entity_type: 'Action',
+      entity_id: 'action-1',
+    });
+    const indicator1 = makeActivity({
+      id: 'i1',
+      entity_type: 'Indicator',
+      entity_id: 'ind-1',
+      parent_entity_type: 'Action',
+      parent_entity_id: 'action-1',
+      action: 'update',
+    });
+    const indicator2 = makeActivity({
+      id: 'i2',
+      entity_type: 'Indicator',
+      entity_id: 'ind-2',
+      parent_entity_type: 'Action',
+      parent_entity_id: 'action-1',
+      action: 'update',
+    });
+
+    const result = rollupIndicators([parentAction, indicator1, indicator2]);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('p1');
+    expect(result[0].children).toBeDefined();
+    expect(result[0].children![0].count).toBe(2);
+  });
+
+  it('should pass through standalone activities unchanged', () => {
+    const standalone = makeActivity({ id: 's1', entity_type: 'Folder' });
+    const result = rollupIndicators([standalone]);
+    expect(result).toHaveLength(1);
+    expect(result[0].children).toBeUndefined();
+  });
+
+  it('should not roll up indicators without parent_entity_type Action', () => {
+    const indicator = makeActivity({
+      id: 'i1',
+      entity_type: 'Indicator',
+      parent_entity_type: 'Folder',
+      parent_entity_id: 'folder-1',
+    });
+    const result = rollupIndicators([indicator]);
+    expect(result).toHaveLength(1);
+    expect(result[0].children).toBeUndefined();
+  });
+
+  it('should handle orphan indicators whose parent Action is not in the list', () => {
+    const indicator = makeActivity({
+      id: 'i1',
+      entity_type: 'Indicator',
+      parent_entity_type: 'Action',
+      parent_entity_id: 'missing-action',
+      parent_entity_name: 'Action Orpheline',
+      action: 'update',
+    });
+
+    const result = rollupIndicators([indicator]);
+    expect(result).toHaveLength(1);
+    expect(result[0].children).toBeDefined();
+    // Orphan should display as parent Action, not as Indicator
+    expect(result[0].entity_type).toBe('Action');
+    expect(result[0].entity_display_name).toBe('Action Orpheline');
   });
 });
 

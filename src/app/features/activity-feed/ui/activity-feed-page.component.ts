@@ -1,92 +1,197 @@
-import { Component, inject, OnInit, OnDestroy, DestroyRef, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, DestroyRef, signal, computed, effect } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { LucideAngularModule, X } from 'lucide-angular';
-import { Eye, GitCompareArrows } from 'lucide-angular';
+import { LucideAngularModule, X, Eye, GitCompareArrows } from 'lucide-angular';
 
-import { DataTableComponent, ColumnDef, RowAction } from '@app/shared/components/data-table/data-table.component';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityFeedFacade } from '../activity-feed.facade';
-import { ActivityFilters, ActivityResponse, EntityTypeCategory, VersionComparison } from '@domains/history/history.models';
+import { ActivityResponse, ActivityWithChildren, VersionComparison } from '@domains/history/history.models';
 import {
-  ENTITY_TYPE_OPTIONS,
-  ENTITY_TYPE_LABELS,
-  ACTION_TYPE_OPTIONS,
-  CATEGORY_OPTIONS,
-  entityRoute,
   actionLabel,
-  filterByCategory,
+  actionBadgeClass,
+  entityTypeLabel,
+  groupByDay,
 } from '@domains/history/history.utils';
 import { entityStateAtDate, compareEntityVersions } from '@domains/history/history.api';
 
+const LAST_VISIT_KEY_PREFIX = 'activity-last-visit-';
+
 @Component({
   selector: 'app-activity-feed-page',
-  imports: [DataTableComponent, FormsModule, LucideAngularModule],
+  imports: [LucideAngularModule],
   template: `
-    <div class="p-6 relative">
-      <h1 class="text-2xl font-bold text-text-primary mb-6">Activité globale</h1>
+    <div class="p-6 max-w-4xl relative">
+      <h1 class="text-2xl font-bold text-text-primary mb-6">Activité</h1>
 
-      <div class="flex flex-wrap items-center gap-3 mb-4">
-        <!-- Category toggle -->
-        <div class="flex gap-1">
-          @for (cat of categoryOptions; track cat.value) {
-            <button
-              class="px-3 py-1.5 text-xs rounded-full transition-colors"
-              [class]="filterCategory() === cat.value
-                ? 'bg-brand text-white'
-                : 'bg-surface-muted text-text-secondary hover:text-text-primary'"
-              (click)="onCategoryChange(cat.value)"
-            >
-              {{ cat.label }}
-            </button>
-          }
+      <!-- Controls bar -->
+      <div class="flex items-center justify-between mb-6">
+        <!-- Scope pill toggle -->
+        <div class="flex gap-1 bg-surface-muted rounded-lg p-1">
+          <button
+            class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+            [class]="facade.scope() === 'admin'
+              ? 'bg-surface-base text-text-primary shadow-sm'
+              : 'text-text-secondary hover:text-text-primary'"
+            (click)="facade.scope.set('admin')"
+          >
+            Administration
+          </button>
+          <button
+            class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+            [class]="facade.scope() === 'user'
+              ? 'bg-surface-base text-text-primary shadow-sm'
+              : 'text-text-secondary hover:text-text-primary'"
+            (click)="facade.scope.set('user')"
+          >
+            Utilisateurs
+          </button>
         </div>
 
-        <div class="w-px h-6 bg-border"></div>
-
-        <select
-          class="text-sm border border-border rounded-lg px-3 py-2 bg-surface-base text-text-primary"
-          [ngModel]="filterEntityType()"
-          (ngModelChange)="onEntityTypeChange($event)"
-        >
-          @for (opt of entityTypeOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        <select
-          class="text-sm border border-border rounded-lg px-3 py-2 bg-surface-base text-text-primary"
-          [ngModel]="filterAction()"
-          (ngModelChange)="onActionChange($event)"
-        >
-          @for (opt of actionTypeOptions; track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-        <input
-          type="date"
-          class="text-sm border border-border rounded-lg px-3 py-2 bg-surface-base text-text-primary"
-          [ngModel]="filterSince()"
-          (ngModelChange)="onSinceChange($event)"
-        />
+        <!-- Hide my actions toggle -->
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <div
+            class="relative w-9 h-5 rounded-full transition-colors"
+            [class]="facade.hideOwnActions() ? 'bg-brand' : 'bg-surface-mid'"
+            (click)="facade.hideOwnActions.set(!facade.hideOwnActions())"
+          >
+            <div
+              class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+              [class]="facade.hideOwnActions() ? 'translate-x-4' : 'translate-x-0.5'"
+            ></div>
+          </div>
+          <span class="text-sm text-text-secondary">Masquer mes actions</span>
+        </label>
       </div>
 
       @if (facade.error()) {
         <p class="text-sm text-error mb-4">{{ facade.error() }}</p>
       }
 
-      <app-data-table
-        [columns]="columns"
-        [data]="rows()"
-        [actions]="tableActions"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [emptyMessage]="!facade.isLoading() && rows().length === 0 ? 'Aucune activité trouvée.' : null"
-        (rowClick)="onRowClick($event)"
-        (actionClick)="onActionClick($event)"
-        (loadMore)="onLoadMore()"
-      />
+      <!-- Timeline -->
+      <div class="space-y-6">
+        @for (group of dayGroups(); track group.date) {
+          <!-- Day header -->
+          <div>
+            <h2 class="text-xs font-semibold text-text-tertiary uppercase tracking-wide mb-3">
+              {{ group.label }}
+            </h2>
+
+            <div class="space-y-2">
+              @for (activity of group.activities; track activity.id) {
+                <!-- Activity card -->
+                <div
+                  class="group relative border rounded-lg px-4 py-3 transition-colors"
+                  [class]="isOwnAction(activity)
+                    ? 'border-border/50 bg-surface-subtle opacity-60'
+                    : 'border-border bg-surface-base hover:bg-surface-table-row-hover'"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                      <!-- Top line: user + time -->
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-sm font-semibold text-text-primary">
+                          {{ activity.user_name }}
+                        </span>
+                        <span class="text-xs text-text-tertiary">
+                          {{ formatTime(activity.created_at) }}
+                        </span>
+                      </div>
+
+                      <!-- Action + entity -->
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="inline-flex px-1.5 py-0.5 text-xs font-medium rounded"
+                          [class]="actionBadgeClass(activity.action)"
+                        >
+                          {{ actionLabel(activity.action) }}
+                        </span>
+                        <span class="text-xs text-text-tertiary">
+                          {{ entityTypeLabel(activity.entity_type) }}
+                        </span>
+                        <span class="text-sm text-text-primary font-medium truncate">
+                          {{ activity.entity_display_name }}
+                        </span>
+                      </div>
+
+                      <!-- Changes summary -->
+                      @if (activity.changes_summary) {
+                        <p class="text-xs text-text-secondary mt-1 ml-0.5">
+                          {{ activity.changes_summary }}
+                        </p>
+                      }
+
+                      <!-- Child rollups (indicator instances) -->
+                      @if (activity.children?.length) {
+                        <div class="mt-1.5 ml-3 border-l-2 border-border/60 pl-3 space-y-0.5">
+                          @for (child of activity.children; track child.label) {
+                            <p class="text-xs text-text-secondary">
+                              <span class="text-text-tertiary">└</span>
+                              {{ child.count }} {{ child.label }}
+                            </p>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Quick actions (visible on hover) -->
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pt-1">
+                      <button
+                        class="p-1.5 rounded-md hover:bg-surface-muted text-icon-secondary hover:text-icon-primary"
+                        title="Voir l'état"
+                        (click)="onViewState(activity)"
+                      >
+                        <lucide-icon [img]="Eye" [size]="15"></lucide-icon>
+                      </button>
+                      <button
+                        class="p-1.5 rounded-md hover:bg-surface-muted text-icon-secondary hover:text-icon-primary"
+                        title="Comparer"
+                        (click)="onCompare(activity)"
+                      >
+                        <lucide-icon [img]="GitCompareArrows" [size]="15"></lucide-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Last visit separator -->
+                @if (isLastVisitAfter(activity)) {
+                  <div class="flex items-center gap-3 py-3">
+                    <div class="flex-1 border-t border-dashed border-brand/40"></div>
+                    <span class="text-xs font-medium text-brand whitespace-nowrap">
+                      Dernière visite · {{ lastVisitLabel() }}
+                    </span>
+                    <div class="flex-1 border-t border-dashed border-brand/40"></div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (facade.isLoading()) {
+        <div class="mt-6 animate-pulse space-y-2">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="h-16 bg-surface-muted rounded-lg"></div>
+          }
+        </div>
+      }
+
+      @if (!facade.isLoading() && dayGroups().length === 0) {
+        <p class="text-sm text-text-secondary mt-4">Aucune activité trouvée.</p>
+      }
+
+      <!-- Load more -->
+      @if (facade.hasMore() && !facade.isLoading()) {
+        <div class="mt-6">
+          <button
+            class="px-4 py-2 text-sm border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+            (click)="facade.loadMore()"
+          >
+            Charger plus
+          </button>
+        </div>
+      }
 
       <!-- Detail side panel -->
       @if (detailPanel(); as panel) {
@@ -169,98 +274,94 @@ import { entityStateAtDate, compareEntityVersions } from '@domains/history/histo
 })
 export class ActivityFeedPageComponent implements OnInit, OnDestroy {
   readonly facade = inject(ActivityFeedFacade);
-  private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly X = X;
-  readonly entityTypeOptions = ENTITY_TYPE_OPTIONS;
-  readonly actionTypeOptions = ACTION_TYPE_OPTIONS;
-  readonly categoryOptions = CATEGORY_OPTIONS;
+  readonly Eye = Eye;
+  readonly GitCompareArrows = GitCompareArrows;
 
-  readonly filterEntityType = signal('');
-  readonly filterAction = signal('');
-  readonly filterSince = signal('');
-  readonly filterCategory = signal<EntityTypeCategory>('all');
   readonly detailPanel = signal<DetailPanel | null>(null);
 
-  readonly columns: ColumnDef[] = [
-    { key: 'date_display', label: 'Date', width: '160px' },
-    { key: 'user_name', label: 'Utilisateur', width: '150px', bold: true },
-    { key: 'action_display', label: 'Action', width: '120px' },
-    { key: 'entity_type_display', label: 'Type', width: '120px' },
-    { key: 'entity_display_name', label: 'Entité', bold: true },
-    { key: 'parent_display', label: 'Parent', width: '150px' },
-    { key: 'changes_summary', label: 'Résumé' },
-  ];
+  readonly dayGroups = computed(() => groupByDay(this.facade.filteredActivities()));
 
-  readonly tableActions: RowAction[] = [
-    { label: 'Voir l\'état', icon: Eye, handler: 'view-state' },
-    { label: 'Comparer', icon: GitCompareArrows, handler: 'compare' },
-  ];
+  readonly lastVisitLabel = computed(() => {
+    const ts = this.facade.lastVisitTimestamp();
+    if (!ts) return '';
+    return formatDateFr(ts);
+  });
 
-  readonly filteredActivities = computed(() =>
-    filterByCategory(this.facade.activities(), this.filterCategory()),
-  );
+  /** The activity ID after which the "last visit" separator should appear. */
+  readonly lastVisitAfterActivityId = computed<string | null>(() => {
+    const ts = this.facade.lastVisitTimestamp();
+    if (!ts) return null;
 
-  readonly rows = computed(() =>
-    this.filteredActivities().map((activity) => ({
-      ...activity,
-      date_display: formatDateFr(activity.created_at),
-      action_display: actionLabel(activity.action),
-      entity_type_display: ENTITY_TYPE_LABELS[activity.entity_type] ?? activity.entity_type,
-      entity_display_name: activity.entity_display_name || activity.entity_id,
-      parent_display: activity.parent_entity_name ?? '',
-      _route: entityRoute(activity.entity_type, activity.entity_id),
-    })),
-  );
+    const lastVisitTime = new Date(ts).getTime();
+    const allActivities = this.facade.filteredActivities();
+
+    for (let i = 0; i < allActivities.length; i++) {
+      const activityTime = new Date(allActivities[i].created_at).getTime();
+      const nextTime = i < allActivities.length - 1
+        ? new Date(allActivities[i + 1].created_at).getTime()
+        : -Infinity;
+
+      if (activityTime > lastVisitTime && nextTime <= lastVisitTime) {
+        return allActivities[i].id;
+      }
+    }
+
+    return null;
+  });
+
+  private lastVisitUpdated = false;
+
+  /** Update localStorage once data has actually loaded (not before). */
+  private readonly updateLastVisitEffect = effect(() => {
+    const activities = this.facade.activities();
+    const isLoading = this.facade.isLoading();
+
+    if (!isLoading && activities.length > 0 && !this.lastVisitUpdated) {
+      this.lastVisitUpdated = true;
+      const userId = this.facade.currentUserId();
+      if (userId) {
+        localStorage.setItem(`${LAST_VISIT_KEY_PREFIX}${userId}`, new Date().toISOString());
+      }
+    }
+  });
 
   ngOnInit(): void {
-    this.reloadWithFilters();
+    const userId = this.facade.currentUserId();
+    if (userId) {
+      const stored = localStorage.getItem(`${LAST_VISIT_KEY_PREFIX}${userId}`);
+      this.facade.lastVisitTimestamp.set(stored);
+    }
+
+    this.facade.load();
   }
 
   ngOnDestroy(): void {
     this.facade.reset();
   }
 
-  onCategoryChange(value: EntityTypeCategory): void {
-    this.filterCategory.set(value);
+  isOwnAction(activity: ActivityResponse): boolean {
+    if (this.facade.hideOwnActions()) return false; // hidden entirely, no styling needed
+    const userId = this.facade.currentUserId();
+    return !!userId && activity.user_id === userId;
   }
 
-  onEntityTypeChange(value: string): void {
-    this.filterEntityType.set(value);
-    this.reloadWithFilters();
+  isLastVisitAfter(activity: ActivityWithChildren): boolean {
+    return activity.id === this.lastVisitAfterActivityId();
   }
 
-  onActionChange(value: string): void {
-    this.filterAction.set(value);
-    this.reloadWithFilters();
+  formatTime(isoDate: string): string {
+    return new Date(isoDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 
-  onSinceChange(value: string): void {
-    this.filterSince.set(value);
-    this.reloadWithFilters();
-  }
+  actionLabel = actionLabel;
+  actionBadgeClass = actionBadgeClass;
+  entityTypeLabel = entityTypeLabel;
 
-  onRowClick(row: Record<string, unknown>): void {
-    const route = row['_route'] as string | null;
-    if (route) {
-      this.router.navigateByUrl(route);
-    }
-  }
-
-  onActionClick(event: { action: string; row: Record<string, unknown> }): void {
-    const activity = event.row as unknown as ActivityResponse;
-    if (event.action === 'view-state') {
-      this.onViewState(activity);
-    } else if (event.action === 'compare') {
-      this.onCompare(activity);
-    }
-  }
-
-  onLoadMore(): void {
-    this.facade.loadMore();
-  }
+  // ── Detail panel (carried over from old implementation) ──────────────
 
   closeDetail(): void {
     this.detailPanel.set(null);
@@ -290,7 +391,7 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
     return value as { old: unknown; new: unknown };
   }
 
-  private onViewState(activity: ActivityResponse): void {
+  onViewState(activity: ActivityResponse): void {
     const title = `État: ${activity.entity_display_name || activity.entity_id}`;
     this.detailPanel.set({ type: 'state', title, loading: true, error: null, stateData: null, comparison: null });
 
@@ -306,7 +407,7 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  private onCompare(activity: ActivityResponse): void {
+  onCompare(activity: ActivityResponse): void {
     const title = `Diff: ${activity.entity_display_name || activity.entity_id}`;
     this.detailPanel.set({ type: 'compare', title, loading: true, error: null, stateData: null, comparison: null });
 
@@ -323,17 +424,6 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
           this.detailPanel.set({ type: 'compare', title, loading: false, error: detailErrorMessage(err), stateData: null, comparison: null });
         },
       });
-  }
-
-  private reloadWithFilters(): void {
-    const filters: ActivityFilters = {};
-    const entityType = this.filterEntityType();
-    const action = this.filterAction();
-    const since = this.filterSince();
-    if (entityType) filters.entity_type = entityType;
-    if (action) filters.action = action as ActivityFilters['action'];
-    if (since) filters.since = new Date(since).toISOString();
-    this.facade.load(filters);
   }
 }
 

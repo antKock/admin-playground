@@ -1,4 +1,4 @@
-import { ActivityResponse, EntityTypeCategory, ENTITY_TYPES, ParentChildGroup, TimeGroup } from './history.models';
+import { ActivityResponse, ActivityScope, ActivityWithChildren, DayGroup, ENTITY_TYPES, TimeGroup } from './history.models';
 
 const ENTITY_ROUTE_MAP: Record<string, string> = {
   FundingProgram: '/funding-programs',
@@ -13,6 +13,17 @@ const ENTITY_ROUTE_MAP: Record<string, string> = {
 
 /** Derived from the single source of truth (ENTITY_TYPES) in history.models.ts. */
 const MODEL_ENTITY_TYPES = new Set<string>(ENTITY_TYPES);
+
+// ── Scope-based entity type sets (timeline feed) ─────────────────────────
+
+export const ADMIN_ENTITY_TYPES = new Set([
+  'FundingProgram', 'ActionTheme', 'ActionModel', 'FolderModel',
+  'IndicatorModel', 'User', 'Community',
+]);
+
+export const USER_ENTITY_TYPES = new Set([
+  'Action', 'Folder', 'Agent', 'Site', 'Building', 'Indicator',
+]);
 
 const TIME_GROUP_WINDOW_MS = 60_000;
 const TIME_GROUP_MAX_VISIBLE = 10;
@@ -54,11 +65,6 @@ export const ACTION_TYPE_OPTIONS = [
   { label: 'Suppression', value: 'delete' },
 ];
 
-export const CATEGORY_OPTIONS: { label: string; value: EntityTypeCategory }[] = [
-  { label: 'Tout', value: 'all' },
-  { label: 'Modèles', value: 'models' },
-  { label: 'Instances', value: 'instances' },
-];
 
 // ── Route / label helpers ──────────────────────────────────────────────────
 
@@ -95,66 +101,17 @@ export function isModelEntityType(entityType: string): boolean {
   return MODEL_ENTITY_TYPES.has(entityType);
 }
 
-/**
- * Client-side category filter.
- * NOTE: This filters already-fetched paginated data. When few items of the
- * selected category exist on the current page, the list may appear shorter
- * than expected. This is a known build-phase limitation — the API does not
- * currently support a category parameter.
- */
-export function filterByCategory(
+// ── Scope filtering (timeline feed) ──────────────────────────────────────
+
+export function filterByScope(
   activities: ActivityResponse[],
-  category: EntityTypeCategory,
+  scope: ActivityScope,
 ): ActivityResponse[] {
-  if (category === 'all') return activities;
-  if (category === 'models') return activities.filter((a) => isModelEntityType(a.entity_type));
-  return activities.filter((a) => !isModelEntityType(a.entity_type));
+  const set = scope === 'admin' ? ADMIN_ENTITY_TYPES : USER_ENTITY_TYPES;
+  return activities.filter((a) => set.has(a.entity_type));
 }
 
 // ── Grouping ──────────────────────────────────────────────────────────────
-
-/**
- * Group activities by parent-child relationship.
- * Activities with parent_entity_id are grouped under their parent.
- * Standalone activities remain ungrouped (empty children array).
- */
-export function groupByParent(activities: ActivityResponse[]): ParentChildGroup[] {
-  const childrenByParent = new Map<string, ActivityResponse[]>();
-  const standalone: ActivityResponse[] = [];
-
-  for (const activity of activities) {
-    if (activity.parent_entity_id) {
-      const key = activity.parent_entity_id;
-      if (!childrenByParent.has(key)) childrenByParent.set(key, []);
-      childrenByParent.get(key)!.push(activity);
-    } else {
-      standalone.push(activity);
-    }
-  }
-
-  const groups: ParentChildGroup[] = [];
-
-  for (const activity of standalone) {
-    const children = childrenByParent.get(activity.entity_id);
-    if (children) {
-      groups.push({ key: activity.id, primary: activity, children });
-      childrenByParent.delete(activity.entity_id);
-    } else {
-      groups.push({ key: activity.id, primary: activity, children: [] });
-    }
-  }
-
-  // Orphan children whose parent isn't in the current page
-  for (const [parentId, children] of childrenByParent) {
-    groups.push({
-      key: `orphan-${parentId}`,
-      primary: children[0],
-      children: children.slice(1),
-    });
-  }
-
-  return groups;
-}
 
 /**
  * Group activities by time proximity: same (entity_id OR parent_entity_id) + user_id within 1min.
@@ -199,4 +156,126 @@ function makeTimeGroup(activities: ActivityResponse[]): TimeGroup {
     activities,
     hiddenCount: Math.max(0, activities.length - TIME_GROUP_MAX_VISIBLE),
   };
+}
+
+// ── Day grouping (timeline feed) ─────────────────────────────────────────
+
+/** Format a date as YYYY-MM-DD in local timezone. */
+function localDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function dayLabel(date: Date, today: Date): string {
+  const todayStr = localDateStr(today);
+  const dateStr = localDateStr(date);
+
+  if (dateStr === todayStr) return "Aujourd'hui";
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === localDateStr(yesterday)) return 'Hier';
+
+  return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/**
+ * Group activities by calendar day in local timezone.
+ * Input must be sorted by created_at descending (newest first) — output preserves this order.
+ */
+export function groupByDay(activities: ActivityWithChildren[], now?: Date): DayGroup[] {
+  const today = now ?? new Date();
+  const map = new Map<string, { label: string; activities: ActivityWithChildren[] }>();
+
+  for (const activity of activities) {
+    const date = new Date(activity.created_at);
+    const dateStr = localDateStr(date);
+
+    if (!map.has(dateStr)) {
+      map.set(dateStr, { label: dayLabel(date, today), activities: [] });
+    }
+    map.get(dateStr)!.activities.push(activity);
+  }
+
+  // Sort day groups by date descending (newest first)
+  return Array.from(map.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, group]) => ({
+      label: group.label,
+      date,
+      activities: group.activities,
+    }));
+}
+
+// ── Indicator rollup (timeline feed, User scope only) ────────────────────
+
+function indicatorRollupLabel(action: string): string {
+  switch (action) {
+    case 'update': return 'indicateurs modifiés';
+    case 'create': return 'indicateurs créés';
+    case 'delete': return 'indicateurs supprimés';
+    default: return 'indicateurs modifiés';
+  }
+}
+
+export function rollupIndicators(activities: ActivityResponse[]): ActivityWithChildren[] {
+  const result: ActivityWithChildren[] = [];
+  const childMap = new Map<string, { label: string; count: number }[]>();
+  const childIds = new Set<string>();
+
+  // First pass: identify indicator instances that have a parent Action
+  for (const activity of activities) {
+    if (
+      activity.parent_entity_type === 'Action' &&
+      activity.parent_entity_id &&
+      activity.entity_type === 'Indicator'
+    ) {
+      const key = activity.parent_entity_id;
+      if (!childMap.has(key)) childMap.set(key, []);
+
+      const existing = childMap.get(key)!;
+      const label = indicatorRollupLabel(activity.action);
+      const found = existing.find((c) => c.label === label);
+      if (found) {
+        found.count++;
+      } else {
+        existing.push({ label, count: 1 });
+      }
+      childIds.add(activity.id);
+    }
+  }
+
+  // Second pass: build result with children attached to parent Actions
+  for (const activity of activities) {
+    if (childIds.has(activity.id)) continue; // skip rolled-up children
+
+    const withChildren: ActivityWithChildren = { ...activity };
+    if (activity.entity_type === 'Action' && childMap.has(activity.entity_id)) {
+      withChildren.children = childMap.get(activity.entity_id)!;
+      childMap.delete(activity.entity_id);
+    }
+    result.push(withChildren);
+  }
+
+  // Orphan indicator groups (parent Action not in current page)
+  for (const [parentId, children] of childMap) {
+    const representative = activities.find(
+      (a) => a.parent_entity_id === parentId && childIds.has(a.id),
+    );
+    if (representative) {
+      // Show as a parent Action card using parent info from the indicator activity
+      result.push({
+        ...representative,
+        entity_type: representative.parent_entity_type ?? representative.entity_type,
+        entity_id: parentId,
+        entity_display_name: representative.parent_entity_name ?? parentId,
+        children,
+      });
+    }
+  }
+
+  return result;
 }
