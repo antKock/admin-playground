@@ -101,7 +101,9 @@ describe('OpenApiWatcherService', () => {
   });
 
   describe('check', () => {
-    it('should set changes when spec differs from baseline', async () => {
+    it('should set changes when live spec differs from baseline', async () => {
+      const liveSpec = { paths: { '/a': {}, '/new': { get: {} } }, components: { schemas: {} } };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(liveSpec), { status: 200 }));
       vi.spyOn(service, 'diffSpecs').mockReturnValue([
         { type: 'added', category: 'path', name: '/new', after: { get: {} } },
       ]);
@@ -112,8 +114,18 @@ describe('OpenApiWatcherService', () => {
       expect(service.changes()!.length).toBe(1);
     });
 
-    it('should not set changes when spec matches baseline', async () => {
+    it('should not set changes when live spec matches baseline', async () => {
+      const liveSpec = { paths: {}, components: { schemas: {} } };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(liveSpec), { status: 200 }));
       vi.spyOn(service, 'diffSpecs').mockReturnValue([]);
+
+      await service.check();
+
+      expect(service.changes()).toBeNull();
+    });
+
+    it('should not set changes when fetch fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500 }));
 
       await service.check();
 

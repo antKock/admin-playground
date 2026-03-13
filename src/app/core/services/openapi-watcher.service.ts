@@ -1,5 +1,21 @@
 import { Injectable, signal } from '@angular/core';
 
+/**
+ * OpenAPI Change Detection Banner
+ *
+ * At runtime, fetches the live openapi.json from the API and compares it
+ * against openapi-baseline.json (bundled at build time, committed in git).
+ *
+ * Banner visible? → The live API has changed since the last acknowledgment.
+ * To dismiss the banner:
+ *   1. npm run api:generate     — downloads the latest spec + regenerates types
+ *   2. Adapt your code to the new/changed API endpoints and schemas
+ *   3. npm run api:acknowledge  — copies the spec into the baseline
+ *   4. Commit the updated openapi-baseline.json
+ *
+ * The banner reappears only when the live API changes again.
+ */
+
 export interface OpenApiChange {
   type: 'added' | 'removed' | 'modified';
   category: 'path' | 'schema';
@@ -8,20 +24,14 @@ export interface OpenApiChange {
   after?: unknown;
 }
 
+const OPENAPI_URL = 'https://laureatv2-api-staging.osc-fr1.scalingo.io/openapi.json';
+
 @Injectable({ providedIn: 'root' })
 export class OpenApiWatcherService {
   readonly changes = signal<OpenApiChange[] | null>(null);
 
   async check(): Promise<void> {
     try {
-      let latestSpec: Record<string, unknown>;
-      try {
-        latestSpec = (await import('@core/api/generated/openapi-spec.json')).default as Record<string, unknown>;
-      } catch {
-        console.warn('[OpenAPI Watcher] Latest spec not found — run: npm run api:generate');
-        return;
-      }
-
       let baseline: Record<string, unknown>;
       try {
         baseline = (await import('@core/api/generated/openapi-baseline.json')).default as Record<string, unknown>;
@@ -30,7 +40,29 @@ export class OpenApiWatcherService {
         return;
       }
 
-      const changes = this.diffSpecs(baseline, latestSpec);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      let response: Response;
+      try {
+        response = await fetch(OPENAPI_URL, { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      if (!response.ok) {
+        console.warn(`[OpenAPI Watcher] Fetch failed with status ${response.status}`);
+        return;
+      }
+
+      let liveSpec: Record<string, unknown>;
+      try {
+        liveSpec = await response.json();
+      } catch {
+        console.warn('[OpenAPI Watcher] Failed to parse live spec as JSON');
+        return;
+      }
+
+      const changes = this.diffSpecs(baseline, liveSpec);
       this.changes.set(changes.length > 0 ? changes : null);
     } catch (err) {
       console.warn('[OpenAPI Watcher] Check failed:', err);
