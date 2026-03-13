@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ActivityResponse, ActivityFilters } from './history.models';
+import { ActivityFilters, ActivityResponse, EntityVersionSnapshot, VersionComparison } from './history.models';
 
 const BASE_URL = `${environment.apiBaseUrl}/history/`;
 
@@ -39,5 +39,30 @@ export function globalActivityLoader(
   return http.get<PaginatedResponse<ActivityResponse>>(
     `${BASE_URL}activities`,
     { params: httpParams },
+  );
+}
+
+export function entityStateAtDate(
+  http: HttpClient,
+  entityType: string,
+  entityId: string,
+  date: string,
+): Observable<EntityVersionSnapshot> {
+  return http.get<EntityVersionSnapshot>(
+    `${BASE_URL}${entityType}/${entityId}/at/${date}`,
+  );
+}
+
+export function compareEntityVersions(
+  http: HttpClient,
+  entityType: string,
+  entityId: string,
+  date1: string,
+  date2: string,
+): Observable<VersionComparison> {
+  const params = new HttpParams().set('date1', date1).set('date2', date2);
+  return http.get<VersionComparison>(
+    `${BASE_URL}${entityType}/${entityId}/compare`,
+    { params },
   );
 }

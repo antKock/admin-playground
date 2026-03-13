@@ -5,37 +5,16 @@ import { FormsModule } from '@angular/forms';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityFeedFacade } from '../activity-feed.facade';
-import { entityRoute, actionLabel } from '@domains/history/history.utils';
-
-const ENTITY_TYPE_OPTIONS = [
-  { label: 'Tous les types', value: '' },
-  { label: 'Programme de financement', value: 'FundingProgram' },
-  { label: 'Modèle de dossier', value: 'FolderModel' },
-  { label: "Modèle d'action", value: 'ActionModel' },
-  { label: "Thème d'action", value: 'ActionTheme' },
-  { label: 'Communauté', value: 'Community' },
-  { label: 'Agent', value: 'Agent' },
-  { label: "Modèle d'indicateur", value: 'IndicatorModel' },
-  { label: 'Utilisateur', value: 'User' },
-];
-
-const ENTITY_TYPE_LABELS: Record<string, string> = {
-  FundingProgram: 'Programme',
-  FolderModel: 'Dossier',
-  ActionModel: 'Action',
-  ActionTheme: 'Thème',
-  Community: 'Communauté',
-  Agent: 'Agent',
-  IndicatorModel: 'Indicateur',
-  User: 'Utilisateur',
-};
-
-const ACTION_TYPE_OPTIONS = [
-  { label: 'Toutes les actions', value: '' },
-  { label: 'Création', value: 'create' },
-  { label: 'Modification', value: 'update' },
-  { label: 'Suppression', value: 'delete' },
-];
+import { ActivityFilters, EntityTypeCategory } from '@domains/history/history.models';
+import {
+  ENTITY_TYPE_OPTIONS,
+  ENTITY_TYPE_LABELS,
+  ACTION_TYPE_OPTIONS,
+  CATEGORY_OPTIONS,
+  entityRoute,
+  actionLabel,
+  filterByCategory,
+} from '@domains/history/history.utils';
 
 @Component({
   selector: 'app-activity-feed-page',
@@ -44,7 +23,24 @@ const ACTION_TYPE_OPTIONS = [
     <div class="p-6">
       <h1 class="text-2xl font-bold text-text-primary mb-6">Activité globale</h1>
 
-      <div class="flex flex-wrap gap-3 mb-4">
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <!-- Category toggle -->
+        <div class="flex gap-1">
+          @for (cat of categoryOptions; track cat.value) {
+            <button
+              class="px-3 py-1.5 text-xs rounded-full transition-colors"
+              [class]="filterCategory() === cat.value
+                ? 'bg-brand text-white'
+                : 'bg-surface-muted text-text-secondary hover:text-text-primary'"
+              (click)="onCategoryChange(cat.value)"
+            >
+              {{ cat.label }}
+            </button>
+          }
+        </div>
+
+        <div class="w-px h-6 bg-border"></div>
+
         <select
           class="text-sm border border-border rounded-lg px-3 py-2 bg-surface-base text-text-primary"
           [ngModel]="filterEntityType()"
@@ -80,7 +76,7 @@ const ACTION_TYPE_OPTIONS = [
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
-        [emptyMessage]="!facade.isLoading() && facade.activities().length === 0 ? 'Aucune activité trouvée.' : null"
+        [emptyMessage]="!facade.isLoading() && rows().length === 0 ? 'Aucune activité trouvée.' : null"
         (rowClick)="onRowClick($event)"
         (loadMore)="onLoadMore()"
       />
@@ -93,10 +89,12 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
 
   readonly entityTypeOptions = ENTITY_TYPE_OPTIONS;
   readonly actionTypeOptions = ACTION_TYPE_OPTIONS;
+  readonly categoryOptions = CATEGORY_OPTIONS;
 
   readonly filterEntityType = signal('');
   readonly filterAction = signal('');
   readonly filterSince = signal('');
+  readonly filterCategory = signal<EntityTypeCategory>('all');
 
   readonly columns: ColumnDef[] = [
     { key: 'date_display', label: 'Date', width: '160px' },
@@ -104,16 +102,22 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
     { key: 'action_display', label: 'Action', width: '120px' },
     { key: 'entity_type_display', label: 'Type', width: '120px' },
     { key: 'entity_display_name', label: 'Entité', bold: true },
+    { key: 'parent_display', label: 'Parent', width: '150px' },
     { key: 'changes_summary', label: 'Résumé' },
   ];
 
+  readonly filteredActivities = computed(() =>
+    filterByCategory(this.facade.activities(), this.filterCategory()),
+  );
+
   readonly rows = computed(() =>
-    this.facade.activities().map((activity) => ({
+    this.filteredActivities().map((activity) => ({
       ...activity,
       date_display: formatDateFr(activity.created_at),
       action_display: actionLabel(activity.action),
       entity_type_display: ENTITY_TYPE_LABELS[activity.entity_type] ?? activity.entity_type,
       entity_display_name: activity.entity_display_name || activity.entity_id,
+      parent_display: activity.parent_entity_name ?? '',
       _route: entityRoute(activity.entity_type, activity.entity_id),
     })),
   );
@@ -124,6 +128,10 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.reset();
+  }
+
+  onCategoryChange(value: EntityTypeCategory): void {
+    this.filterCategory.set(value);
   }
 
   onEntityTypeChange(value: string): void {
@@ -153,13 +161,13 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
   }
 
   private reloadWithFilters(): void {
-    const filters: Record<string, string> = {};
+    const filters: ActivityFilters = {};
     const entityType = this.filterEntityType();
     const action = this.filterAction();
     const since = this.filterSince();
-    if (entityType) filters['entity_type'] = entityType;
-    if (action) filters['action'] = action;
-    if (since) filters['since'] = new Date(since).toISOString();
-    this.facade.load(filters as any);
+    if (entityType) filters.entity_type = entityType;
+    if (action) filters.action = action as ActivityFilters['action'];
+    if (since) filters.since = new Date(since).toISOString();
+    this.facade.load(filters);
   }
 }

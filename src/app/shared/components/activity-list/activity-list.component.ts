@@ -1,7 +1,7 @@
-import { Component, inject, input, effect } from '@angular/core';
+import { Component, inject, input, effect, computed, signal } from '@angular/core';
 
 import { formatDateFr } from '@app/shared/utils/format-date';
-import { actionLabel, actionBadgeClass } from '@domains/history/history.utils';
+import { actionLabel, actionBadgeClass, groupByTime } from '@domains/history/history.utils';
 import { HistoryStore } from '@domains/history/history.store';
 
 @Component({
@@ -24,18 +24,42 @@ import { HistoryStore } from '@domains/history/history.store';
         <p class="text-sm text-text-secondary">Aucune activité enregistrée.</p>
       } @else {
         <div class="space-y-3">
-          @for (activity of store.activities(); track activity.id) {
+          @for (group of timeGroups(); track group.key) {
+            <!-- First (primary) activity in the group -->
+            @let primary = group.activities[0];
             <div class="flex flex-col gap-0.5 px-3 py-2 border border-border rounded-lg">
               <div class="flex items-center gap-2 text-sm">
-                <span class="text-text-tertiary">{{ formatDate(activity.created_at) }}</span>
-                <span class="font-medium text-text-primary">{{ activity.user_name }}</span>
+                <span class="text-text-tertiary">{{ formatDate(primary.created_at) }}</span>
+                <span class="font-medium text-text-primary">{{ primary.user_name }}</span>
                 <span class="px-1.5 py-0.5 text-xs rounded"
-                  [class]="actionBadgeClass(activity.action)">
-                  {{ actionLabel(activity.action) }}
+                  [class]="actionBadgeClass(primary.action)">
+                  {{ actionLabel(primary.action) }}
                 </span>
               </div>
-              @if (activity.changes_summary) {
-                <p class="text-xs text-text-secondary mt-0.5">{{ activity.changes_summary }}</p>
+              @if (primary.changes_summary) {
+                <p class="text-xs text-text-secondary mt-0.5">{{ primary.changes_summary }}</p>
+              }
+              @if (group.activities.length > 1) {
+                <button
+                  class="text-xs text-brand hover:text-brand/80 mt-1 text-left"
+                  (click)="toggleTimeGroup(group.key)"
+                >
+                  {{ expandedTimeGroups().has(group.key) ? 'Masquer' : 'et ' + (group.activities.length - 1) + ' autre' + (group.activities.length > 2 ? 's' : '') + '...' }}
+                </button>
+                @if (expandedTimeGroups().has(group.key)) {
+                  @for (activity of group.activities.slice(1); track activity.id) {
+                    <div class="flex items-center gap-2 text-sm ml-2 mt-1 pt-1 border-t border-border/50">
+                      <span class="text-text-tertiary text-xs">{{ formatDate(activity.created_at) }}</span>
+                      <span class="px-1.5 py-0.5 text-xs rounded"
+                        [class]="actionBadgeClass(activity.action)">
+                        {{ actionLabel(activity.action) }}
+                      </span>
+                      @if (activity.changes_summary) {
+                        <span class="text-xs text-text-secondary">{{ activity.changes_summary }}</span>
+                      }
+                    </div>
+                  }
+                }
               }
             </div>
           }
@@ -64,6 +88,12 @@ export class ActivityListComponent {
   readonly entityType = input.required<string>();
   readonly entityId = input.required<string>();
 
+  readonly expandedTimeGroups = signal(new Set<string>());
+
+  readonly timeGroups = computed(() =>
+    groupByTime(this.store.activities()),
+  );
+
   constructor() {
     effect(() => {
       const type = this.entityType();
@@ -72,6 +102,17 @@ export class ActivityListComponent {
         this.store.load(type, id);
       }
     });
+  }
+
+  toggleTimeGroup(key: string): void {
+    const current = this.expandedTimeGroups();
+    const next = new Set(current);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.expandedTimeGroups.set(next);
   }
 
   formatDate(value: string): string {
