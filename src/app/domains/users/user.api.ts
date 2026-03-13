@@ -70,7 +70,7 @@ export function loadAllCommunities(
   http: HttpClient,
 ): Observable<PaginatedResponse<CommunityRead>> {
   return http.get<PaginatedResponse<CommunityRead>>(COMMUNITIES_URL, {
-    params: new HttpParams().set('limit', '500'),
+    params: new HttpParams().set('limit', '100'),
   });
 }
 

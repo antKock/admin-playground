@@ -72,7 +72,7 @@ import { CommunityUsersComponent } from './community-users.component';
             <ul class="space-y-1">
               @for (parent of facade.parents(); track parent.id) {
                 <li>
-                  <a [routerLink]="['/communities', parent.id]" class="text-brand hover:underline text-sm">
+                  <a [routerLink]="['/communities', parent.id]" target="_blank" rel="noopener noreferrer" class="text-brand hover:underline text-sm">
                     {{ parent.name }}
                   </a>
                 </li>
@@ -93,7 +93,7 @@ import { CommunityUsersComponent } from './community-users.component';
             <ul class="space-y-1">
               @for (child of facade.children(); track child.id) {
                 <li>
-                  <a [routerLink]="['/communities', child.id]" class="text-brand hover:underline text-sm">
+                  <a [routerLink]="['/communities', child.id]" target="_blank" rel="noopener noreferrer" class="text-brand hover:underline text-sm">
                     {{ child.name }}
                   </a>
                 </li>
