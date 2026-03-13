@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { CommunityDomainStore } from '@domains/communities/community.store';
 import { CommunityCreate, CommunityUpdate, UserRead } from '@domains/communities/community.models';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { CommunityFeatureStore } from './community.store';
 
 @Injectable({ providedIn: 'root' })
@@ -90,7 +91,7 @@ export class CommunityFacade {
       this.toast.success('Communauté créée');
       this.router.navigate(['/communities']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -101,7 +102,7 @@ export class CommunityFacade {
       this.domainStore.load(undefined);
       this.router.navigate(['/communities', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -111,7 +112,7 @@ export class CommunityFacade {
       this.toast.success('Communauté supprimée');
       this.router.navigate(['/communities']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -121,7 +122,7 @@ export class CommunityFacade {
       this.toast.success('Utilisateur assigné à la communauté');
       this.domainStore.loadUsers();
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -131,21 +132,7 @@ export class CommunityFacade {
       this.toast.success('Utilisateur retiré de la communauté');
       this.domainStore.loadUsers();
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }

@@ -11,6 +11,7 @@ import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.stor
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { ToastService } from '@app/shared/services/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { ActionModelFeatureStore } from './action-model.store';
 
 // Backend currently expects string defaults — convert null to the backend's expected defaults.
@@ -186,21 +187,18 @@ export class ActionModelFacade {
       this._paramEdits.set(new Map());
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
   // Intention methods
-  // TODO: [H3] load() only fetches the first page (default limit ~20). If there are >20 FPs/ATs,
-  // dropdown options will be incomplete. Fix: add a loadAll() to withCursorPagination or use a
-  // dedicated non-paginated endpoint for association selectors.
   loadAssociationData(): void {
-    this.fpDomainStore.load(undefined);
-    this.atDomainStore.load(undefined);
+    this.fpDomainStore.loadAll(undefined);
+    this.atDomainStore.loadAll(undefined);
   }
 
   loadIndicators(): void {
-    this.imDomainStore.load(undefined);
+    this.imDomainStore.loadAll(undefined);
   }
 
   load(filters?: Record<string, string>): void {
@@ -226,7 +224,7 @@ export class ActionModelFacade {
       this.toast.success('Modèle d\'action créé');
       this.router.navigate(['/action-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -237,7 +235,7 @@ export class ActionModelFacade {
       this.domainStore.refresh(undefined);
       this.router.navigate(['/action-models', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -247,7 +245,7 @@ export class ActionModelFacade {
       this.toast.success('Modèle d\'action supprimé');
       this.router.navigate(['/action-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -285,7 +283,7 @@ export class ActionModelFacade {
       this.toast.success('Indicateur attaché');
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -310,7 +308,7 @@ export class ActionModelFacade {
       this.toast.success('Indicateur retiré');
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -336,23 +334,9 @@ export class ActionModelFacade {
       if (result.status === 'success') {
         this.domainStore.selectById(actionModelId);
       } else if (result.status === 'error') {
-        this.handleMutationError(result.error);
+        handleMutationError(this.toast, result.error);
         this.domainStore.selectById(actionModelId); // Revert to server state
       }
     });
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
-    }
   }
 }

@@ -6,7 +6,6 @@ import { HistoryStore } from '@domains/history/history.store';
 
 @Component({
   selector: 'app-activity-list',
-  providers: [HistoryStore],
   template: `
     <div class="mt-8">
       <h2 class="text-lg font-semibold text-text-primary mb-4">Activité</h2>

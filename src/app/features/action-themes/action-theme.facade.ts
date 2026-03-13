@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { ActionTheme, ActionThemeCreate, ActionThemeUpdate } from '@domains/action-themes/action-theme.models';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { ActionThemeFeatureStore } from './action-theme.store';
 
 @Injectable({ providedIn: 'root' })
@@ -67,7 +68,7 @@ export class ActionThemeFacade {
       this.toast.success('Thème d\'action créé');
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -78,7 +79,7 @@ export class ActionThemeFacade {
       this.domainStore.load(undefined);
       this.router.navigate(['/action-themes', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -88,7 +89,7 @@ export class ActionThemeFacade {
       this.toast.success('Thème d\'action supprimé');
       this.router.navigate(['/action-themes']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -99,7 +100,7 @@ export class ActionThemeFacade {
       this.toast.success('Thème d\'action publié');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Impossible de publier le thème d\'action');
+      handleMutationError(this.toast, result.error, 'Impossible de publier le thème d\'action');
     }
   }
 
@@ -109,7 +110,7 @@ export class ActionThemeFacade {
       this.toast.success('Thème d\'action désactivé');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Impossible de désactiver le thème d\'action');
+      handleMutationError(this.toast, result.error, 'Impossible de désactiver le thème d\'action');
     }
   }
 
@@ -119,7 +120,7 @@ export class ActionThemeFacade {
       this.toast.success('Thème d\'action activé');
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Impossible d\'activer le thème d\'action');
+      handleMutationError(this.toast, result.error, 'Impossible d\'activer le thème d\'action');
     }
   }
 
@@ -130,22 +131,7 @@ export class ActionThemeFacade {
       const duplicated = result.value as ActionTheme;
       this.router.navigate(['/action-themes', duplicated.id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error, 'Échec de la duplication');
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown, prefix?: string): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Suppression impossible — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      const text = typeof message === 'string' ? message : 'Une erreur est survenue';
-      this.toast.error(prefix ? `${prefix} — ${text}` : text);
+      handleMutationError(this.toast, result.error, 'Échec de la duplication');
     }
   }
 }

@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { IndicatorModelCreate, IndicatorModelUpdate } from '@domains/indicator-models/indicator-model.models';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { IndicatorModelFeatureStore } from './indicator-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -65,7 +66,7 @@ export class IndicatorModelFacade {
       this.toast.success('Modèle d\'indicateur créé');
       this.router.navigate(['/indicator-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -76,7 +77,7 @@ export class IndicatorModelFacade {
       this.domainStore.refresh(undefined);
       this.router.navigate(['/indicator-models', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -86,21 +87,7 @@ export class IndicatorModelFacade {
       this.toast.success('Modèle d\'indicateur supprimé');
       this.router.navigate(['/indicator-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }

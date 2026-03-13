@@ -8,6 +8,7 @@ import { FolderModelDomainStore } from '@domains/folder-models/folder-model.stor
 import { FolderModelCreate, FolderModelUpdate } from '@domains/folder-models/folder-model.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FolderModelFeatureStore } from './folder-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -42,11 +43,8 @@ export class FolderModelFacade {
   );
 
   // Intention methods
-  // TODO: [H3] load() only fetches the first page (default limit ~20). If there are >20 FPs,
-  // multi-selector options will be incomplete. Fix: add a loadAll() to withCursorPagination or
-  // use a dedicated non-paginated endpoint for association selectors.
   loadAssociationData(): void {
-    this.fpDomainStore.load(undefined);
+    this.fpDomainStore.loadAll(undefined);
   }
 
   load(filters?: Record<string, string>): void {
@@ -71,7 +69,7 @@ export class FolderModelFacade {
       this.toast.success('Modèle de dossier créé');
       this.router.navigate(['/folder-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -82,7 +80,7 @@ export class FolderModelFacade {
       this.domainStore.refresh(undefined);
       this.router.navigate(['/folder-models', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -92,21 +90,7 @@ export class FolderModelFacade {
       this.toast.success('Modèle de dossier supprimé');
       this.router.navigate(['/folder-models']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }

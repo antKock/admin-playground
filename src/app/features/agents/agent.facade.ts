@@ -8,6 +8,7 @@ import { AgentDomainStore } from '@domains/agents/agent.store';
 import { AgentCreate, AgentUpdate, AgentStatus } from '@domains/agents/agent.models';
 import { CommunityDomainStore } from '@domains/communities/community.store';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { AgentFeatureStore } from './agent.store';
 
 @Injectable({ providedIn: 'root' })
@@ -44,7 +45,7 @@ export class AgentFacade {
 
   // Intention methods
   loadAssociationData(): void {
-    this.communityDomainStore.load(undefined);
+    this.communityDomainStore.loadAll(undefined);
   }
 
   load(filters?: Record<string, string>): void {
@@ -69,7 +70,7 @@ export class AgentFacade {
       this.toast.success('Agent créé');
       this.router.navigate(['/agents']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -80,7 +81,7 @@ export class AgentFacade {
       this.domainStore.load(undefined);
       this.router.navigate(['/agents', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -90,7 +91,7 @@ export class AgentFacade {
       this.toast.success('Agent supprimé');
       this.router.navigate(['/agents']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -100,21 +101,7 @@ export class AgentFacade {
       this.toast.success(`Statut de l'agent changé en ${newStatus}`);
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }
