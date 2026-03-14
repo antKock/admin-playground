@@ -25,7 +25,7 @@ describe('IndicatorModelListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns.map(c => c.key)).toEqual([
-      'name', 'type_display', 'unit_display', 'updated_at',
+      'name', 'type_display', 'status', 'unit_display', 'last_updated_at',
     ]);
   });
 
@@ -69,5 +69,12 @@ describe('IndicatorModelListComponent', () => {
     component.clearFilters();
     expect(component.activeFilters()).toEqual({});
     expect(loadSpy).toHaveBeenCalledWith({});
+  });
+
+  it('should join multi-select filter values with commas', () => {
+    const loadSpy = vi.spyOn(component.facade, 'load');
+    component.onFilterChange({ key: 'status', values: ['draft', 'published'] });
+    expect(component.activeFilters()).toEqual({ status: ['draft', 'published'] });
+    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft,published' });
   });
 });

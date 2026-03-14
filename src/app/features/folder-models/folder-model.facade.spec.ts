@@ -23,11 +23,11 @@ const mockFolderModel: FolderModel = {
       start_date: null,
       end_date: null,
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
     },
   ],
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<FolderModel> = {
@@ -178,7 +178,7 @@ describe('FolderModelFacade', () => {
       data: [{
         id: 'fp-1', name: 'Test FP', description: null, budget: null,
         is_active: true, start_date: null, end_date: null,
-        created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+        created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       }],
       pagination: {
         total_count: 1, page_size: 20, has_next_page: false, has_previous_page: false,

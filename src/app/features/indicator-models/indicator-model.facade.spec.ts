@@ -15,8 +15,9 @@ const mockIndicatorModel: IndicatorModel = {
   description: 'A test indicator model',
   type: 'number',
   unit: 'kg',
+  status: 'draft',
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<IndicatorModel> = {
@@ -111,6 +112,7 @@ describe('IndicatorModelFacade', () => {
         name: 'New Indicator',
         technical_label: 'new_indicator',
         type: 'text',
+        status: 'draft',
       });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST' && r.url.includes('indicator-models'));
@@ -151,12 +153,61 @@ describe('IndicatorModelFacade', () => {
     });
   });
 
+  describe('publish', () => {
+    it('should trigger publish mutation, show toast, and reload detail on success', async () => {
+      const publishPromise = facade.publish('im-1');
+
+      const publishReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('indicator-models/im-1/publish'));
+      publishReq.flush({ ...mockIndicatorModel, status: 'published' });
+
+      await publishPromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur publié');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('indicator-models/im-1'));
+      detailReq.flush({ ...mockIndicatorModel, status: 'published' });
+    });
+  });
+
+  describe('disable', () => {
+    it('should trigger disable mutation, show toast, and reload detail on success', async () => {
+      const disablePromise = facade.disable('im-1');
+
+      const disableReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('indicator-models/im-1/disable'));
+      disableReq.flush({ ...mockIndicatorModel, status: 'disabled' });
+
+      await disablePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur désactivé');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('indicator-models/im-1'));
+      detailReq.flush({ ...mockIndicatorModel, status: 'disabled' });
+    });
+  });
+
+  describe('activate', () => {
+    it('should trigger activate mutation, show toast, and reload detail on success', async () => {
+      const activatePromise = facade.activate('im-1');
+
+      const activateReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('indicator-models/im-1/activate'));
+      activateReq.flush({ ...mockIndicatorModel, status: 'published' });
+
+      await activatePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'indicateur activé');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('indicator-models/im-1'));
+      detailReq.flush({ ...mockIndicatorModel, status: 'published' });
+    });
+  });
+
   describe('error handling', () => {
     it('should show error toast on mutation error', async () => {
       const createPromise = facade.create({
         name: 'Bad',
         technical_label: 'bad',
         type: 'text',
+        status: 'draft',
       });
 
       const createReq = httpTesting.expectOne((r) => r.method === 'POST');
@@ -165,6 +216,18 @@ describe('IndicatorModelFacade', () => {
       await createPromise;
 
       expect(facade.items().length).toBe(0);
+      expect(errorSpy).toHaveBeenCalled();
+      expect(successSpy).not.toHaveBeenCalled();
+    });
+
+    it('should show error toast on publish error', async () => {
+      const publishPromise = facade.publish('im-1');
+
+      const req = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('indicator-models/im-1/publish'));
+      req.flush({ detail: 'Cannot publish' }, { status: 422, statusText: 'Unprocessable Entity' });
+
+      await publishPromise;
+
       expect(errorSpy).toHaveBeenCalled();
       expect(successSpy).not.toHaveBeenCalled();
     });

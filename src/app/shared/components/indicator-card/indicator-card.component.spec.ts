@@ -22,12 +22,12 @@ describe('IndicatorCardComponent', () => {
   };
 
   const mockParams: IndicatorParams = {
-    visibility_rule: null,
+    hidden_rule: null,
     required_rule: null,
-    editable_rule: null,
+    disabled_rule: null,
     default_value_rule: null,
-    duplicable: null,
-    constrained_values: null,
+    duplicable_rule: null,
+    constrained_rule: null,
   };
 
   beforeEach(async () => {
@@ -78,22 +78,22 @@ describe('IndicatorCardComponent', () => {
     expect(removeSpy).toHaveBeenCalledWith('ind-1');
   });
 
-  it('should emit null when toggling visibility OFF (no override)', () => {
+  it('should emit null when toggling hidden OFF (no override)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
-    component.onVisibilityToggle(false);
+    component.onHiddenToggle(false);
 
-    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ visibility_rule: null }));
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden_rule: null }));
   });
 
-  it('should emit "false" when toggling visibility ON (override: hide)', () => {
+  it('should emit "true" when toggling hidden ON (override: hide)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
-    component.onVisibilityToggle(true);
+    component.onHiddenToggle(true);
 
-    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ visibility_rule: 'false' }));
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden_rule: 'true' }));
   });
 
   it('should emit "true" when toggling required ON (override: required)', () => {
@@ -114,47 +114,43 @@ describe('IndicatorCardComponent', () => {
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ required_rule: null }));
   });
 
-  it('should emit "false" when toggling editable ON (override: non-editable)', () => {
+  it('should emit "true" when toggling disabled ON (override: non-editable)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
-    component.onEditableToggle(true);
+    component.onDisabledToggle(true);
 
-    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ editable_rule: 'false' }));
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ disabled_rule: 'true' }));
   });
 
-  it('should emit null when toggling editable OFF (no override)', () => {
+  it('should emit null when toggling disabled OFF (no override)', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
-    component.onEditableToggle(false);
+    component.onDisabledToggle(false);
 
-    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ editable_rule: null }));
+    expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ disabled_rule: null }));
   });
 
-  it('should emit paramsChange with duplicable config on toggle', () => {
+  it('should emit paramsChange with duplicable_rule "true" on toggle', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
     component.onDuplicableToggle(true);
 
     expect(changeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        duplicable: { enabled: true, min_count: null, max_count: null },
-      }),
+      expect.objectContaining({ duplicable_rule: 'true' }),
     );
   });
 
-  it('should emit paramsChange with constrained config on toggle', () => {
+  it('should emit paramsChange with constrained_rule "true" on toggle', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
     component.onConstrainedToggle(true);
 
     expect(changeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        constrained_values: { enabled: true, min_value: null, max_value: null },
-      }),
+      expect.objectContaining({ constrained_rule: 'true' }),
     );
   });
 
@@ -211,20 +207,20 @@ describe('IndicatorCardComponent', () => {
 describe('isRuleOverridden', () => {
   it('should return false for null (no override)', () => {
     expect(isRuleOverridden('required_rule', null)).toBe(false);
-    expect(isRuleOverridden('editable_rule', null)).toBe(false);
-    expect(isRuleOverridden('visibility_rule', null)).toBe(false);
+    expect(isRuleOverridden('disabled_rule', null)).toBe(false);
+    expect(isRuleOverridden('hidden_rule', null)).toBe(false);
   });
 
-  it('should return false for backend string defaults (backward compat)', () => {
+  it('should return false for backend string defaults', () => {
     expect(isRuleOverridden('required_rule', 'false')).toBe(false);
-    expect(isRuleOverridden('editable_rule', 'true')).toBe(false);
-    expect(isRuleOverridden('visibility_rule', 'true')).toBe(false);
+    expect(isRuleOverridden('disabled_rule', 'false')).toBe(false);
+    expect(isRuleOverridden('hidden_rule', 'false')).toBe(false);
   });
 
   it('should return true for active overrides', () => {
     expect(isRuleOverridden('required_rule', 'true')).toBe(true);
-    expect(isRuleOverridden('editable_rule', 'false')).toBe(true);
-    expect(isRuleOverridden('visibility_rule', 'false')).toBe(true);
+    expect(isRuleOverridden('disabled_rule', 'true')).toBe(true);
+    expect(isRuleOverridden('hidden_rule', 'true')).toBe(true);
   });
 
   it('should return true for JSONLogic rules', () => {

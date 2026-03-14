@@ -70,7 +70,7 @@ export class FundingProgramListComponent implements OnInit {
         { id: 'true', label: 'Actif' },
       ],
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {

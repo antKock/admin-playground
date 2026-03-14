@@ -22,7 +22,7 @@ import { AgentFacade } from '../agent.facade';
       </div>
 
       <app-data-table
-        [columns]="columns"
+        [columns]="columns()"
         [data]="rows()"
         [isLoading]="facade.isLoading()"
         [hasMore]="facade.hasMore()"
@@ -59,7 +59,7 @@ export class AgentListComponent implements OnInit {
     });
   }
 
-  readonly columns: ColumnDef[] = [
+  readonly columns = computed<ColumnDef[]>(() => [
     { key: 'displayName', label: 'Nom', sortable: true, bold: true },
     { key: 'email', label: 'E-mail', sortable: true },
     { key: 'agent_type', label: 'Type d\'agent', sortable: true },
@@ -76,9 +76,19 @@ export class AgentListComponent implements OnInit {
         { id: 'deleted', label: 'Supprimé' },
       ],
     },
-    { key: 'community_name', label: 'Communauté', sortable: true, type: 'link', linkRoute: '/communities', linkIdKey: 'community_id' },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
-  ];
+    {
+      key: 'community_name',
+      label: 'Communauté',
+      sortable: true,
+      type: 'link',
+      linkRoute: '/communities',
+      linkIdKey: 'community_id',
+      filterable: true,
+      filterKey: 'community_id',
+      filterOptions: this.facade.communityOptions(),
+    },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+  ]);
 
   private readonly agentTypeLabels: Record<string, string> = {
     energy_performance_advisor: 'Conseiller en performance énergétique',
@@ -95,6 +105,7 @@ export class AgentListComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.facade.loadAssociationData();
     this.facade.load(this.buildFilters());
   }
 

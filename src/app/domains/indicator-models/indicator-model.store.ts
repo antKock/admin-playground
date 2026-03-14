@@ -6,7 +6,7 @@ import { signalStore, withState, withMethods, withProps, withFeature } from '@ng
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
-import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
+import { httpMutation, concatOp, exhaustOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { patch } from '@domains/shared/store.utils';
@@ -18,6 +18,9 @@ import {
   updateIndicatorModelRequest,
   deleteIndicatorModelRequest,
   loadUsageByIndicatorModel,
+  publishIndicatorModelRequest,
+  disableIndicatorModelRequest,
+  activateIndicatorModelRequest,
 } from './indicator-model.api';
 
 export const IndicatorModelDomainStore = signalStore(
@@ -52,6 +55,19 @@ export const IndicatorModelDomainStore = signalStore(
     deleteMutation: httpMutation({
       request: (id: string) => deleteIndicatorModelRequest(id),
       operator: concatOp,
+    }),
+    // Status mutations — exhaustOp (ignores new calls while in-flight, prevents double-clicks)
+    publishMutation: httpMutation({
+      request: (id: string) => publishIndicatorModelRequest(id),
+      operator: exhaustOp,
+    }),
+    disableMutation: httpMutation({
+      request: (id: string) => disableIndicatorModelRequest(id),
+      operator: exhaustOp,
+    }),
+    activateMutation: httpMutation({
+      request: (id: string) => activateIndicatorModelRequest(id),
+      operator: exhaustOp,
     }),
   })),
   withMethods((store) => ({

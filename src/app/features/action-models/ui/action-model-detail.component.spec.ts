@@ -46,12 +46,12 @@ describe('ActionModelDetailComponent', () => {
   it('should delegate param updates to facade', () => {
     const updateSpy = vi.spyOn(component.facade, 'updateParams');
     const params = {
-      visibility_rule: 'true',
+      hidden_rule: 'true',
       required_rule: 'true',
-      editable_rule: 'true',
+      disabled_rule: 'true',
       default_value_rule: null,
-      duplicable: null,
-      constrained_values: null,
+      duplicable_rule: null,
+      constrained_rule: null,
     };
     component.onParamsChange('ind-1', params);
     expect(updateSpy).toHaveBeenCalledWith('ind-1', params);
@@ -67,5 +67,23 @@ describe('ActionModelDetailComponent', () => {
     const clearSpy = vi.spyOn(component.facade, 'clearSelection');
     component.ngOnDestroy();
     expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it('should delegate onPublish to facade.publish', () => {
+    const publishSpy = vi.spyOn(component.facade, 'publish').mockResolvedValue();
+    component.onPublish();
+    expect(publishSpy).toHaveBeenCalledWith('am-1');
+  });
+
+  it('should delegate onDisable to facade.disable', () => {
+    const disableSpy = vi.spyOn(component.facade, 'disable').mockResolvedValue();
+    component.onDisable();
+    expect(disableSpy).toHaveBeenCalledWith('am-1');
+  });
+
+  it('should delegate onActivate to facade.activate', () => {
+    const activateSpy = vi.spyOn(component.facade, 'activate').mockResolvedValue();
+    component.onActivate();
+    expect(activateSpy).toHaveBeenCalledWith('am-1');
   });
 });

@@ -7,6 +7,7 @@ import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { FundingProgramFacade } from '../funding-program.facade';
 
@@ -38,7 +39,7 @@ import { FundingProgramFacade } from '../funding-program.facade';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ program()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(program()!.updated_at) }} · ID: {{ program()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(program()!.last_updated_at) }} · ID: {{ program()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -70,6 +71,7 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(FundingProgramFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly program = this.facade.selectedItem;
@@ -110,7 +112,8 @@ export class FundingProgramDetailComponent implements OnInit, OnDestroy {
         linkedRoute: p.folder_model_id ? '/folder-models/' + p.folder_model_id : undefined,
       },
       { label: 'Créé le', value: p.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: p.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: p.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(p.last_updated_by_id), type: 'text' as const },
     ];
   });
 

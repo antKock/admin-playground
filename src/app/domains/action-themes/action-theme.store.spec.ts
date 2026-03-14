@@ -16,7 +16,7 @@ const mockActionTheme: ActionTheme = {
   color: null,
   status: 'draft',
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<ActionTheme> = {

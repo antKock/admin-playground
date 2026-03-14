@@ -52,7 +52,7 @@ export class CommunityListComponent implements OnInit {
     { key: 'name', label: 'Nom', sortable: true, bold: true, width: '250px' },
     { key: 'siret', label: 'SIRET', width: '140px' },
     { key: 'public_comment', label: 'Commentaire public' },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {

@@ -58,6 +58,16 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'sites',
+        loadChildren: () =>
+          import('./pages/sites/sites.routes').then((m) => m.sitesRoutes),
+      },
+      {
+        path: 'buildings',
+        loadChildren: () =>
+          import('./pages/buildings/buildings.routes').then((m) => m.buildingsRoutes),
+      },
+      {
         path: 'users',
         loadChildren: () =>
           import('./pages/users/users.routes').then((m) => m.usersRoutes),

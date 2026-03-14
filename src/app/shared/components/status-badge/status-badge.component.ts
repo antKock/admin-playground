@@ -9,8 +9,13 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
   processing: { bg: 'bg-status-processing', text: 'text-white', border: 'border-transparent' },
   done: { bg: 'bg-status-done', text: 'text-white', border: 'border-transparent' },
   published: { bg: 'bg-status-done', text: 'text-white', border: 'border-transparent' },
+  completed: { bg: 'bg-status-done', text: 'text-white', border: 'border-transparent' },
   closed: { bg: 'bg-status-closed', text: 'text-text-primary', border: 'border-transparent' },
   disabled: { bg: 'bg-status-closed', text: 'text-text-primary', border: 'border-transparent' },
+  deleted: { bg: 'bg-status-invalid', text: 'text-text-primary', border: 'border-transparent' },
+  admin: { bg: 'bg-status-invalid', text: 'text-text-primary', border: 'border-transparent' },
+  cdm: { bg: 'bg-status-processing', text: 'text-white', border: 'border-transparent' },
+  collectivite: { bg: 'bg-surface-base', text: 'text-text-secondary', border: 'border-stroke-standard' },
 };
 
 const DEFAULT_COLORS = { bg: 'bg-surface-muted', text: 'text-text-secondary', border: 'border-transparent' };

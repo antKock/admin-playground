@@ -72,7 +72,7 @@ export class ActionThemeListComponent implements OnInit {
         { id: 'disabled', label: 'Désactivé' },
       ],
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {

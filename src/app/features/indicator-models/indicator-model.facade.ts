@@ -38,8 +38,14 @@ export class IndicatorModelFacade {
   readonly createIsPending = this.featureStore.createIsPending;
   readonly updateIsPending = this.featureStore.updateIsPending;
   readonly deleteIsPending = this.featureStore.deleteIsPending;
+
+  // Per-mutation lifecycle status signals
+  readonly publishIsPending = this.domainStore.publishMutationIsPending;
+  readonly disableIsPending = this.domainStore.disableMutationIsPending;
+  readonly activateIsPending = this.domainStore.activateMutationIsPending;
   readonly anyMutationPending = computed(() =>
-    this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
+    this.createIsPending() || this.updateIsPending() || this.deleteIsPending() ||
+    this.publishIsPending() || this.disableIsPending() || this.activateIsPending(),
   );
 
   // Intention methods
@@ -88,6 +94,37 @@ export class IndicatorModelFacade {
       this.router.navigate(['/indicator-models']);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error);
+    }
+  }
+
+  // Lifecycle / status mutations
+  async publish(id: string): Promise<void> {
+    const result = await this.domainStore.publishMutation(id);
+    if (result.status === 'success') {
+      this.toast.success('Modèle d\'indicateur publié');
+      this.domainStore.selectById(id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible de publier le modèle d\'indicateur');
+    }
+  }
+
+  async disable(id: string): Promise<void> {
+    const result = await this.domainStore.disableMutation(id);
+    if (result.status === 'success') {
+      this.toast.success('Modèle d\'indicateur désactivé');
+      this.domainStore.selectById(id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible de désactiver le modèle d\'indicateur');
+    }
+  }
+
+  async activate(id: string): Promise<void> {
+    const result = await this.domainStore.activateMutation(id);
+    if (result.status === 'success') {
+      this.toast.success('Modèle d\'indicateur activé');
+      this.domainStore.selectById(id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible d\'activer le modèle d\'indicateur');
     }
   }
 }

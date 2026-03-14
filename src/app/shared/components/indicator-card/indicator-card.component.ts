@@ -16,21 +16,21 @@ export interface IndicatorCardData {
 }
 
 export interface IndicatorParams {
-  visibility_rule: string | null;
+  hidden_rule: string | null;
   required_rule: string | null;
-  editable_rule: string | null;
+  disabled_rule: string | null;
   default_value_rule: string | null;
-  duplicable: { enabled: boolean; min_count: number | null; max_count: number | null } | null;
-  constrained_values: { enabled: boolean; min_value: number | null; max_value: number | null } | null;
+  duplicable_rule: string | null;
+  constrained_rule: string | null;
 }
 
-export type RuleField = 'visibility_rule' | 'required_rule' | 'editable_rule';
+export type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule';
 
 /** Default values per rule field — used to determine if a toggle is "active" (overridden). */
 const RULE_DEFAULTS: Record<RuleField, string> = {
   required_rule: 'false',
-  editable_rule: 'true',
-  visibility_rule: 'true',
+  disabled_rule: 'false',
+  hidden_rule: 'false',
 };
 
 /** Returns true when the rule field has been actively configured (overridden from default). */
@@ -100,16 +100,16 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Non éditable"
               [icon]="PenOffIcon"
-              [enabled]="isOverridden('editable_rule')"
-              (toggle)="onEditableToggle($event)"
+              [enabled]="isOverridden('disabled_rule')"
+              (toggle)="onDisabledToggle($event)"
             />
-            @if (isOverridden('editable_rule')) {
+            @if (isOverridden('disabled_rule')) {
               <app-rule-field
-                [value]="isCustomRule(params().editable_rule) ? params().editable_rule! : ''"
+                [value]="isCustomRule(params().disabled_rule) ? params().disabled_rule! : ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
                 [excludeIndicator]="indicator().technical_label"
-                (valueChange)="onRuleChange('editable_rule', $event)"
+                (valueChange)="onRuleChange('disabled_rule', $event)"
               />
             }
           </div>
@@ -119,16 +119,16 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Masqué"
               [icon]="EyeOffIcon"
-              [enabled]="isOverridden('visibility_rule')"
-              (toggle)="onVisibilityToggle($event)"
+              [enabled]="isOverridden('hidden_rule')"
+              (toggle)="onHiddenToggle($event)"
             />
-            @if (isOverridden('visibility_rule')) {
+            @if (isOverridden('hidden_rule')) {
               <app-rule-field
-                [value]="isCustomRule(params().visibility_rule) ? params().visibility_rule! : ''"
+                [value]="isCustomRule(params().hidden_rule) ? params().hidden_rule! : ''"
                 [modelType]="modelType()"
                 [modelId]="modelId()"
                 [excludeIndicator]="indicator().technical_label"
-                (valueChange)="onRuleChange('visibility_rule', $event)"
+                (valueChange)="onRuleChange('hidden_rule', $event)"
               />
             }
           </div>
@@ -138,10 +138,10 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Valeur par défaut"
               [icon]="ClipboardIcon"
-              [enabled]="params().default_value_rule != null"
+              [enabled]="params().default_value_rule != null && params().default_value_rule !== 'false'"
               (toggle)="onDefaultValueToggle($event)"
             />
-            @if (params().default_value_rule != null) {
+            @if (params().default_value_rule != null && params().default_value_rule !== 'false') {
               <app-rule-field
                 mode="value"
                 [value]="params().default_value_rule ?? ''"
@@ -158,7 +158,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Duplicable"
               [icon]="CopyIcon"
-              [enabled]="params().duplicable?.enabled ?? false"
+              [enabled]="params().duplicable_rule != null && params().duplicable_rule !== 'false'"
               (toggle)="onDuplicableToggle($event)"
             />
           </div>
@@ -168,7 +168,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Valeurs contraintes"
               [icon]="BracesIcon"
-              [enabled]="params().constrained_values?.enabled ?? false"
+              [enabled]="params().constrained_rule != null && params().constrained_rule !== 'false'"
               (toggle)="onConstrainedToggle($event)"
             />
           </div>
@@ -331,7 +331,7 @@ export class IndicatorCardComponent {
     this.paramsChange.emit({ ...this.params(), ...partial });
   }
 
-  isOverridden(field: 'visibility_rule' | 'required_rule' | 'editable_rule'): boolean {
+  isOverridden(field: RuleField): boolean {
     return isRuleOverridden(field, this.params()[field]);
   }
 
@@ -341,37 +341,31 @@ export class IndicatorCardComponent {
     return value != null && value !== 'true' && value !== 'false';
   }
 
-  onRuleChange(field: 'visibility_rule' | 'required_rule' | 'editable_rule', value: string): void {
+  onRuleChange(field: RuleField, value: string): void {
     // If the editor is cleared (empty string), fall back to the "on" value for this override.
-    this.emitParams({ [field]: value || this.onValueForField(field) });
+    this.emitParams({ [field]: value || 'true' });
   }
 
-  /** The value to store when a toggle is turned ON (the override is activated). */
-  private onValueForField(field: 'visibility_rule' | 'required_rule' | 'editable_rule'): string {
-    // "Obligatoire" ON → required = 'true'; "Non éditable" ON → editable = 'false'; "Masqué" ON → visible = 'false'
-    return field === 'required_rule' ? 'true' : 'false';
-  }
-
-  private toggleRule(field: 'visibility_rule' | 'required_rule' | 'editable_rule', enabled: boolean): void {
+  private toggleRule(field: RuleField, enabled: boolean): void {
     const current = this.params()[field];
     if (!enabled && this.isCustomRule(current)) {
       this.savedRules[field] = current!;
     }
-    const onValue = this.savedRules[field] ?? this.onValueForField(field);
+    const onValue = this.savedRules[field] ?? 'true';
     // OFF → null (no override). Works today (backend treats null as default) and after backend migration.
     this.emitParams({ [field]: enabled ? onValue : null });
   }
 
-  onVisibilityToggle(enabled: boolean): void {
-    this.toggleRule('visibility_rule', enabled);
+  onHiddenToggle(enabled: boolean): void {
+    this.toggleRule('hidden_rule', enabled);
   }
 
   onRequiredToggle(enabled: boolean): void {
     this.toggleRule('required_rule', enabled);
   }
 
-  onEditableToggle(enabled: boolean): void {
-    this.toggleRule('editable_rule', enabled);
+  onDisabledToggle(enabled: boolean): void {
+    this.toggleRule('disabled_rule', enabled);
   }
 
   onDefaultValueToggle(enabled: boolean): void {
@@ -387,18 +381,10 @@ export class IndicatorCardComponent {
   }
 
   onDuplicableToggle(enabled: boolean): void {
-    this.emitParams({
-      duplicable: enabled
-        ? { enabled: true, min_count: null, max_count: null }
-        : null,
-    });
+    this.emitParams({ duplicable_rule: enabled ? 'true' : null });
   }
 
   onConstrainedToggle(enabled: boolean): void {
-    this.emitParams({
-      constrained_values: enabled
-        ? { enabled: true, min_value: null, max_value: null }
-        : null,
-    });
+    this.emitParams({ constrained_rule: enabled ? 'true' : null });
   }
 }

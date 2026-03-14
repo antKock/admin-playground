@@ -1,9 +1,8 @@
 // API layer — standalone functions, no inject() calls.
 // List/detail return Observables (used by rxMethod). Mutations return config objects (consumed by httpMutation).
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, EMPTY } from 'rxjs';
-
-import { map, expand, reduce, catchError } from 'rxjs';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -47,37 +46,31 @@ export function deleteIndicatorModelRequest(id: string) {
   return { url: `${BASE_URL}${id}`, method: 'DELETE' };
 }
 
+// Status mutations — exhaustOp
+export function publishIndicatorModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/publish`, method: 'PUT', body: {} };
+}
+
+export function disableIndicatorModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/disable`, method: 'PUT', body: {} };
+}
+
+export function activateIndicatorModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/activate`, method: 'PUT', body: {} };
+}
+
 // Cross-domain: load action models that reference a given indicator model.
-// Iterates all pages of action models and filters client-side by indicator_models array.
-// TODO: Replace with server-side filter endpoint (GET /action-models?indicator_id=X) when available.
+// Uses server-side filter: GET /action-models/?indicator_model_id={id}
 const ACTION_MODELS_URL = `${environment.apiBaseUrl}/action-models/`;
-const USAGE_PAGE_SIZE = 50;
 
 export function loadUsageByIndicatorModel(
   http: HttpClient,
   indicatorModelId: string,
 ): Observable<{ id: string; name: string }[]> {
-  const fetchPage = (cursor: string | null) => {
-    let params = new HttpParams().set('limit', String(USAGE_PAGE_SIZE));
-    if (cursor) params = params.set('cursor', cursor);
-    return http.get<PaginatedResponse<ActionModel>>(ACTION_MODELS_URL, { params });
-  };
-
-  return fetchPage(null).pipe(
-    expand((response) =>
-      response.pagination.has_next_page
-        ? fetchPage(response.pagination.cursors.end_cursor).pipe(
-            catchError(() => EMPTY),
-          )
-        : EMPTY,
-    ),
-    map((response) =>
-      response.data
-        .filter((am) =>
-          am.indicator_models?.some((im) => im.id === indicatorModelId),
-        )
-        .map((am) => ({ id: am.id, name: am.name })),
-    ),
-    reduce((acc, matches) => [...acc, ...matches], [] as { id: string; name: string }[]),
+  const params = new HttpParams()
+    .set('indicator_model_id', indicatorModelId)
+    .set('limit', '100');
+  return http.get<PaginatedResponse<ActionModel>>(ACTION_MODELS_URL, { params }).pipe(
+    map((response) => response.data.map((am) => ({ id: am.id, name: am.name }))),
   );
 }

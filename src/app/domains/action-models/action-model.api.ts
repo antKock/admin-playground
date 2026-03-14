@@ -43,3 +43,16 @@ export function updateActionModelRequest(params: { id: string; data: ActionModel
 export function deleteActionModelRequest(id: string) {
   return { url: `${BASE_URL}${id}`, method: 'DELETE' };
 }
+
+// Status mutations — exhaustOp
+export function publishActionModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/publish`, method: 'PUT', body: {} };
+}
+
+export function disableActionModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/disable`, method: 'PUT', body: {} };
+}
+
+export function activateActionModelRequest(id: string) {
+  return { url: `${BASE_URL}${id}/activate`, method: 'PUT', body: {} };
+}

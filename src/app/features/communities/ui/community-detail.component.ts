@@ -7,6 +7,7 @@ import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { CommunityFacade } from '../community.facade';
@@ -40,7 +41,7 @@ import { CommunityUsersComponent } from './community-users.component';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ community()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(community()!.updated_at) }} · ID: {{ community()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(community()!.last_updated_at) }} · ID: {{ community()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -117,6 +118,7 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   readonly facade = inject(CommunityFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly community = this.facade.selectedItem;
@@ -140,7 +142,8 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
       { label: 'Commentaire public', value: c.public_comment ?? '—', type: 'text' as const },
       { label: 'Commentaire interne', value: c.internal_comment ?? '—', type: 'text' as const },
       { label: 'Créé le', value: c.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: c.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: c.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(c.last_updated_by_id), type: 'text' as const },
     ];
   });
 
