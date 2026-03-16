@@ -209,21 +209,29 @@ describe('isRuleOverridden', () => {
     expect(isRuleOverridden('required_rule', null)).toBe(false);
     expect(isRuleOverridden('disabled_rule', null)).toBe(false);
     expect(isRuleOverridden('hidden_rule', null)).toBe(false);
+    expect(isRuleOverridden('duplicable_rule', null)).toBe(false);
+    expect(isRuleOverridden('constrained_rule', null)).toBe(false);
   });
 
   it('should return false for backend string defaults', () => {
     expect(isRuleOverridden('required_rule', 'false')).toBe(false);
     expect(isRuleOverridden('disabled_rule', 'false')).toBe(false);
     expect(isRuleOverridden('hidden_rule', 'false')).toBe(false);
+    expect(isRuleOverridden('duplicable_rule', 'false')).toBe(false);
+    expect(isRuleOverridden('constrained_rule', 'false')).toBe(false);
   });
 
   it('should return true for active overrides', () => {
     expect(isRuleOverridden('required_rule', 'true')).toBe(true);
     expect(isRuleOverridden('disabled_rule', 'true')).toBe(true);
     expect(isRuleOverridden('hidden_rule', 'true')).toBe(true);
+    expect(isRuleOverridden('duplicable_rule', 'true')).toBe(true);
+    expect(isRuleOverridden('constrained_rule', 'true')).toBe(true);
   });
 
   it('should return true for JSONLogic rules', () => {
     expect(isRuleOverridden('required_rule', '{"if": [true]}')).toBe(true);
+    expect(isRuleOverridden('duplicable_rule', '{"if": [true]}')).toBe(true);
+    expect(isRuleOverridden('constrained_rule', '{"if": [true]}')).toBe(true);
   });
 });

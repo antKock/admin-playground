@@ -3,7 +3,14 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { authGuard } from './auth.guard';
+import { authGuard, adminGuard } from './auth.guard';
+
+/** Build a fake JWT with the given payload (no signature verification in tests). */
+function fakeJwt(payload: Record<string, unknown>): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256' }));
+  const body = btoa(JSON.stringify(payload));
+  return `${header}.${body}.fake-sig`;
+}
 
 describe('authGuard', () => {
   beforeEach(() => {
@@ -53,5 +60,71 @@ describe('authGuard', () => {
     const result = TestBed.runInInjectionContext(() => authGuard(mockRoute, mockState));
 
     expect(result).toBe(true);
+  });
+});
+
+describe('adminGuard', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('should allow admin users', () => {
+    localStorage.setItem('laureat_admin_jwt', fakeJwt({ role: 'admin', email: 'a@b.com' }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const mockRoute = {} as Parameters<typeof adminGuard>[0];
+    const mockState = { url: '/' } as Parameters<typeof adminGuard>[1];
+
+    const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
+    expect(result).toBe(true);
+  });
+
+  it('should allow cdm users', () => {
+    localStorage.setItem('laureat_admin_jwt', fakeJwt({ role: 'cdm', email: 'c@b.com' }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const mockRoute = {} as Parameters<typeof adminGuard>[0];
+    const mockState = { url: '/' } as Parameters<typeof adminGuard>[1];
+
+    const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
+    expect(result).toBe(true);
+  });
+
+  it('should block collectivite users', () => {
+    localStorage.setItem('laureat_admin_jwt', fakeJwt({ role: 'collectivite', email: 'u@b.com' }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const mockRoute = {} as Parameters<typeof adminGuard>[0];
+    const mockState = { url: '/' } as Parameters<typeof adminGuard>[1];
+
+    const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
+    expect(result).toBe(false);
+  });
+
+  it('should redirect to login when not authenticated', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const mockRoute = {} as Parameters<typeof adminGuard>[0];
+    const mockState = { url: '/sites' } as Parameters<typeof adminGuard>[1];
+
+    const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
+    expect(result).not.toBe(true);
+    expect(result).not.toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, loginGuard } from './core/auth/auth.guard';
+import { adminGuard, authGuard, loginGuard } from './core/auth/auth.guard';
 import { LoginComponent } from './core/auth/login.component';
 import { AppLayoutComponent } from './core/layout/app-layout.component';
 
@@ -9,7 +9,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AppLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, adminGuard],
     children: [
       { path: '', redirectTo: 'funding-programs', pathMatch: 'full' },
       {

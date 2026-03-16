@@ -24,13 +24,15 @@ export interface IndicatorParams {
   constrained_rule: string | null;
 }
 
-export type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule';
+export type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'duplicable_rule' | 'constrained_rule';
 
 /** Default values per rule field — used to determine if a toggle is "active" (overridden). */
 const RULE_DEFAULTS: Record<RuleField, string> = {
   required_rule: 'false',
   disabled_rule: 'false',
   hidden_rule: 'false',
+  duplicable_rule: 'false',
+  constrained_rule: 'false',
 };
 
 /** Returns true when the rule field has been actively configured (overridden from default). */
@@ -158,9 +160,18 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Duplicable"
               [icon]="CopyIcon"
-              [enabled]="params().duplicable_rule != null && params().duplicable_rule !== 'false'"
+              [enabled]="isOverridden('duplicable_rule')"
               (toggle)="onDuplicableToggle($event)"
             />
+            @if (isOverridden('duplicable_rule')) {
+              <app-rule-field
+                [value]="isCustomRule(params().duplicable_rule) ? params().duplicable_rule! : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
+                (valueChange)="onRuleChange('duplicable_rule', $event)"
+              />
+            }
           </div>
 
           <!-- Constrained Values -->
@@ -168,9 +179,18 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
             <app-toggle-row
               label="Valeurs contraintes"
               [icon]="BracesIcon"
-              [enabled]="params().constrained_rule != null && params().constrained_rule !== 'false'"
+              [enabled]="isOverridden('constrained_rule')"
               (toggle)="onConstrainedToggle($event)"
             />
+            @if (isOverridden('constrained_rule')) {
+              <app-rule-field
+                [value]="isCustomRule(params().constrained_rule) ? params().constrained_rule! : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                [excludeIndicator]="indicator().technical_label"
+                (valueChange)="onRuleChange('constrained_rule', $event)"
+              />
+            }
           </div>
         </div>
       }
@@ -381,10 +401,10 @@ export class IndicatorCardComponent {
   }
 
   onDuplicableToggle(enabled: boolean): void {
-    this.emitParams({ duplicable_rule: enabled ? 'true' : null });
+    this.toggleRule('duplicable_rule', enabled);
   }
 
   onConstrainedToggle(enabled: boolean): void {
-    this.emitParams({ constrained_rule: enabled ? 'true' : null });
+    this.toggleRule('constrained_rule', enabled);
   }
 }

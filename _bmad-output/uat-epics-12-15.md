@@ -24,53 +24,64 @@ Generated: 2026-03-14
 - [ ] Click outside panel → panel closes
 - [ ] Open panel with no activities → shows empty state message
 
+**Anthony Tests**
+- We removed the Activity panel and replaced it with a dedicated page, with an access from the navbar. Check for dead code
+
 ---
 
 ## Epic 13: API Alignment & Schema Sync
 
 ### 13.1 — OpenAPI Types & Field Renames
 
-- [ ] `npx ng build` succeeds with zero errors
-- [ ] `npx ng test --no-watch` passes all tests
-- [ ] Action model detail shows `status` field
-- [ ] Indicator model detail shows `status` field
-- [ ] All entity details show `last_updated_at` (not `updated_at`)
-- [ ] Action model form: indicator parameter rules use correct field names (Obligatoire, Non éditable, Masqué, Valeur par défaut, Duplicable, Valeurs contraintes)
-- [ ] Indicator parameter cards display rule values correctly
+- [X] `npx ng build` succeeds with zero errors
+- [X] `npx ng test --no-watch` passes all tests
+- [X] Action model detail shows `status` field
+- [X] Indicator model detail shows `status` field
+- [X] All entity details show `last_updated_at` (not `updated_at`)
+- [X] Action model form: indicator parameter rules use correct field names (Obligatoire, Non éditable, Masqué, Valeur par défaut, Duplicable, Valeurs contraintes)
+- [F] Indicator parameter cards display rule values correctly
+
+**Anthony Tests**
+- The parameters "duplicable" and "valeurs contraintes" should have a JSONLOGIC box as the other parameters, it isn't the case right now.
+
+
 
 ### 13.2 — Last Updated By on Metadata Grids
 
 Test on each entity type: Action Model, Action Theme, Funding Program, Folder Model, Community, Agent, Indicator Model
 
-- [ ] "Dernière modification par" row appears in metadata grid
-- [ ] When `last_updated_by_id` is a valid user → shows resolved user name
-- [ ] When `last_updated_by_id` is null → shows "—"
-- [ ] When user lookup fails → shows truncated UUID gracefully
+- [X] "Dernière modification par" row appears in metadata grid
+- [X] When `last_updated_by_id` is a valid user → shows resolved user name
+- [X] When `last_updated_by_id` is null → shows "—"
+- [X] When user lookup fails → shows truncated UUID gracefully
 
 ### 13.3 — Server-Side Filters
 
 **Action Models list (`/action-models`)**
-- [ ] Filter by Action Theme → only matching models shown, API sends `action_theme_id` param
-- [ ] Filter by Status (e.g. `draft`) → API sends `status=draft`
-- [ ] Multi-select status filter → API sends comma-separated (e.g. `status=draft,published`)
-- [ ] Clear filter → full list returns
+- [X] Filter by Action Theme → only matching models shown, API sends `action_theme_id` param
+- [X] Filter by Status (e.g. `draft`) → API sends `status=draft`
+- [X] Multi-select status filter → API sends comma-separated (e.g. `status=draft,published`)
+- [X] Clear filter → full list returns
+
+**Anthony Tests**
+- When I multi-select a status filter, it only shows models with all those statuses; the filter works as an AND filter, instead of an OR filter
 
 **Agents list (`/agents`)**
-- [ ] Filter by Community → API sends `community_id` param
-- [ ] Filter by Status → API sends `status` param
+- [X] Filter by Community → API sends `community_id` param
+- [X] Filter by Status → API sends `status` param
 
 **Indicator Models list (`/indicator-models`)**
-- [ ] Filter by Action Model → API sends `action_model_id` param
-- [ ] Filter by Type → API sends `type` param
-- [ ] Filter by Status → API sends `status` param
+- [X] Filter by Action Model → API sends `action_model_id` param
+- [X] Filter by Type → API sends `type` param
+- [X] Filter by Status → API sends `status` param
 
 ### 13.4 — Pagination Upgrade
 
-- [ ] Any list view: initial load shows first page
-- [ ] "Charger plus" or scroll load triggers next page with `cursor` param
-- [ ] Total count displayed matches API `pagination.total_count`
-- [ ] When `has_next_page` is false → no more "load more" button/trigger
-- [ ] Empty list → shows empty state, no pagination controls
+- [X] Any list view: initial load shows first page
+- [X] "Charger plus" or scroll load triggers next page with `cursor` param
+- [X] Total count displayed matches API `pagination.total_count`
+- [X] When `has_next_page` is false → no more "load more" button/trigger
+- [X] Empty list → shows empty state, no pagination controls
 
 ---
 
@@ -78,27 +89,31 @@ Test on each entity type: Action Model, Action Theme, Funding Program, Folder Mo
 
 ### 14.1 — Action Model Status Workflow
 
-- [ ] Detail view: StatusBadge shows current status with correct color (draft=gray, published=green, disabled=red)
-- [ ] List view: status column shows StatusBadge for each row
-- [ ] Draft action model detail → "Publier" button visible
-- [ ] Click "Publier" → success toast "Modèle d'action publié", detail refreshes, status = published
-- [ ] Published action model → "Désactiver" button visible
-- [ ] Click "Désactiver" → success toast, status = disabled
-- [ ] Disabled action model → "Réactiver" button visible
-- [ ] Click "Réactiver" → success toast, status = published
-- [ ] Double-click any status button rapidly → only one API request sent (check Network tab)
-- [ ] Button shows loading/disabled state while mutation is pending
-- [ ] Status filter on list: filter by draft, published, disabled
+- [X] Detail view: StatusBadge shows current status with correct color (draft=gray, published=green, disabled=red)
+- [X] List view: status column shows StatusBadge for each row
+- [X] Draft action model detail → "Publier" button visible
+- [X] Click "Publier" → success toast "Modèle d'action publié", detail refreshes, status = published
+- [X] Published action model → "Désactiver" button visible
+- [X] Click "Désactiver" → success toast, status = disabled
+- [X] Disabled action model → "Réactiver" button visible
+- [X] Click "Réactiver" → success toast, status = published
+- [X] Double-click any status button rapidly → only one API request sent (check Network tab)
+- [X] Button shows loading/disabled state while mutation is pending
+- [X] Status filter on list: filter by draft, published, disabled
 
 ### 14.2 — Indicator Model Status Workflow
 
-- [ ] Detail view: StatusBadge shows current status
-- [ ] List view: status column with StatusBadge
-- [ ] Draft → "Publier" → success toast, status changes to published
-- [ ] Published → "Désactiver" → success toast, status changes to disabled
-- [ ] Disabled → "Réactiver" → success toast, status changes to published
-- [ ] Double-click protection works (exhaustOp)
-- [ ] Status filter on list works with server-side param
+- [X] Detail view: StatusBadge shows current status
+- [X] List view: status column with StatusBadge
+- [X] Draft → "Publier" → success toast, status changes to published
+- [X] Published → "Désactiver" → success toast, status changes to disabled
+- [X] Disabled → "Réactiver" → success toast, status changes to published
+- [X] Double-click protection works (exhaustOp)
+- [X] Status filter on list works with server-side param
+
+**Anthony Test**
+- One unrelated API error : "Http failure response for https://staging-admin-playground.anthonykocken.fr/api/history/IndicatorModel/bc3f5359-8680-464e-a43b-f869efd95eb8/activities?limit=20: 400 OK"
+
 
 ### 14.3 — Token Refresh
 
@@ -111,19 +126,25 @@ Test on each entity type: Action Model, Action Theme, Funding Program, Folder Mo
 - [ ] Click Logout → `POST /auth/logout` called, redirect to login page
 - [ ] After logout → API calls return 401 (no stale token)
 
+**Anthony Test**
+- Don't know how to make sure the refresh toekn is stored; I don't see it in the login API response
+
 ### 14.4 — CDM Role & Soft-Delete Handling
 
 **Roles**
-- [ ] User list: role badges show "Admin" (red), "CDM" (blue), "Collectivité" (gray)
-- [ ] CDM user can log in and access all admin pages
-- [ ] Role-based guards accept `collectivite`, `cdm`, `admin` values
+- [X] User list: role badges show "Admin" (red), "CDM" (blue), "Collectivité" (gray)
+- [X] CDM user can log in and access all admin pages
+- [X] Role-based guards accept `collectivite`, `cdm`, `admin` values
+
+**Anthony Tests**
+- "Collectivité" users shouldn't be able to access admin pages, even in read mode. They may need to access some of this data in the end-user app; but shouldn't be able to access the admin UI.
 
 **Soft-Delete**
-- [ ] Action models list: deleted items hidden by default
-- [ ] Select "deleted" in status filter → deleted items appear with muted styling
-- [ ] Deleted items show "Supprimé" status badge
-- [ ] Indicator models list: same behavior for deleted items
-- [ ] Clear status filter → deleted items hidden again
+- [X] Action models list: deleted items hidden by default
+- [X] Select "deleted" in status filter → deleted items appear with muted styling
+- [X] Deleted items show "Supprimé" status badge
+- [X] Indicator models list: same behavior for deleted items
+- [X] Clear status filter → deleted items hidden again
 
 ---
 
@@ -132,91 +153,120 @@ Test on each entity type: Action Model, Action Theme, Funding Program, Folder Mo
 ### 15.1 — Sites CRUD
 
 **Navigation**
-- [ ] Sidebar: "Sites" entry visible under Administration section (MapPin icon)
-- [ ] Click sidebar → navigates to `/sites`
+- [X] Sidebar: "Sites" entry visible under Administration section (MapPin icon)
+- [F] Click sidebar → navigates to `/sites`
+
+**Anthony Tests**
+- "Internal Server Error" when accessing `/sites`
 
 **List View (`/sites`)**
-- [ ] DataTable shows columns: Nom, SIREN, Usage, Créé le
-- [ ] Data loads from API with cursor-based pagination
-- [ ] "Charger plus" works when more pages exist
-- [ ] Total count displayed
-- [ ] Empty state: "Aucun site trouvé."
-- [ ] "Créer un site" button visible → navigates to `/sites/new`
+- [F] DataTable shows columns: Nom, SIREN, Usage, Créé le
+- [F] Data loads from API with cursor-based pagination
+- [F] "Charger plus" works when more pages exist
+- [F] Total count displayed
+- [F] Empty state: "Aucun site trouvé."
+- [F] "Créer un site" button visible → navigates to `/sites/new`
+
+**Anthony Tests**
+- Can't test because of bug above
 
 **Detail View (`/sites/:id`)**
-- [ ] Click row → navigates to `/sites/:id`
-- [ ] Breadcrumbs: Sites > [Site Name]
-- [ ] Metadata grid shows: Nom, SIREN (mono), Usage, ID externe (mono), Communauté (linked → clickable to `/communities/:id`, shows community name), Identifiant unique (mono), Créé le, Mis à jour le, Dernière modification par
-- [ ] "Modifier" button → navigates to `/sites/:id/edit`
-- [ ] "Supprimer" button → confirmation dialog → on confirm: toast "Site supprimé", navigate to `/sites`
-- [ ] Loading skeleton shown while fetching
-- [ ] Error state shown on API failure
+- [F] Click row → navigates to `/sites/:id`
+- [F] Breadcrumbs: Sites > [Site Name]
+- [F] Metadata grid shows: Nom, SIREN (mono), Usage, ID externe (mono), Communauté (linked → clickable to `/communities/:id`, shows community name), Identifiant unique (mono), Créé le, Mis à jour le, Dernière modification par
+- [F] "Modifier" button → navigates to `/sites/:id/edit`
+- [F] "Supprimer" button → confirmation dialog → on confirm: toast "Site supprimé", navigate to `/sites`
+- [F] Loading skeleton shown while fetching
+- [F] Error state shown on API failure
+
+**Anthony Tests**
+- Can't test because of bug above
 
 **Buildings Sub-List (on site detail)**
-- [ ] "Bâtiments" section shows with count indicator (e.g. "(3)")
-- [ ] Table shows: Nom, Usage, RNB IDs, Créé le
-- [ ] Click building row → navigates to `/buildings/:id`
-- [ ] "Ajouter un bâtiment" button → navigates to `/buildings/new?site_id=X`
-- [ ] Empty state: "Aucun bâtiment associé à ce site."
-- [ ] Loading skeleton while fetching buildings
+- [F] "Bâtiments" section shows with count indicator (e.g. "(3)")
+- [F] Table shows: Nom, Usage, RNB IDs, Créé le
+- [F] Click building row → navigates to `/buildings/:id`
+- [F] "Ajouter un bâtiment" button → navigates to `/buildings/new?site_id=X`
+- [F] Empty state: "Aucun bâtiment associé à ce site."
+- [F] Loading skeleton while fetching buildings
+
+**Anthony Tests**
+- Can't test because of bug above
 
 **Create Form (`/sites/new`)**
-- [ ] Breadcrumbs: Sites > Nouveau site
-- [ ] Fields: Nom (required), SIREN (required, 9-digit validation), Usage (optional textarea), ID externe (optional), Communauté (required, select populated from API)
-- [ ] Submit with empty required fields → validation errors shown
-- [ ] Enter invalid SIREN (e.g. "12345") → error: "Le SIREN doit comporter exactement 9 chiffres"
-- [ ] Enter valid SIREN (e.g. "123456789") → no error
-- [ ] Community select: shows loading state, then community names
-- [ ] Submit valid form → toast "Site créé", navigate to `/sites`
-- [ ] Ctrl+S / Cmd+S shortcut submits form
-- [ ] Escape key navigates back (when not focused on input)
-- [ ] Navigate away with unsaved changes → unsaved changes guard triggers
+- [F] Breadcrumbs: Sites > Nouveau site
+- [F] Fields: Nom (required), SIREN (required, 9-digit validation), Usage (optional textarea), ID externe (optional), Communauté (required, select populated from API)
+- [F] Submit with empty required fields → validation errors shown
+- [F] Enter invalid SIREN (e.g. "12345") → error: "Le SIREN doit comporter exactement 9 chiffres"
+- [F] Enter valid SIREN (e.g. "123456789") → no error
+- [F] Community select: shows loading state, then community names
+- [F] Submit valid form → toast "Site créé", navigate to `/sites`
+- [F] Ctrl+S / Cmd+S shortcut submits form
+- [F] Escape key navigates back (when not focused on input)
+- [F] Navigate away with unsaved changes → unsaved changes guard triggers
+
+**Anthony Tests**
+- Can't test because of bug above
 
 **Edit Form (`/sites/:id/edit`)**
-- [ ] Breadcrumbs: Sites > [Site Name] > Modifier
-- [ ] Form pre-filled with current values
-- [ ] Submit → toast "Site mis à jour", navigate to `/sites/:id`
-- [ ] Cancel → navigate back to detail
+- [F] Breadcrumbs: Sites > [Site Name] > Modifier
+- [F] Form pre-filled with current values
+- [F] Submit → toast "Site mis à jour", navigate to `/sites/:id`
+- [F] Cancel → navigate back to detail
+
+**Anthony Tests**
+- Can't test because of bug above
 
 ### 15.2 — Buildings CRUD with RNB Linking
 
 **Navigation**
-- [ ] Sidebar: "Bâtiments" entry visible under Administration (Building2 icon)
-- [ ] Click sidebar → navigates to `/buildings`
+- [X] Sidebar: "Bâtiments" entry visible under Administration (Building2 icon)
+- [X] Click sidebar → navigates to `/buildings`
 
 **List View (`/buildings`)**
-- [ ] DataTable shows columns: Nom, Usage, Créé le
-- [ ] Data loads with cursor-based pagination
-- [ ] "Charger plus" works
-- [ ] Empty state: "Aucun bâtiment trouvé."
-- [ ] "Créer un bâtiment" button → navigates to `/buildings/new`
+- [X] DataTable shows columns: Nom, Usage, Créé le
+- [X] Data loads with cursor-based pagination
+- [X] "Charger plus" works
+- [X] Empty state: "Aucun bâtiment trouvé."
+- [X] "Créer un bâtiment" button → navigates to `/buildings/new`
 
 **Detail View (`/buildings/:id`)**
-- [ ] Breadcrumbs: Bâtiments > [Building Name]
-- [ ] Metadata grid shows: Nom, Usage, ID externe (mono), Site (linked → clickable to `/sites/:id`, shows site name), Identifiant unique (mono), Créé le, Mis à jour le, Dernière modification par
-- [ ] "Modifier" / "Supprimer" buttons work correctly
-- [ ] Delete: confirmation → toast "Bâtiment supprimé" → navigate to `/buildings`
+- [X] Breadcrumbs: Bâtiments > [Building Name]
+- [X] Metadata grid shows: Nom, Usage, ID externe (mono), Site (linked → clickable to `/sites/:id`, shows site name), Identifiant unique (mono), Créé le, Mis à jour le, Dernière modification par
+- [X] "Modifier" / "Supprimer" buttons work correctly
+- [X] Delete: confirmation → toast "Bâtiment supprimé" → navigate to `/buildings`
+
+**Anthony Tests**
+- activities?limit=20 error: {
+    "detail": "Invalid entity_type. Must be one of: Action, ActionModel, ActionTheme, Agent, Community, Folder, FolderModel, FundingProgram, Role, User"
+}
+- Couldn't test "site" related aspect due to the 500 error on site calls
 
 **RNB Management (on building detail)**
-- [ ] "Identifiants RNB" section visible
-- [ ] Existing RNB IDs shown as chip-list (mono font, rounded tags)
-- [ ] Each chip has X button to remove
-- [ ] Click X → confirmation dialog → on confirm: toast "RNB supprimé", chips refresh
-- [ ] No RNB IDs → shows "Aucun identifiant RNB."
-- [ ] Text input + "Ajouter" button for adding RNB
-- [ ] Type RNB ID + click "Ajouter" → toast "RNB ajouté", chip appears, input clears
-- [ ] Press Enter in input → same as clicking "Ajouter"
-- [ ] Empty input → "Ajouter" button disabled
-- [ ] While mutation pending → buttons disabled, "Ajout..." label shown
+- [X] "Identifiants RNB" section visible
+- [X] Existing RNB IDs shown as chip-list (mono font, rounded tags)
+- [X] Each chip has X button to remove
+- [X] Click X → confirmation dialog → on confirm: toast "RNB supprimé", chips refresh
+- [X] No RNB IDs → shows "Aucun identifiant RNB."
+- [X] Text input + "Ajouter" button for adding RNB
+- [X] Type RNB ID + click "Ajouter" → toast "RNB ajouté", chip appears, input clears
+- [X] Press Enter in input → same as clicking "Ajouter"
+- [X] Empty input → "Ajouter" button disabled
+- [X] While mutation pending → buttons disabled, "Ajout..." label shown
 
 **Create Form (`/buildings/new`)**
-- [ ] Fields: Nom (required), Usage (optional textarea), ID externe (optional), Site (required, select populated from API)
+- [X] Fields: Nom (required), Usage (optional textarea), ID externe (optional), Site (required, select populated from API)
 - [ ] Submit valid → toast "Bâtiment créé", navigate to `/buildings`
 - [ ] Navigate from site detail ("Ajouter un bâtiment") → site_id pre-filled in select
 
+**Anthony Test**
+- Can't test site-related aspect due to 500 error on site calls
+
+
 **Edit Form (`/buildings/:id/edit`)**
-- [ ] Form pre-filled with current values
-- [ ] Submit → toast "Bâtiment mis à jour", navigate to `/buildings/:id`
+- [X] Form pre-filled with current values
+- [X] Submit → toast "Bâtiment mis à jour", navigate to `/buildings/:id`
+
 
 **Cross-Navigation (15.1 ↔ 15.2)**
 - [ ] Site detail → click building row → building detail opens
@@ -224,13 +274,16 @@ Test on each entity type: Action Model, Action Theme, Funding Program, Folder Mo
 - [ ] Building detail → click Site linked field → site detail opens
 - [ ] Building form → site select shows all sites by name
 
+**Anthony Test**
+- Can't test site-related aspect due to 500 error on site calls
+
 ---
 
 ## Cross-Cutting Checks
 
-- [ ] All toast messages appear and auto-dismiss
-- [ ] Navigation breadcrumbs correct on all pages
-- [ ] Browser back/forward navigation works correctly
+- [X] All toast messages appear and auto-dismiss
+- [X] Navigation breadcrumbs correct on all pages
+- [X] Browser back/forward navigation works correctly
 - [ ] No console errors in browser DevTools
-- [ ] API Inspector (bottom of detail pages) shows request/response for debugging
-- [ ] Activity list sections on detail pages load entity history
+- [X] API Inspector (bottom of detail pages) shows request/response for debugging
+- [X] Activity list sections on detail pages load entity history

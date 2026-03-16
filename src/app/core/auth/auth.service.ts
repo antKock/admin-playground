@@ -49,6 +49,12 @@ export class AuthService {
     return (payload['sub'] as string) ?? (payload['id'] as string) ?? null;
   });
 
+  readonly userRole = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['role'] as string) ?? null;
+  });
+
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(
