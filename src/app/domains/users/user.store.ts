@@ -35,6 +35,7 @@ export const UserDomainStore = signalStore(
     isLoadingRoles: false,
     allCommunities: [] as CommunityRead[],
     isLoadingCommunities: false,
+    communitiesError: null as string | null,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withFeature((store) =>
@@ -102,13 +103,13 @@ export const UserDomainStore = signalStore(
     ),
     loadCommunities: rxMethod<void>(
       pipe(
-        tap(() => patch(store, { isLoadingCommunities: true })),
+        tap(() => patch(store, { isLoadingCommunities: true, communitiesError: null })),
         switchMap(() =>
           loadAllCommunities(store._http).pipe(
             map((response) => response.data),
             tap((communities) => patch(store, { allCommunities: communities, isLoadingCommunities: false })),
-            catchError(() => {
-              patch(store, { isLoadingCommunities: false });
+            catchError((err) => {
+              patch(store, { isLoadingCommunities: false, communitiesError: err?.message ?? 'Échec du chargement des communautés' });
               return EMPTY;
             }),
           ),

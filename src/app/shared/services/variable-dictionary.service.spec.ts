@@ -33,8 +33,9 @@ function makeIndicator(overrides: Partial<IndicatorModel> = {}): IndicatorModel 
     description: null,
     type: 'number',
     unit: null,
+    status: 'draft',
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    last_updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
   };
 }
@@ -137,14 +138,14 @@ describe('VariableDictionaryService', () => {
       name: 'Test Action Model',
       description: 'A test',
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1',
       action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' },
       action_theme: { id: 'at-1', name: 'AT' },
       indicator_models: [
-        { id: 'im-1', name: 'Montant HT', type: 'number', visibility_rule: 'true', required_rule: 'false', editable_rule: 'true', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-        { id: 'im-3', name: 'Score', type: 'number', visibility_rule: 'true', required_rule: 'false', editable_rule: 'true', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+        { id: 'im-1', name: 'Montant HT', type: 'number', hidden_rule: 'true', required_rule: 'false', disabled_rule: 'true', created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
+        { id: 'im-3', name: 'Score', type: 'number', hidden_rule: 'true', required_rule: 'false', disabled_rule: 'true', created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
       ],
     });
 
@@ -199,7 +200,7 @@ describe('VariableDictionaryService', () => {
     // Flush entity
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-pag`).flush({
       id: 'am-pag', name: 'AM', description: null,
-      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1', action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' }, action_theme: { id: 'at-1', name: 'AT' },
     });
@@ -227,7 +228,7 @@ describe('VariableDictionaryService', () => {
       name: 'Model Name',
       description: 'Some description',
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1',
       action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' },
@@ -258,7 +259,7 @@ describe('VariableDictionaryService', () => {
       name: 'Folder Model',
       description: null,
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
       funding_programs: [],
     });
 
@@ -284,7 +285,7 @@ describe('VariableDictionaryService', () => {
       name: 'Folder With Indicators',
       description: null,
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
       funding_programs: [],
     });
 
@@ -311,7 +312,7 @@ describe('VariableDictionaryService', () => {
       name: 'Cached',
       description: null,
       created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
+      last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1',
       action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' },
@@ -330,13 +331,13 @@ describe('VariableDictionaryService', () => {
 
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-1`).flush({
       id: 'am-1', name: 'AM', description: null,
-      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1', action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' }, action_theme: { id: 'at-1', name: 'AT' },
     });
     httpTesting.expectOne(`${FOLDER_MODELS_URL}fm-1`).flush({
       id: 'fm-1', name: 'FM', description: null,
-      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       funding_programs: [],
     });
   });
@@ -351,7 +352,7 @@ describe('VariableDictionaryService', () => {
     flushIndicators(httpTesting, indicators, 'am-linked');
     httpTesting.expectOne(`${ACTION_MODELS_URL}am-linked`).flush({
       id: 'am-linked', name: 'AM', description: null,
-      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       funding_program_id: 'fp-1', action_theme_id: 'at-1',
       funding_program: { id: 'fp-1', name: 'FP' }, action_theme: { id: 'at-1', name: 'AT' },
     });
@@ -382,7 +383,7 @@ describe('VariableDictionaryService', () => {
     flushIndicators(httpTesting, []);
     httpTesting.expectOne(`${FOLDER_MODELS_URL}fm-linked`).flush({
       id: 'fm-linked', name: 'FM', description: null,
-      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       funding_programs: [],
     });
 

@@ -29,7 +29,7 @@ describe('AppLayoutComponent', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const navItems = compiled.querySelectorAll('.nav-item');
-    expect(navItems.length).toBe(9);
+    expect(navItems.length).toBe(11);
   });
 
   it('should render section labels for Configuration and Administration', async () => {

@@ -13,8 +13,9 @@ const mockIndicatorModel: IndicatorModel = {
   description: 'A test indicator model',
   type: 'number',
   unit: 'kg',
+  status: 'draft',
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<IndicatorModel> = {
@@ -121,7 +122,7 @@ describe('IndicatorModelDomainStore', () => {
 
   describe('mutations', () => {
     it('should send POST for createMutation', async () => {
-      const createData = { name: 'New IM', technical_label: 'new_im', type: 'text' as const };
+      const createData = { name: 'New IM', technical_label: 'new_im', type: 'text' as const, status: 'draft' as const };
       const resultPromise = store.createMutation(createData);
 
       const req = httpTesting.expectOne((r) => r.url.includes('indicator-models') && r.method === 'POST');
@@ -155,13 +156,46 @@ describe('IndicatorModelDomainStore', () => {
     });
 
     it('should return error status on mutation failure', async () => {
-      const resultPromise = store.createMutation({ name: 'Bad', technical_label: 'bad', type: 'text' as const });
+      const resultPromise = store.createMutation({ name: 'Bad', technical_label: 'bad', type: 'text' as const, status: 'draft' });
 
       const req = httpTesting.expectOne((r) => r.method === 'POST');
       req.flush({ detail: 'Validation error' }, { status: 422, statusText: 'Unprocessable Entity' });
 
       const result = await resultPromise;
       expect(result.status).toBe('error');
+    });
+
+    it('should send PUT for publishMutation', async () => {
+      const resultPromise = store.publishMutation('im-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('indicator-models/im-1/publish') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockIndicatorModel, status: 'published' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send PUT for disableMutation', async () => {
+      const resultPromise = store.disableMutation('im-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('indicator-models/im-1/disable') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockIndicatorModel, status: 'disabled' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send PUT for activateMutation', async () => {
+      const resultPromise = store.activateMutation('im-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('indicator-models/im-1/activate') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockIndicatorModel, status: 'published' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
     });
   });
 
@@ -172,23 +206,16 @@ describe('IndicatorModelDomainStore', () => {
       expect(store.isLoadingUsage()).toBe(true);
 
       const req = httpTesting.expectOne((r) => r.url.includes('action-models') && r.method === 'GET');
+      expect(req.request.params.get('indicator_model_id')).toBe('im-1');
       req.flush({
         data: [
           {
             id: 'am-1', name: 'Action Model 1', description: null,
             funding_program_id: 'fp-1', action_theme_id: 'at-1',
-            funding_program: { id: 'fp-1', name: 'FP', description: null, budget: null, is_active: true, start_date: null, end_date: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-            action_theme: { id: 'at-1', name: 'AT', technical_label: 'at', unique_id: 'at', description: null, status: 'published', icon: null, color: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+            funding_program: { id: 'fp-1', name: 'FP', description: null, budget: null, is_active: true, start_date: null, end_date: null, created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
+            action_theme: { id: 'at-1', name: 'AT', technical_label: 'at', unique_id: 'at', description: null, status: 'published', icon: null, color: null, created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
             indicator_models: [{ id: 'im-1', name: 'Test', technical_label: 'test', type: 'number', unit: 'kg' }],
-            created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
-          },
-          {
-            id: 'am-2', name: 'Action Model 2', description: null,
-            funding_program_id: 'fp-1', action_theme_id: 'at-1',
-            funding_program: { id: 'fp-1', name: 'FP', description: null, budget: null, is_active: true, start_date: null, end_date: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-            action_theme: { id: 'at-1', name: 'AT', technical_label: 'at', unique_id: 'at', description: null, status: 'published', icon: null, color: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
-            indicator_models: [],
-            created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+            created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
           },
         ],
         pagination: mockPaginatedResponse.pagination,

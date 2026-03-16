@@ -6,7 +6,7 @@ import { signalStore, withState, withMethods, withProps, withFeature } from '@ng
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { withMutations } from '@angular-architects/ngrx-toolkit';
-import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
+import { httpMutation, concatOp, exhaustOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { patch } from '@domains/shared/store.utils';
@@ -17,6 +17,9 @@ import {
   createActionModelRequest,
   updateActionModelRequest,
   deleteActionModelRequest,
+  publishActionModelRequest,
+  disableActionModelRequest,
+  activateActionModelRequest,
 } from './action-model.api';
 
 export const ActionModelDomainStore = signalStore(
@@ -48,6 +51,19 @@ export const ActionModelDomainStore = signalStore(
     deleteMutation: httpMutation({
       request: (id: string) => deleteActionModelRequest(id),
       operator: concatOp,
+    }),
+    // Status mutations — exhaustOp (ignores new calls while in-flight, prevents double-clicks)
+    publishMutation: httpMutation({
+      request: (id: string) => publishActionModelRequest(id),
+      operator: exhaustOp,
+    }),
+    disableMutation: httpMutation({
+      request: (id: string) => disableActionModelRequest(id),
+      operator: exhaustOp,
+    }),
+    activateMutation: httpMutation({
+      request: (id: string) => activateActionModelRequest(id),
+      operator: exhaustOp,
     }),
   })),
   withMethods((store) => ({

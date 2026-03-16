@@ -23,7 +23,7 @@ const mockAgent: AgentRead = {
   public_comment: null,
   internal_comment: null,
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<AgentRead> = {
@@ -171,7 +171,7 @@ describe('AgentFacade', () => {
 
       const req = httpTesting.expectOne((r) => r.url.includes('communities') && r.method === 'GET');
       req.flush({
-        data: [{ id: 'comm-1', name: 'Community 1', siret: '12345678901234', created_at: '', updated_at: '' }],
+        data: [{ id: 'comm-1', name: 'Community 1', siret: '12345678901234', created_at: '', last_updated_at: '' }],
         pagination: {
           total_count: 1, page_size: 20, has_next_page: false, has_previous_page: false,
           cursors: { start_cursor: null, end_cursor: null },

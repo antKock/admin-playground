@@ -54,7 +54,6 @@ export class IndicatorModelListComponent implements OnInit {
       ...item,
       type_display: item.type,
       unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
-      children_count: item.type === 'group' ? (item.children?.length?.toString() ?? '—') : '',
     })),
   );
 
@@ -81,9 +80,22 @@ export class IndicatorModelListComponent implements OnInit {
         { id: 'group', label: 'Groupe' },
       ],
     },
+    {
+      key: 'status',
+      label: 'Statut',
+      type: 'status-badge',
+      width: '120px',
+      filterable: true,
+      filterKey: 'status',
+      filterOptions: [
+        { id: 'draft', label: 'Brouillon' },
+        { id: 'published', label: 'Publié' },
+        { id: 'disabled', label: 'Désactivé' },
+        { id: 'deleted', label: 'Supprimé' },
+      ],
+    },
     { key: 'unit_display', label: 'Unité', sortable: true, width: '100px' },
-    { key: 'children_count', label: 'Enfants', width: '100px' },
-    { key: 'updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', type: 'date', sortable: true, width: '175px' },
   ];
 
   ngOnInit(): void {

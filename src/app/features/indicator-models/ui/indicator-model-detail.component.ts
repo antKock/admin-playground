@@ -2,18 +2,20 @@ import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
+import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-detail',
-  imports: [MetadataGridComponent, RouterLink, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, SectionAnchorsComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, RouterLink, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, SectionAnchorsComponent],
   template: `
     <div class="p-6">
       @if (facade.isLoadingDetail()) {
@@ -33,25 +35,59 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
         <app-breadcrumb [items]="breadcrumbs()" />
         <div class="flex items-center justify-between mb-2">
           <div>
-            <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
+            <div class="flex items-center gap-3">
+              <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
+              <app-status-badge [status]="model()!.status" />
+            </div>
             @if (model()!.technical_label) {
               <p class="text-sm font-mono text-text-tertiary mt-1">{{ model()!.technical_label }}</p>
             }
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.last_updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
+            @if (model()!.status === 'draft') {
+              <button
+                class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+                (click)="onPublish()"
+                [disabled]="facade.anyMutationPending()"
+              >
+                {{ facade.publishIsPending() ? 'Publication...' : 'Publier' }}
+              </button>
+            }
+            @if (model()!.status === 'published') {
+              <button
+                class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
+                (click)="onDisable()"
+                [disabled]="facade.anyMutationPending()"
+              >
+                {{ facade.disableIsPending() ? 'Désactivation...' : 'Désactiver' }}
+              </button>
+            }
+            @if (model()!.status === 'disabled') {
+              <button
+                class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+                (click)="onActivate()"
+                [disabled]="facade.anyMutationPending()"
+              >
+                {{ facade.activateIsPending() ? 'Activation...' : 'Activer' }}
+              </button>
+            }
             <button
-              class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+              class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
               (click)="router.navigate(['/indicator-models', model()!.id, 'edit'])"
+              [disabled]="facade.anyMutationPending()"
             >
               Modifier
             </button>
-            <button
-              class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
-              (click)="onDelete()"
-            >
-              Supprimer
-            </button>
+            @if (model()!.status !== 'deleted') {
+              <button
+                class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                (click)="onDelete()"
+                [disabled]="facade.anyMutationPending()"
+              >
+                Supprimer
+              </button>
+            }
           </div>
         </div>
 
@@ -91,7 +127,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
           } @else if (facade.usageError()) {
             <p class="text-sm text-error">{{ facade.usageError() }}</p>
           } @else if (facade.usageCount() === 0) {
-            <p class="text-text-secondary text-sm">Non utilisé dans aucun modèle d'action.</p>
+            <p class="text-text-secondary text-sm">Utilisé dans aucun modèle d'action.</p>
           } @else {
             <ul class="space-y-1">
               @for (am of facade.usedInModels(); track am.id) {
@@ -127,6 +163,7 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(IndicatorModelFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;
@@ -167,7 +204,8 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
     }
     fields.push(
       { label: 'Créé le', value: m.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: m.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(m.last_updated_by_id), type: 'text' as const },
     );
     return fields;
   });
@@ -186,6 +224,22 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
 
   formatDate(value: string | null | undefined): string {
     return formatDateFr(value);
+  }
+
+  private get modelId(): string {
+    return this.route.snapshot.paramMap.get('id')!;
+  }
+
+  onPublish(): void {
+    this.facade.publish(this.modelId);
+  }
+
+  onDisable(): void {
+    this.facade.disable(this.modelId);
+  }
+
+  onActivate(): void {
+    this.facade.activate(this.modelId);
   }
 
   async onDelete(): Promise<void> {

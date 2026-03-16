@@ -7,6 +7,7 @@ import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { FolderModelFacade } from '../folder-model.facade';
 
@@ -38,7 +39,7 @@ import { FolderModelFacade } from '../folder-model.facade';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.updated_at) }} · ID: {{ model()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.last_updated_at) }} · ID: {{ model()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -66,6 +67,8 @@ import { FolderModelFacade } from '../folder-model.facade';
                 <li>
                   <a
                     [routerLink]="['/funding-programs', fp.id]"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     class="text-sm text-brand hover:underline"
                   >
                     {{ fp.name }}
@@ -90,6 +93,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(FolderModelFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;
@@ -111,7 +115,8 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
       { label: 'Nom', value: m.name, type: 'text' as const },
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
       { label: 'Créé le', value: m.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: m.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: m.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(m.last_updated_by_id), type: 'text' as const },
     ];
   });
 

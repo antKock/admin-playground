@@ -6,10 +6,17 @@ import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { UserFacade } from '../user.facade';
 import { UserCommunitiesComponent } from './user-communities.component';
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  cdm: 'CDM',
+  collectivite: 'Collectivite',
+};
 
 @Component({
   selector: 'app-user-detail',
@@ -39,7 +46,7 @@ import { UserCommunitiesComponent } from './user-communities.component';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ user()!.first_name }} {{ user()!.last_name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(user()!.updated_at) }} · ID: {{ user()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(user()!.last_updated_at) }} · ID: {{ user()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -73,6 +80,7 @@ export class UserDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(UserFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly user = this.facade.selectedItem;
@@ -94,10 +102,11 @@ export class UserDetailComponent implements OnInit, OnDestroy {
       { label: 'Email', value: u.email, type: 'mono' as const },
       { label: 'Prénom', value: u.first_name, type: 'text' as const },
       { label: 'Nom', value: u.last_name, type: 'text' as const },
-      { label: 'Rôle', value: u.role, type: 'text' as const },
+      { label: 'Rôle', value: ROLE_LABELS[u.role] ?? u.role, type: 'text' as const },
       { label: 'Statut', value: u.is_active ? 'Actif' : 'Inactif', type: 'text' as const },
       { label: 'Créé le', value: u.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: u.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: u.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(u.last_updated_by_id), type: 'text' as const },
     ];
   });
 

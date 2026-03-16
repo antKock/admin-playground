@@ -9,6 +9,7 @@ import { entityActivityLoader, globalActivityLoader } from './history.api';
 const PAGE_SIZE = 20;
 
 export const HistoryStore = signalStore(
+  { providedIn: 'root' },
   withState({
     activities: [] as ActivityResponse[],
     isLoading: false,
@@ -68,15 +69,15 @@ export const GlobalHistoryStore = signalStore(
     cursor: null as string | null,
     hasMore: false,
     error: null as string | null,
+    currentFilters: {} as ActivityFilters,
   }),
   withProps(() => ({ _http: inject(HttpClient) })),
   withMethods((store) => {
-    let currentFilters: ActivityFilters = {};
     return {
       load(filters?: ActivityFilters): void {
-        currentFilters = { ...filters, cursor: undefined };
-        patch(store, { isLoading: true, error: null, activities: [], cursor: null, hasMore: false });
-        globalActivityLoader(store._http, currentFilters)
+        const newFilters = { ...filters, cursor: undefined };
+        patch(store, { isLoading: true, error: null, activities: [], cursor: null, hasMore: false, currentFilters: newFilters });
+        globalActivityLoader(store._http, newFilters)
           .subscribe({
             next: (response) => {
               patch(store, {
@@ -95,7 +96,7 @@ export const GlobalHistoryStore = signalStore(
         const currentCursor = store.cursor();
         if (!currentCursor || store.isLoading()) return;
         patch(store, { isLoading: true });
-        globalActivityLoader(store._http, { ...currentFilters, cursor: currentCursor })
+        globalActivityLoader(store._http, { ...store.currentFilters(), cursor: currentCursor })
           .subscribe({
             next: (response) => {
               patch(store, {
@@ -111,8 +112,7 @@ export const GlobalHistoryStore = signalStore(
           });
       },
       reset(): void {
-        currentFilters = {};
-        patch(store, { activities: [], isLoading: false, cursor: null, hasMore: false, error: null });
+        patch(store, { activities: [], isLoading: false, cursor: null, hasMore: false, error: null, currentFilters: {} });
       },
     };
   }),

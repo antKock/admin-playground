@@ -1,13 +1,13 @@
-import { Component, inject, OnInit, OnDestroy, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-
-import { RouterLink } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ApiInspectorComponent } from '@app/shared/components/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { CommunityFacade } from '../community.facade';
@@ -41,7 +41,7 @@ import { CommunityUsersComponent } from './community-users.component';
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-text-primary">{{ community()!.name }}</h1>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(community()!.updated_at) }} · ID: {{ community()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(community()!.last_updated_at) }} · ID: {{ community()!.id }}</p>
           </div>
           <div class="flex gap-2">
             <button
@@ -73,7 +73,7 @@ import { CommunityUsersComponent } from './community-users.component';
             <ul class="space-y-1">
               @for (parent of facade.parents(); track parent.id) {
                 <li>
-                  <a [routerLink]="['/communities', parent.id]" class="text-brand hover:underline text-sm">
+                  <a [routerLink]="['/communities', parent.id]" target="_blank" rel="noopener noreferrer" class="text-brand hover:underline text-sm">
                     {{ parent.name }}
                   </a>
                 </li>
@@ -94,7 +94,7 @@ import { CommunityUsersComponent } from './community-users.component';
             <ul class="space-y-1">
               @for (child of facade.children(); track child.id) {
                 <li>
-                  <a [routerLink]="['/communities', child.id]" class="text-brand hover:underline text-sm">
+                  <a [routerLink]="['/communities', child.id]" target="_blank" rel="noopener noreferrer" class="text-brand hover:underline text-sm">
                     {{ child.name }}
                   </a>
                 </li>
@@ -115,8 +115,10 @@ import { CommunityUsersComponent } from './community-users.component';
 export class CommunityDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly facade = inject(CommunityFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly community = this.facade.selectedItem;
@@ -140,16 +142,19 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
       { label: 'Commentaire public', value: c.public_comment ?? '—', type: 'text' as const },
       { label: 'Commentaire interne', value: c.internal_comment ?? '—', type: 'text' as const },
       { label: 'Créé le', value: c.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: c.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: c.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(c.last_updated_by_id), type: 'text' as const },
     ];
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.facade.select(id);
-      this.facade.loadUsers();
-    }
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.facade.select(id);
+        this.facade.loadUsers();
+      }
+    });
   }
 
   // Required: clear stale selection so navigating to a different item doesn't briefly show the old one.

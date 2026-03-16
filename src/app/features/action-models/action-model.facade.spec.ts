@@ -13,6 +13,7 @@ const mockActionModel: ActionModel = {
   id: 'am-1',
   name: 'Test Action Model',
   description: 'A test action model',
+  status: 'draft',
   funding_program_id: 'fp-1',
   action_theme_id: 'at-1',
   funding_program: {
@@ -24,7 +25,7 @@ const mockActionModel: ActionModel = {
     start_date: null,
     end_date: null,
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    last_updated_at: '2026-01-01T00:00:00Z',
   },
   action_theme: {
     id: 'at-1',
@@ -36,10 +37,10 @@ const mockActionModel: ActionModel = {
     icon: null,
     color: null,
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    last_updated_at: '2026-01-01T00:00:00Z',
   },
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<ActionModel> = {
@@ -128,6 +129,7 @@ describe('ActionModelFacade', () => {
     it('should trigger mutation, show toast, and navigate on success', async () => {
       const createPromise = facade.create({
         name: 'New Model',
+        status: 'draft',
         funding_program_id: 'fp-1',
         action_theme_id: 'at-1',
       });
@@ -170,10 +172,59 @@ describe('ActionModelFacade', () => {
     });
   });
 
+  describe('publish', () => {
+    it('should trigger publish mutation, show toast, and reload detail on success', async () => {
+      const publishPromise = facade.publish('am-1');
+
+      const publishReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-models/am-1/publish'));
+      publishReq.flush({ ...mockActionModel, status: 'published' });
+
+      await publishPromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action publié');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush({ ...mockActionModel, status: 'published' });
+    });
+  });
+
+  describe('disable', () => {
+    it('should trigger disable mutation, show toast, and reload detail on success', async () => {
+      const disablePromise = facade.disable('am-1');
+
+      const disableReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-models/am-1/disable'));
+      disableReq.flush({ ...mockActionModel, status: 'disabled' });
+
+      await disablePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action désactivé');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush({ ...mockActionModel, status: 'disabled' });
+    });
+  });
+
+  describe('activate', () => {
+    it('should trigger activate mutation, show toast, and reload detail on success', async () => {
+      const activatePromise = facade.activate('am-1');
+
+      const activateReq = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-models/am-1/activate'));
+      activateReq.flush({ ...mockActionModel, status: 'published' });
+
+      await activatePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Modèle d\'action activé');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush({ ...mockActionModel, status: 'published' });
+    });
+  });
+
   describe('error handling', () => {
     it('should show error toast on mutation error', async () => {
       const createPromise = facade.create({
         name: 'Bad',
+        status: 'draft',
         funding_program_id: 'fp-1',
         action_theme_id: 'at-1',
       });
@@ -187,6 +238,18 @@ describe('ActionModelFacade', () => {
       expect(errorSpy).toHaveBeenCalled();
       expect(successSpy).not.toHaveBeenCalled();
     });
+
+    it('should show error toast on publish error', async () => {
+      const publishPromise = facade.publish('am-1');
+
+      const req = httpTesting.expectOne((r) => r.method === 'PUT' && r.url.includes('action-models/am-1/publish'));
+      req.flush({ detail: 'Cannot publish' }, { status: 422, statusText: 'Unprocessable Entity' });
+
+      await publishPromise;
+
+      expect(errorSpy).toHaveBeenCalled();
+      expect(successSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('cross-domain: loadAssociationData', () => {
@@ -194,7 +257,7 @@ describe('ActionModelFacade', () => {
       data: [{
         id: 'fp-1', name: 'Test FP', description: null, budget: null,
         is_active: true, start_date: null, end_date: null,
-        created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+        created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z',
       }],
       pagination: {
         total_count: 1, page_size: 20, has_next_page: false, has_previous_page: false,

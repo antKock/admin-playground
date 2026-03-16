@@ -8,6 +8,7 @@ import { ActivityListComponent } from '@app/shared/components/activity-list/acti
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActionThemeFacade } from '../action-theme.facade';
 
@@ -45,14 +46,14 @@ import { ActionThemeFacade } from '../action-theme.facade';
             @if (theme()!.technical_label) {
               <p class="text-sm font-mono text-text-tertiary mt-1">{{ theme()!.technical_label }}</p>
             }
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(theme()!.updated_at) }} · ID: {{ theme()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(theme()!.last_updated_at) }} · ID: {{ theme()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @if (theme()!.status === 'draft') {
               <button
                 class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
                 (click)="onPublish()"
-                [disabled]="facade.publishIsPending() || facade.anyMutationPending()"
+                [disabled]="facade.anyMutationPending()"
               >
                 {{ facade.publishIsPending() ? 'Publication...' : 'Publier' }}
               </button>
@@ -61,7 +62,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
               <button
                 class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
                 (click)="onDisable()"
-                [disabled]="facade.disableIsPending() || facade.anyMutationPending()"
+                [disabled]="facade.anyMutationPending()"
               >
                 {{ facade.disableIsPending() ? 'Désactivation...' : 'Désactiver' }}
               </button>
@@ -70,7 +71,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
               <button
                 class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
                 (click)="onActivate()"
-                [disabled]="facade.activateIsPending() || facade.anyMutationPending()"
+                [disabled]="facade.anyMutationPending()"
               >
                 {{ facade.activateIsPending() ? 'Activation...' : 'Activer' }}
               </button>
@@ -78,7 +79,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
             <button
               class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
               (click)="onDuplicate()"
-              [disabled]="facade.duplicateIsPending() || facade.anyMutationPending()"
+              [disabled]="facade.anyMutationPending()"
             >
               {{ facade.duplicateIsPending() ? 'Duplication...' : 'Dupliquer' }}
             </button>
@@ -115,6 +116,7 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionThemeFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly theme = this.facade.selectedItem;
@@ -148,7 +150,8 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
       { label: 'Icône', value: t.icon ?? '—', type: 'text' as const },
       { label: 'Couleur', value: t.color ?? '—', type: 'text' as const },
       { label: 'Créé le', value: t.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: t.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: t.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(t.last_updated_by_id), type: 'text' as const },
     ];
   });
 

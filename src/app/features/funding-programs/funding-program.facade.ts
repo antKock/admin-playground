@@ -8,6 +8,7 @@ import { FundingProgramDomainStore } from '@domains/funding-programs/funding-pro
 import { FundingProgramCreate, FundingProgramUpdate } from '@domains/funding-programs/funding-program.models';
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FundingProgramFeatureStore } from './funding-program.store';
 
 @Injectable({ providedIn: 'root' })
@@ -43,7 +44,7 @@ export class FundingProgramFacade {
 
   // Intention methods
   loadAssociationData(): void {
-    this.fmDomainStore.load(undefined);
+    this.fmDomainStore.loadAll(undefined);
   }
 
   load(filters?: Record<string, string>): void {
@@ -68,7 +69,7 @@ export class FundingProgramFacade {
       this.toast.success('Programme de financement créé');
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -79,7 +80,7 @@ export class FundingProgramFacade {
       this.domainStore.load(undefined);
       this.router.navigate(['/funding-programs', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -89,21 +90,7 @@ export class FundingProgramFacade {
       this.toast.success('Programme de financement supprimé');
       this.router.navigate(['/funding-programs']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  // Intentionally inlined per facade (not shared) — each facade may need custom error handling in the future.
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Suppression impossible — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }

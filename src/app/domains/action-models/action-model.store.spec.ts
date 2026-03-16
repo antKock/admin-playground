@@ -10,6 +10,7 @@ const mockActionModel: ActionModel = {
   id: 'am-1',
   name: 'Test Action Model',
   description: 'A test action model',
+  status: 'draft',
   funding_program_id: 'fp-1',
   action_theme_id: 'at-1',
   funding_program: {
@@ -21,7 +22,7 @@ const mockActionModel: ActionModel = {
     start_date: null,
     end_date: null,
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    last_updated_at: '2026-01-01T00:00:00Z',
   },
   action_theme: {
     id: 'at-1',
@@ -33,10 +34,10 @@ const mockActionModel: ActionModel = {
     icon: null,
     color: null,
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
+    last_updated_at: '2026-01-01T00:00:00Z',
   },
   created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
+  last_updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockPaginatedResponse: PaginatedResponse<ActionModel> = {
@@ -143,7 +144,7 @@ describe('ActionModelDomainStore', () => {
 
   describe('mutations', () => {
     it('should send POST for createMutation', async () => {
-      const createData = { name: 'New AM', description: 'desc', funding_program_id: 'fp-1', action_theme_id: 'at-1' };
+      const createData = { name: 'New AM', description: 'desc', funding_program_id: 'fp-1', action_theme_id: 'at-1', status: 'draft' as const };
       const resultPromise = store.createMutation(createData);
 
       const req = httpTesting.expectOne((r) => r.url.includes('action-models') && r.method === 'POST');
@@ -177,13 +178,46 @@ describe('ActionModelDomainStore', () => {
     });
 
     it('should return error status on mutation failure', async () => {
-      const resultPromise = store.createMutation({ name: 'Bad', description: null, funding_program_id: 'fp-1', action_theme_id: 'at-1' });
+      const resultPromise = store.createMutation({ name: 'Bad', description: null, funding_program_id: 'fp-1', action_theme_id: 'at-1', status: 'draft' });
 
       const req = httpTesting.expectOne((r) => r.method === 'POST');
       req.flush({ detail: 'Validation error' }, { status: 422, statusText: 'Unprocessable Entity' });
 
       const result = await resultPromise;
       expect(result.status).toBe('error');
+    });
+
+    it('should send PUT for publishMutation', async () => {
+      const resultPromise = store.publishMutation('am-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1/publish') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockActionModel, status: 'published' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send PUT for disableMutation', async () => {
+      const resultPromise = store.disableMutation('am-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1/disable') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockActionModel, status: 'disabled' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
+    });
+
+    it('should send PUT for activateMutation', async () => {
+      const resultPromise = store.activateMutation('am-1');
+
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1/activate') && r.method === 'PUT');
+      expect(req.request.body).toEqual({});
+      req.flush({ ...mockActionModel, status: 'published' });
+
+      const result = await resultPromise;
+      expect(result.status).toBe('success');
     });
   });
 });

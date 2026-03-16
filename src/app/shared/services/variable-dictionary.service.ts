@@ -66,7 +66,7 @@ const MAX_INDICATOR_PAGES = 20;
 
 /** Properties to skip when building entity property variables. */
 const SKIP_PROPERTIES = new Set([
-  'id', 'created_at', 'updated_at',
+  'id', 'created_at', 'last_updated_at',
   'funding_program_id', 'action_theme_id',
   'indicator_model_ids', 'indicator_model_associations',
   'indicator_models', 'funding_program', 'action_theme',

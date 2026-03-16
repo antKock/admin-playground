@@ -21,7 +21,7 @@ import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.servic
           (keydown)="$event.stopPropagation()"
         >
           <h2 class="text-lg font-semibold text-text-primary">{{ dialog.title }}</h2>
-          <p id="confirm-dialog-message" class="mt-2 text-sm text-text-secondary">{{ dialog.message }}</p>
+          <p id="confirm-dialog-message" class="mt-2 text-sm text-text-secondary" [innerHTML]="dialog.message"></p>
           <div class="mt-6 flex justify-end gap-3">
             <button
               class="rounded border border-stroke-standard px-4 py-2 text-sm text-text-secondary hover:bg-surface-muted"

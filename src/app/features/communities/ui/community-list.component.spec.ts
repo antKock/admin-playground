@@ -25,7 +25,7 @@ describe('CommunityListComponent', () => {
 
   it('should define expected columns', () => {
     expect(component.columns.map(c => c.key)).toEqual([
-      'name', 'siret', 'public_comment', 'updated_at',
+      'name', 'siret', 'public_comment', 'last_updated_at',
     ]);
   });
 

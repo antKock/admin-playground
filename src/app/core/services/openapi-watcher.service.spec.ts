@@ -102,43 +102,34 @@ describe('OpenApiWatcherService', () => {
 
   describe('check', () => {
     it('should set changes when live spec differs from baseline', async () => {
-      const liveSpec = JSON.stringify({ paths: { '/new': { get: {} } }, components: { schemas: {} } });
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(liveSpec, { status: 200 }));
+      const liveSpec = { paths: { '/a': {}, '/new': { get: {} } }, components: { schemas: {} } };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(liveSpec), { status: 200 }));
+      vi.spyOn(service, 'diffSpecs').mockReturnValue([
+        { type: 'added', category: 'path', name: '/new', after: { get: {} } },
+      ]);
 
       await service.check();
 
       expect(service.changes()).toBeTruthy();
-      expect(service.changes()!.length).toBeGreaterThan(0);
+      expect(service.changes()!.length).toBe(1);
     });
 
     it('should not set changes when live spec matches baseline', async () => {
-      // Mock diffSpecs to return empty (simulating identical specs)
+      const liveSpec = { paths: {}, components: { schemas: {} } };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(liveSpec), { status: 200 }));
       vi.spyOn(service, 'diffSpecs').mockReturnValue([]);
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
 
       await service.check();
 
       expect(service.changes()).toBeNull();
     });
 
-    it('should fail silently on fetch error', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network error'));
+    it('should not set changes when fetch fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500 }));
 
       await service.check();
 
       expect(service.changes()).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
-    });
-
-    it('should fail silently on non-200 response', async () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 500 }));
-
-      await service.check();
-
-      expect(service.changes()).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,6 @@
 import { Component, inject, computed, signal, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { CommunityRead } from '@domains/communities/community.models';
@@ -8,7 +9,7 @@ import { UserFacade } from '../user.facade';
 
 @Component({
   selector: 'app-user-communities',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="mt-6">
       <div class="flex items-center justify-between mb-4">
@@ -32,6 +33,8 @@ import { UserFacade } from '../user.facade';
           />
           @if (facade.isLoadingCommunities()) {
             <p class="text-sm text-text-secondary">Chargement des communautés...</p>
+          } @else if (facade.communitiesError()) {
+            <p class="text-sm text-error">{{ facade.communitiesError() }}</p>
           } @else if (filteredCommunities().length === 0) {
             <p class="text-sm text-text-secondary">Aucune communauté trouvée.</p>
           } @else {
@@ -69,7 +72,7 @@ import { UserFacade } from '../user.facade';
         <div class="space-y-1">
           @for (community of assignedCommunities(); track community.id) {
             <div class="flex items-center justify-between px-3 py-2 border border-border rounded-lg">
-              <span class="text-sm text-text-primary">{{ community.name }}</span>
+              <a [routerLink]="['/communities', community.id]" target="_blank" rel="noopener noreferrer" class="text-sm text-brand hover:underline">{{ community.name }}</a>
               <button
                 class="text-text-secondary hover:text-status-invalid transition-colors disabled:opacity-50"
                 [disabled]="facade.removeCommunityIsPending()"

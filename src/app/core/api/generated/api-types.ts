@@ -45,6 +45,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Access Token */
+        post: operations["refresh_access_token_auth_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/token": {
         parameters: {
             query?: never;
@@ -59,66 +76,6 @@ export interface paths {
          * @description OAuth2 token endpoint for login (required by FastAPI).
          */
         post: operations["login_for_access_token_auth_token_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Read Users Me
-         * @description Retrieve the current logged-in user information.
-         */
-        get: operations["read_users_me_auth_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/protected": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Protected Route
-         * @description Protected route to test authentication.
-         */
-        get: operations["protected_route_auth_protected_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Users
-         * @description List all users with pagination.
-         */
-        get: operations["list_users_auth_users_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -382,7 +339,8 @@ export interface paths {
         };
         /**
          * Get Communities
-         * @description Get all communities with cursor-based pagination.
+         * @description Get communities with cursor-based pagination.
+         *     Collectivite users only see their accessible communities.
          */
         get: operations["get_communities_communities__get"];
         put?: never;
@@ -406,7 +364,7 @@ export interface paths {
         };
         /**
          * Get Community By Unique Id
-         * @description Get a specific community by unique_id.
+         * @description Get a specific community by unique_id (only if user has access).
          */
         get: operations["get_community_by_unique_id_communities_by_unique_id__unique_id__get"];
         put?: never;
@@ -426,7 +384,7 @@ export interface paths {
         };
         /**
          * Get Community
-         * @description Get a specific community by ID.
+         * @description Get a specific community by ID (only if user has access).
          */
         get: operations["get_community_communities__community_id__get"];
         /**
@@ -464,6 +422,26 @@ export interface paths {
          * @description Remove a user from a community (admin only).
          */
         delete: operations["remove_user_from_community_communities__community_id__users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/communities/{community_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Community Users
+         * @description Get all users assigned to a community.
+         */
+        get: operations["get_community_users_communities__community_id__users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -596,6 +574,7 @@ export interface paths {
         /**
          * Get Action Models
          * @description Get all action models with cursor-based pagination and optional filtering.
+         *     By default, excludes deleted action models unless explicitly filtered by status.
          *     Accessible to all authenticated users.
          */
         get: operations["get_action_models_action_models__get"];
@@ -606,6 +585,69 @@ export interface paths {
          *     Can optionally associate with funding programs by providing their IDs.
          */
         post: operations["create_action_model_action_models__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/action-models/{action_model_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Publish Action Model
+         * @description Publish an action model (admin only).
+         *     Changes status to PUBLISHED.
+         */
+        put: operations["publish_action_model_action_models__action_model_id__publish_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/action-models/{action_model_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Disable Action Model
+         * @description Disable an action model (admin only).
+         *     Changes status to DISABLED.
+         */
+        put: operations["disable_action_model_action_models__action_model_id__disable_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/action-models/{action_model_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Activate Action Model
+         * @description Activate (re-publish) an action model (admin only).
+         *     Changes status from DISABLED to PUBLISHED.
+         */
+        put: operations["activate_action_model_action_models__action_model_id__activate_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -787,7 +829,7 @@ export interface paths {
         /**
          * Get Actions By Action Model
          * @description Get all actions associated with a specific action model with cursor-based pagination.
-         *     Accessible to all authenticated users.
+         *     Actions are filtered by user's accessible communities.
          */
         get: operations["get_actions_by_action_model_actions_by_action_model__action_model_id__get"];
         put?: never;
@@ -1131,7 +1173,7 @@ export interface paths {
         };
         /**
          * Get Folder By Unique Id
-         * @description Get a specific folder by unique_id (accessible to all authenticated users).
+         * @description Get a specific folder by unique_id (only if user has access to its community).
          *     Returns folder with next_possible_statuses field indicating allowed transitions.
          */
         get: operations["get_folder_by_unique_id_folders_by_unique_id__unique_id__get"];
@@ -1152,19 +1194,19 @@ export interface paths {
         };
         /**
          * Get Folder
-         * @description Get a specific folder by ID (accessible to all authenticated users).
+         * @description Get a specific folder by ID (only if user has access to its community).
          *     Returns folder with next_possible_statuses field indicating allowed transitions.
          */
         get: operations["get_folder_folders__folder_id__get"];
         /**
          * Update Folder
-         * @description Update a folder (accessible to all authenticated users).
+         * @description Update a folder (only if user has access to its community).
          */
         put: operations["update_folder_folders__folder_id__put"];
         post?: never;
         /**
          * Delete Folder
-         * @description Delete a folder (accessible to all authenticated users).
+         * @description Delete a folder (only if user has access to its community).
          */
         delete: operations["delete_folder_folders__folder_id__delete"];
         options?: never;
@@ -1182,7 +1224,7 @@ export interface paths {
         /**
          * Get Folders By Status
          * @description Get folders by status with cursor-based pagination.
-         *     Accessible to all authenticated users.
+         *     Folders are filtered by user's accessible communities.
          */
         get: operations["get_folders_by_status_folders_by_status__status__get"];
         put?: never;
@@ -1203,7 +1245,7 @@ export interface paths {
         /**
          * Get Folders By Funding Program
          * @description Get folders by funding program with cursor-based pagination.
-         *     Accessible to all authenticated users.
+         *     Folders are filtered by user's accessible communities.
          */
         get: operations["get_folders_by_funding_program_folders_by_funding_program__funding_program_id__get"];
         put?: never;
@@ -1297,6 +1339,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sites/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sites */
+        get: operations["get_sites_sites__get"];
+        put?: never;
+        /** Create Site */
+        post: operations["create_site_sites__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/{site_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Site */
+        get: operations["get_site_sites__site_id__get"];
+        /** Update Site */
+        put: operations["update_site_sites__site_id__put"];
+        post?: never;
+        /** Delete Site */
+        delete: operations["delete_site_sites__site_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/{site_id}/buildings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Buildings By Site */
+        get: operations["get_buildings_by_site_sites__site_id__buildings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/buildings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Buildings */
+        get: operations["get_buildings_buildings__get"];
+        put?: never;
+        /** Create Building */
+        post: operations["create_building_buildings__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/buildings/{building_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Building */
+        get: operations["get_building_buildings__building_id__get"];
+        /** Update Building */
+        put: operations["update_building_buildings__building_id__put"];
+        post?: never;
+        /** Delete Building */
+        delete: operations["delete_building_buildings__building_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/buildings/{building_id}/rnbs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Rnb To Building */
+        post: operations["add_rnb_to_building_buildings__building_id__rnbs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/buildings/{building_id}/rnbs/{rnb_id_str}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Rnb From Building */
+        delete: operations["remove_rnb_from_building_buildings__building_id__rnbs__rnb_id_str__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/indicator-models/": {
         parameters: {
             query?: never;
@@ -1307,6 +1474,7 @@ export interface paths {
         /**
          * Get Indicator Models
          * @description Get all indicator models with cursor-based pagination and optional filtering.
+         *     By default, excludes deleted indicator models unless explicitly filtered by status.
          *     Accessible to all authenticated users.
          */
         get: operations["get_indicator_models_indicator_models__get"];
@@ -1339,6 +1507,69 @@ export interface paths {
          */
         get: operations["get_indicator_models_by_action_model_indicator_models_by_action_model__action_model_id__get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indicator-models/{indicator_model_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Publish Indicator Model
+         * @description Publish an indicator model (admin only).
+         *     Changes status to PUBLISHED.
+         */
+        put: operations["publish_indicator_model_indicator_models__indicator_model_id__publish_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indicator-models/{indicator_model_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Disable Indicator Model
+         * @description Disable an indicator model (admin only).
+         *     Changes status to DISABLED.
+         */
+        put: operations["disable_indicator_model_indicator_models__indicator_model_id__disable_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indicator-models/{indicator_model_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Activate Indicator Model
+         * @description Activate (re-publish) an indicator model (admin only).
+         *     Changes status from DISABLED to PUBLISHED.
+         */
+        put: operations["activate_indicator_model_indicator_models__indicator_model_id__activate_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1402,6 +1633,33 @@ export interface paths {
          */
         put: operations["update_indicator_indicators__indicator_id__put"];
         post?: never;
+        /**
+         * Delete Indicator
+         * @description Delete an indicator.
+         *     Cannot delete a child indicator individually or the last indicator of a type.
+         *     If the indicator is a GROUP, its children are deleted via cascade.
+         */
+        delete: operations["delete_indicator_indicators__indicator_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indicators/{indicator_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Indicator
+         * @description Duplicate an indicator. If the indicator is a GROUP, its children are also duplicated.
+         *     Requires the indicator to have duplicable_enabled in its action model link.
+         */
+        post: operations["duplicate_indicator_indicators__indicator_id__duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1838,24 +2096,35 @@ export interface components {
              */
             action_model_id: string;
             /**
-             * Visibility Rule
-             * @default true
+             * Hidden Rule
+             * @default false
              */
-            visibility_rule: string;
+            hidden_rule: string;
             /**
              * Required Rule
              * @default false
              */
             required_rule: string;
             /**
-             * Editable Rule
-             * @default true
+             * Disabled Rule
+             * @default false
              */
-            editable_rule: string;
-            /** Default Value Rule */
-            default_value_rule?: string | null;
-            duplicable?: components["schemas"]["DuplicableConfig"] | null;
-            constrained_values?: components["schemas"]["ConstrainedValuesConfig"] | null;
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
         };
         /**
          * ActionModelBrief
@@ -1881,6 +2150,8 @@ export interface components {
             name: string;
             /** Description */
             description?: string | null;
+            /** @default draft */
+            status: components["schemas"]["ActionModelStatus"];
             /**
              * Funding Program Id
              * Format: uuid
@@ -1905,6 +2176,8 @@ export interface components {
             name: string;
             /** Description */
             description?: string | null;
+            /** @default draft */
+            status: components["schemas"]["ActionModelStatus"];
             /**
              * Id
              * Format: uuid
@@ -1916,10 +2189,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
             /**
              * Funding Program Id
              * Format: uuid
@@ -1936,6 +2211,12 @@ export interface components {
             indicator_models?: components["schemas"]["IndicatorModelWithAssociation"][];
         };
         /**
+         * ActionModelStatus
+         * @description Action model status enumeration
+         * @enum {string}
+         */
+        ActionModelStatus: "draft" | "published" | "disabled" | "deleted";
+        /**
          * ActionModelUpdate
          * @description Model for updating action models
          */
@@ -1944,6 +2225,7 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            status?: components["schemas"]["ActionModelStatus"] | null;
             /** Funding Program Id */
             funding_program_id?: string | null;
             /** Action Theme Id */
@@ -2011,10 +2293,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
             /** Folder Id */
             folder_id?: string | null;
             folder?: components["schemas"]["FolderBrief"] | null;
@@ -2100,10 +2384,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
         };
         /**
          * ActionThemeStatus
@@ -2204,10 +2490,10 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
             /** Next Possible Statuses */
             next_possible_statuses?: components["schemas"]["ActionNextStatusInfo"][];
             action_model: components["schemas"]["ActionModelRead"];
@@ -2380,10 +2666,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
         };
         /**
          * AgentStatus
@@ -2465,6 +2753,97 @@ export interface components {
             client_secret?: string | null;
         };
         /**
+         * BuildingCreate
+         * @description Model for creating buildings.
+         */
+        BuildingCreate: {
+            /** Name */
+            name: string;
+            /**
+             * Usage
+             * @description Building usage
+             */
+            usage?: string | null;
+            /**
+             * External Id
+             * @description External system identifier
+             */
+            external_id?: string | null;
+            /**
+             * Site Id
+             * Format: uuid
+             * @description Site that owns this building
+             */
+            site_id: string;
+            /**
+             * Rnb Ids
+             * @description List of RNB identifiers
+             */
+            rnb_ids?: string[] | null;
+        };
+        /**
+         * BuildingRead
+         * @description Model for reading buildings.
+         */
+        BuildingRead: {
+            /** Name */
+            name: string;
+            /**
+             * Usage
+             * @description Building usage
+             */
+            usage?: string | null;
+            /**
+             * External Id
+             * @description External system identifier
+             */
+            external_id?: string | null;
+            /**
+             * Site Id
+             * Format: uuid
+             * @description Site that owns this building
+             */
+            site_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Unique Id */
+            unique_id: string;
+            /** Rnb Ids */
+            rnb_ids?: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Last Updated At
+             * Format: date-time
+             */
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
+        };
+        /**
+         * BuildingUpdate
+         * @description Model for updating buildings.
+         */
+        BuildingUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Usage */
+            usage?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /**
+             * Rnb Ids
+             * @description List of RNB identifiers
+             */
+            rnb_ids?: string[] | null;
+        };
+        /**
          * CommunityCreate
          * @description Schema for creating a new Community.
          */
@@ -2530,10 +2909,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
         };
         /**
          * CommunityUpdate
@@ -2551,18 +2932,6 @@ export interface components {
             /** Internal Comment */
             internal_comment?: string | null;
         };
-        /** ConstrainedValuesConfig */
-        ConstrainedValuesConfig: {
-            /**
-             * Enabled
-             * @default false
-             */
-            enabled: boolean;
-            /** Min Value */
-            min_value?: number | null;
-            /** Max Value */
-            max_value?: number | null;
-        };
         /**
          * CountResponse
          * @description Response model for count endpoints.
@@ -2573,18 +2942,6 @@ export interface components {
              * @description Count value
              */
             count: number;
-        };
-        /** DuplicableConfig */
-        DuplicableConfig: {
-            /**
-             * Enabled
-             * @default false
-             */
-            enabled: boolean;
-            /** Min Count */
-            min_count?: number | null;
-            /** Max Count */
-            max_count?: number | null;
         };
         /**
          * EntityHistoricalState
@@ -2707,10 +3064,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
             /** Funding Programs */
             funding_programs?: components["schemas"]["FundingProgramRead"][];
         };
@@ -2771,10 +3130,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
             /**
              * Funding Program Id
              * Format: uuid
@@ -2882,10 +3243,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
         };
         /** FundingProgramUpdate */
         FundingProgramUpdate: {
@@ -2923,24 +3286,35 @@ export interface components {
              */
             indicator_model_id: string;
             /**
-             * Visibility Rule
-             * @default true
+             * Hidden Rule
+             * @default false
              */
-            visibility_rule: string;
+            hidden_rule: string;
             /**
              * Required Rule
              * @default false
              */
             required_rule: string;
             /**
-             * Editable Rule
-             * @default true
+             * Disabled Rule
+             * @default false
              */
-            editable_rule: string;
-            /** Default Value Rule */
-            default_value_rule?: string | null;
-            duplicable?: components["schemas"]["DuplicableConfig"] | null;
-            constrained_values?: components["schemas"]["ConstrainedValuesConfig"] | null;
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
         };
         /**
          * IndicatorModelBrief
@@ -2974,6 +3348,8 @@ export interface components {
             type: components["schemas"]["IndicatorModelType"];
             /** Unit */
             unit?: string | null;
+            /** @default draft */
+            status: components["schemas"]["IndicatorModelStatus"];
             /** Action Model Ids */
             action_model_ids?: string[] | null;
             /** Action Model Associations */
@@ -2995,11 +3371,8 @@ export interface components {
             type: components["schemas"]["IndicatorModelType"];
             /** Unit */
             unit?: string | null;
-            /**
-             * Children
-             * @description Child indicator models (only for group type)
-             */
-            children?: components["schemas"]["IndicatorModelRead"][] | null;
+            /** @default draft */
+            status: components["schemas"]["IndicatorModelStatus"];
             /**
              * Id
              * Format: uuid
@@ -3011,14 +3384,24 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
+            /** Children */
+            children?: components["schemas"]["IndicatorModelRead"][] | null;
         };
         /**
+         * IndicatorModelStatus
+         * @description Indicator model status enumeration
+         * @enum {string}
+         */
+        IndicatorModelStatus: "draft" | "published" | "disabled" | "deleted";
+        /**
          * IndicatorModelType
-         * @description Type of indicator: text or numeric.
+         * @description Type of indicator: text, numeric, or group.
          * @enum {string}
          */
         IndicatorModelType: "text" | "number" | "group";
@@ -3036,6 +3419,7 @@ export interface components {
             type?: components["schemas"]["IndicatorModelType"] | null;
             /** Unit */
             unit?: string | null;
+            status?: components["schemas"]["IndicatorModelStatus"] | null;
             /** Action Model Ids */
             action_model_ids?: string[] | null;
             /** Action Model Associations */
@@ -3055,6 +3439,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Technical Label */
+            technical_label: string;
             /** Description */
             description?: string | null;
             type: components["schemas"]["IndicatorModelType"];
@@ -3066,29 +3452,40 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
             /**
-             * Visibility Rule
-             * @default true
+             * Hidden Rule
+             * @default false
              */
-            visibility_rule: string;
+            hidden_rule: string;
             /**
              * Required Rule
              * @default false
              */
             required_rule: string;
             /**
-             * Editable Rule
-             * @default true
+             * Disabled Rule
+             * @default false
              */
-            editable_rule: string;
-            /** Default Value Rule */
-            default_value_rule?: string | null;
-            duplicable?: components["schemas"]["DuplicableConfig"] | null;
-            constrained_values?: components["schemas"]["ConstrainedValuesConfig"] | null;
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
         };
         /**
          * IndicatorRead
@@ -3104,6 +3501,8 @@ export interface components {
             value_text?: string | null;
             /** Value Number */
             value_number?: number | null;
+            /** Change Origin */
+            change_origin?: string | null;
             /**
              * Indicator Model Id
              * Format: uuid
@@ -3114,36 +3513,51 @@ export interface components {
              * Format: uuid
              */
             action_id: string;
+            /** Parent Indicator Id */
+            parent_indicator_id?: string | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
             indicator_model?: components["schemas"]["IndicatorModelBrief"] | null;
+            /** Children */
+            children?: components["schemas"]["IndicatorRead"][] | null;
             /**
-             * Visibility Rule
-             * @default true
+             * Hidden Rule
+             * @default false
              */
-            visibility_rule: string;
+            hidden_rule: string;
             /**
              * Required Rule
              * @default false
              */
             required_rule: string;
             /**
-             * Editable Rule
-             * @default true
+             * Disabled Rule
+             * @default false
              */
-            editable_rule: string;
-            /** Default Value Rule */
-            default_value_rule?: string | null;
-            duplicable?: components["schemas"]["DuplicableConfig"] | null;
-            constrained_values?: components["schemas"]["ConstrainedValuesConfig"] | null;
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
         };
         /**
          * IndicatorUpdate
@@ -3154,6 +3568,8 @@ export interface components {
             value_text?: string | null;
             /** Value Number */
             value_number?: number | null;
+            /** Change Origin */
+            change_origin?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3315,6 +3731,16 @@ export interface components {
             /** @description Pagination metadata and links */
             pagination: components["schemas"]["PaginationMeta"];
         };
+        /** PaginatedResponse[BuildingRead] */
+        PaginatedResponse_BuildingRead_: {
+            /**
+             * Data
+             * @description List of items for current page
+             */
+            data: components["schemas"]["BuildingRead"][];
+            /** @description Pagination metadata and links */
+            pagination: components["schemas"]["PaginationMeta"];
+        };
         /** PaginatedResponse[CommunityRead] */
         PaginatedResponse_CommunityRead_: {
             /**
@@ -3362,6 +3788,16 @@ export interface components {
              * @description List of items for current page
              */
             data: components["schemas"]["IndicatorModelRead"][];
+            /** @description Pagination metadata and links */
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginatedResponse[SiteRead] */
+        PaginatedResponse_SiteRead_: {
+            /**
+             * Data
+             * @description List of items for current page
+             */
+            data: components["schemas"]["SiteRead"][];
             /** @description Pagination metadata and links */
             pagination: components["schemas"]["PaginationMeta"];
         };
@@ -3486,6 +3922,105 @@ export interface components {
             } | null;
         };
         /**
+         * SiteCreate
+         * @description Schema for creating a new Site.
+         */
+        SiteCreate: {
+            /**
+             * Name
+             * @description Site name
+             */
+            name: string;
+            /**
+             * Siren
+             * @description 9-digit SIREN identifier
+             */
+            siren: string;
+            /**
+             * Usage
+             * @description Site usage
+             */
+            usage?: string | null;
+            /**
+             * External Id
+             * @description External system identifier
+             */
+            external_id?: string | null;
+            /**
+             * Community Id
+             * Format: uuid
+             * @description Community that owns this site
+             */
+            community_id: string;
+        };
+        /**
+         * SiteRead
+         * @description Schema for reading a Site.
+         */
+        SiteRead: {
+            /**
+             * Name
+             * @description Site name
+             */
+            name: string;
+            /**
+             * Siren
+             * @description 9-digit SIREN identifier
+             */
+            siren: string;
+            /**
+             * Usage
+             * @description Site usage
+             */
+            usage?: string | null;
+            /**
+             * External Id
+             * @description External system identifier
+             */
+            external_id?: string | null;
+            /**
+             * Community Id
+             * Format: uuid
+             * @description Community that owns this site
+             */
+            community_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Unique Id */
+            unique_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Last Updated At
+             * Format: date-time
+             */
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
+        };
+        /**
+         * SiteUpdate
+         * @description Schema for updating a Site.
+         */
+        SiteUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Siren */
+            siren?: string | null;
+            /** Usage */
+            usage?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Community Id */
+            community_id?: string | null;
+        };
+        /**
          * SnapshotMetadata
          * @description Metadata about a snapshot for listing available versions.
          */
@@ -3578,10 +4113,12 @@ export interface components {
              */
             created_at: string;
             /**
-             * Updated At
+             * Last Updated At
              * Format: date-time
              */
-            updated_at: string;
+            last_updated_at: string;
+            /** Last Updated By Id */
+            last_updated_by_id?: string | null;
             role: components["schemas"]["RoleType"];
             /** Communities */
             communities?: components["schemas"]["UserCommunityBrief"][];
@@ -3739,7 +4276,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Token"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_access_token_auth_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3773,78 +4341,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Token"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    read_users_me_auth_me_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserRead"];
-                };
-            };
-        };
-    };
-    protected_route_auth_protected_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    list_users_auth_users_get: {
-        parameters: {
-            query?: {
-                cursor?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserRead"][];
                 };
             };
             /** @description Validation Error */
@@ -4185,7 +4681,10 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
+                /** @description Filter by community ID */
+                community_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -4312,6 +4811,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -4564,6 +5064,37 @@ export interface operations {
             };
         };
     };
+    get_community_users_communities__community_id__users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                community_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_parent_to_community_communities__community_id__parents__parent_id__post: {
         parameters: {
             query?: never;
@@ -4695,6 +5226,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
                 active_only?: boolean;
             };
@@ -4857,9 +5389,16 @@ export interface operations {
             query?: {
                 /** @description Cursor for pagination */
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by funding program ID */
                 funding_program_id?: string | null;
+                /** @description Filter by action theme ID */
+                action_theme_id?: string | null;
+                /** @description Filter by linked indicator model ID */
+                indicator_model_id?: string | null;
+                /** @description Filter by status (comma-separated) */
+                status?: string | null;
             };
             header?: never;
             path?: never;
@@ -4902,6 +5441,99 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_action_model_action_models__action_model_id__publish_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_action_model_action_models__action_model_id__disable_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activate_action_model_action_models__action_model_id__activate_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5019,6 +5651,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -5053,10 +5686,11 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by action model ID */
                 action_model_id?: string | null;
-                /** @description Filter by action status */
+                /** @description Filter by status (comma-separated) */
                 status?: string | null;
             };
             header?: never;
@@ -5310,6 +5944,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -5411,8 +6046,9 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
-                /** @description Filter by action theme status */
+                /** @description Filter by status (comma-separated) */
                 status?: string | null;
             };
             header?: never;
@@ -5604,6 +6240,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -5763,6 +6400,7 @@ export interface operations {
             query?: {
                 /** @description Cursor for pagination */
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by funding program ID */
                 funding_program_id?: string | null;
@@ -5925,6 +6563,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -5959,7 +6598,9 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
+                /** @description Filter by status (comma-separated) */
                 status?: string | null;
                 funding_program_id?: string | null;
             };
@@ -6152,6 +6793,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -6186,6 +6828,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -6220,8 +6863,12 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
-                status?: components["schemas"]["AgentStatus"] | null;
+                /** @description Filter by community ID */
+                community_id?: string | null;
+                /** @description Filter by status (comma-separated) */
+                status?: string | null;
                 include_deleted?: boolean;
             };
             header?: never;
@@ -6411,16 +7058,444 @@ export interface operations {
             };
         };
     };
+    get_sites_sites__get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                /** @description Number of results per page */
+                limit?: number;
+                /** @description Filter by community */
+                community_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SiteRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_site_sites__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_site_sites__site_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_site_sites__site_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_site_sites__site_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_buildings_by_site_sites__site_id__buildings_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                /** @description Number of results per page */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_BuildingRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_buildings_buildings__get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                /** @description Number of results per page */
+                limit?: number;
+                /** @description Filter by site */
+                site_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_BuildingRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_building_buildings__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_building_buildings__building_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_building_buildings__building_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_building_buildings__building_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_rnb_to_building_buildings__building_id__rnbs_post: {
+        parameters: {
+            query: {
+                /** @description RNB identifier to add */
+                rnb_id: string;
+            };
+            header?: never;
+            path: {
+                building_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_rnb_from_building_buildings__building_id__rnbs__rnb_id_str__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                building_id: string;
+                rnb_id_str: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_indicator_models_indicator_models__get: {
         parameters: {
             query?: {
                 /** @description Cursor for pagination */
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by action model ID */
                 action_model_id?: string | null;
                 /** @description Filter by indicator type */
                 type?: components["schemas"]["IndicatorModelType"] | null;
+                /** @description Filter by status (comma-separated) */
+                status?: string | null;
             };
             header?: never;
             path?: never;
@@ -6485,6 +7560,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: string | null;
+                /** @description Number of results per page */
                 limit?: number;
             };
             header?: never;
@@ -6502,6 +7578,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponse_IndicatorModelRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_indicator_model_indicator_models__indicator_model_id__publish_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                indicator_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_indicator_model_indicator_models__indicator_model_id__disable_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                indicator_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activate_indicator_model_indicator_models__indicator_model_id__activate_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                indicator_model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorModelRead"];
                 };
             };
             /** @description Validation Error */
@@ -6658,6 +7827,66 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_indicator_indicators__indicator_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                indicator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_indicator_indicators__indicator_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                indicator_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

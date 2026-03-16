@@ -91,7 +91,21 @@ export class ActionModelListComponent implements OnInit {
       filterKey: 'action_theme_id',
       filterOptions: this.facade.atOptions().map(at => ({ id: at.id, label: at.name })),
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    {
+      key: 'status',
+      label: 'Statut',
+      type: 'status-badge',
+      width: '120px',
+      filterable: true,
+      filterKey: 'status',
+      filterOptions: [
+        { id: 'draft', label: 'Brouillon' },
+        { id: 'published', label: 'Publié' },
+        { id: 'disabled', label: 'Désactivé' },
+        { id: 'deleted', label: 'Supprimé' },
+      ],
+    },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ]);
 
   ngOnInit(): void {

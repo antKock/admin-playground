@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, loginGuard } from './core/auth/auth.guard';
+import { adminGuard, authGuard, loginGuard } from './core/auth/auth.guard';
 import { LoginComponent } from './core/auth/login.component';
 import { AppLayoutComponent } from './core/layout/app-layout.component';
 
@@ -9,7 +9,7 @@ export const routes: Routes = [
   {
     path: '',
     component: AppLayoutComponent,
-    canActivate: [authGuard],
+    canActivate: [authGuard, adminGuard],
     children: [
       { path: '', redirectTo: 'funding-programs', pathMatch: 'full' },
       {
@@ -56,6 +56,16 @@ export const routes: Routes = [
           import('./pages/indicator-models/indicator-models.routes').then(
             (m) => m.indicatorModelsRoutes,
           ),
+      },
+      {
+        path: 'sites',
+        loadChildren: () =>
+          import('./pages/sites/sites.routes').then((m) => m.sitesRoutes),
+      },
+      {
+        path: 'buildings',
+        loadChildren: () =>
+          import('./pages/buildings/buildings.routes').then((m) => m.buildingsRoutes),
       },
       {
         path: 'users',

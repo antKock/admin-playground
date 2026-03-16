@@ -8,6 +8,7 @@ import { ActivityListComponent } from '@app/shared/components/activity-list/acti
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@app/shared/services/confirm-dialog.service';
 import { ApiInspectorService } from '@app/shared/services/api-inspector.service';
+import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { AgentFacade } from '../agent.facade';
 import { AgentStatus } from '@domains/agents/agent.models';
@@ -43,7 +44,7 @@ import { AgentStatus } from '@domains/agents/agent.models';
               <h1 class="text-2xl font-bold text-text-primary">{{ displayName() }}</h1>
               <app-status-badge [status]="agent()!.status" />
             </div>
-            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(agent()!.updated_at) }} · ID: {{ agent()!.id }}</p>
+            <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(agent()!.last_updated_at) }} · ID: {{ agent()!.id }}</p>
           </div>
           <div class="flex gap-2">
             @for (transition of allowedTransitions(); track transition.status) {
@@ -85,6 +86,7 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(AgentFacade);
   readonly inspectorService = inject(ApiInspectorService);
+  private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly agent = this.facade.selectedItem;
@@ -120,7 +122,8 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
       { label: 'Commentaire public', value: a.public_comment ?? '—', type: 'text' as const },
       { label: 'Commentaire interne', value: a.internal_comment ?? '—', type: 'text' as const },
       { label: 'Créé le', value: a.created_at, type: 'date' as const },
-      { label: 'Mis à jour le', value: a.updated_at, type: 'date' as const },
+      { label: 'Mis à jour le', value: a.last_updated_at, type: 'date' as const },
+      { label: 'Dernière modification par', value: this.userNameResolver.resolve(a.last_updated_by_id), type: 'text' as const },
     ];
   });
 

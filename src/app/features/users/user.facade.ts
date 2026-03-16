@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { UserDomainStore } from '@domains/users/user.store';
 import { UserCreate, UserUpdate } from '@domains/users/user.models';
 import { ToastService } from '@app/shared/services/toast.service';
+import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { UserFeatureStore } from './user.store';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +35,7 @@ export class UserFacade {
   // Community signals
   readonly allCommunities = this.featureStore.allCommunities;
   readonly isLoadingCommunities = this.featureStore.isLoadingCommunities;
+  readonly communitiesError = this.featureStore.communitiesError;
 
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;
@@ -74,7 +76,7 @@ export class UserFacade {
       this.toast.success('Utilisateur créé');
       this.router.navigate(['/users']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -85,7 +87,7 @@ export class UserFacade {
       this.domainStore.selectById(id);
       this.router.navigate(['/users', id]);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -95,7 +97,7 @@ export class UserFacade {
       this.toast.success('Utilisateur supprimé');
       this.router.navigate(['/users']);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -109,7 +111,7 @@ export class UserFacade {
       this.toast.success('Communauté assignée');
       this.domainStore.selectById(userId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -119,7 +121,7 @@ export class UserFacade {
       this.toast.success('Communauté retirée');
       this.domainStore.selectById(userId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
+      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -129,20 +131,7 @@ export class UserFacade {
       this.toast.success('Rôle mis à jour');
       this.domainStore.selectById(userId);
     } else if (result.status === 'error') {
-      this.handleMutationError(result.error);
-    }
-  }
-
-  private handleMutationError(error: unknown): void {
-    const httpError = error as { status?: number; error?: { detail?: unknown; message?: string }; message?: string };
-    if (httpError?.status === 409) {
-      const reason = httpError.error?.detail || 'lié à d\'autres ressources';
-      this.toast.error(`Conflit — ${typeof reason === 'string' ? reason : 'lié à d\'autres ressources'}`);
-    } else if (httpError?.status === 422 && httpError.error?.detail) {
-      this.toast.error('Veuillez corriger les erreurs de validation');
-    } else {
-      const message = httpError?.error?.detail || httpError?.error?.message || httpError?.message || 'Une erreur est survenue';
-      this.toast.error(typeof message === 'string' ? message : 'Une erreur est survenue');
+      handleMutationError(this.toast, result.error);
     }
   }
 }

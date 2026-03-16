@@ -203,10 +203,10 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
   private setupInfiniteScroll(): void {
     if (typeof IntersectionObserver === 'undefined') return;
 
-    const container = this.scrollContainer()?.nativeElement;
-    if (!container) return;
+    const el = this.scrollContainer()?.nativeElement;
+    if (!el) return;
 
-    this.sentinel = container.querySelector('.scroll-sentinel');
+    this.sentinel = el.querySelector('.scroll-sentinel');
     if (!this.sentinel) return;
 
     this.observer = new IntersectionObserver(
@@ -215,7 +215,7 @@ export class DataTableComponent implements AfterViewInit, OnDestroy {
           this.loadMore.emit();
         }
       },
-      { root: container, rootMargin: '0px 0px 20% 0px', threshold: 0 },
+      { root: null, rootMargin: '0px 0px 200px 0px', threshold: 0 },
     );
 
     this.observer.observe(this.sentinel);

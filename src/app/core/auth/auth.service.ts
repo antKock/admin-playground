@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, firstValueFrom } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 
@@ -43,9 +43,25 @@ export class AuthService {
     return (payload['email'] as string) ?? null;
   });
 
+  readonly userId = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['sub'] as string) ?? (payload['id'] as string) ?? null;
+  });
+
+  readonly userRole = computed(() => {
+    const payload = this.decodedPayload();
+    if (!payload) return null;
+    return (payload['role'] as string) ?? null;
+  });
+
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, { email, password })
+      .post<LoginResponse>(
+        `${environment.apiBaseUrl}/auth/login`,
+        { email, password },
+        { withCredentials: true },
+      )
       .pipe(
         tap((response) => {
           localStorage.setItem(TOKEN_KEY, response.access_token);
@@ -54,10 +70,40 @@ export class AuthService {
       );
   }
 
-  logout(): void {
+  /**
+   * Attempt a silent token refresh using the httpOnly refresh cookie.
+   * Returns the new access token on success.
+   */
+  async refresh(): Promise<string> {
+    const response = await firstValueFrom(
+      this.http.post<LoginResponse>(
+        `${environment.apiBaseUrl}/auth/refresh`,
+        {},
+        { withCredentials: true },
+      ),
+    );
+    localStorage.setItem(TOKEN_KEY, response.access_token);
+    this._token.set(response.access_token);
+    return response.access_token;
+  }
+
+  logout(returnUrl?: string): void {
+    // Fire-and-forget: invalidate refresh token server-side
+    this.http
+      .post(`${environment.apiBaseUrl}/auth/logout`, {}, { withCredentials: true })
+      .subscribe({ error: () => { /* ignore — we're logging out anyway */ } });
     localStorage.removeItem(TOKEN_KEY);
     this._token.set(null);
-    this.router.navigate(['/login']);
+    const extras = returnUrl ? { queryParams: { returnUrl } } : {};
+    this.router.navigate(['/login'], extras);
+  }
+
+  /**
+   * Update the stored access token (used by interceptor after refresh).
+   */
+  setToken(token: string): void {
+    localStorage.setItem(TOKEN_KEY, token);
+    this._token.set(token);
   }
 
   getToken(): string | null {

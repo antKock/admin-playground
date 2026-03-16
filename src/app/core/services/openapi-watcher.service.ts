@@ -1,6 +1,20 @@
 import { Injectable, signal } from '@angular/core';
 
-import { environment } from '../../../environments/environment';
+/**
+ * OpenAPI Change Detection Banner
+ *
+ * At runtime, fetches the live openapi.json from the API and compares it
+ * against openapi-baseline.json (bundled at build time, committed in git).
+ *
+ * Banner visible? → The live API has changed since the last acknowledgment.
+ * To dismiss the banner:
+ *   1. npm run api:generate     — downloads the latest spec + regenerates types
+ *   2. Adapt your code to the new/changed API endpoints and schemas
+ *   3. npm run api:acknowledge  — copies the spec into the baseline
+ *   4. Commit the updated openapi-baseline.json
+ *
+ * The banner reappears only when the live API changes again.
+ */
 
 export interface OpenApiChange {
   type: 'added' | 'removed' | 'modified';
@@ -10,37 +24,42 @@ export interface OpenApiChange {
   after?: unknown;
 }
 
+/** Uses the same /api proxy as the rest of the app to avoid CORS issues. */
+const OPENAPI_URL = '/api/openapi.json';
+
 @Injectable({ providedIn: 'root' })
 export class OpenApiWatcherService {
   readonly changes = signal<OpenApiChange[] | null>(null);
 
   async check(): Promise<void> {
     try {
-      const specUrl = `${environment.apiBaseUrl}/openapi.json`;
+      let baseline: Record<string, unknown>;
+      try {
+        baseline = (await import('@core/api/generated/openapi-baseline.json')).default as Record<string, unknown>;
+      } catch {
+        console.warn('[OpenAPI Watcher] Baseline not found — run: npm run api:acknowledge');
+        return;
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10_000);
-      const response = await fetch(specUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
+      let response: Response;
+      try {
+        response = await fetch(OPENAPI_URL, { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       if (!response.ok) {
         console.warn(`[OpenAPI Watcher] Fetch failed with status ${response.status}`);
         return;
       }
 
-      const specText = await response.text();
-
       let liveSpec: Record<string, unknown>;
       try {
-        liveSpec = JSON.parse(specText);
+        liveSpec = await response.json();
       } catch {
-        console.warn('[OpenAPI Watcher] Failed to parse spec as JSON');
-        return;
-      }
-
-      let baseline: Record<string, unknown>;
-      try {
-        baseline = (await import('@core/api/generated/openapi-baseline.json')).default as Record<string, unknown>;
-      } catch {
-        console.warn('[OpenAPI Watcher] Baseline not found — run scripts/generate-api-types.sh');
+        console.warn('[OpenAPI Watcher] Failed to parse live spec as JSON');
         return;
       }
 

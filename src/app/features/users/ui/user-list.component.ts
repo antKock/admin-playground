@@ -5,6 +5,12 @@ import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
 import { UserFacade } from '../user.facade';
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  cdm: 'CDM',
+  collectivite: 'Collectivite',
+};
+
 @Component({
   selector: 'app-user-list',
   imports: [DataTableComponent, LucideAngularModule],
@@ -51,6 +57,7 @@ export class UserListComponent implements OnInit {
     this.facade.items().map((item) => ({
       ...item,
       display_name: [item.first_name, item.last_name].filter(Boolean).join(' ') || '—',
+      role_display: ROLE_LABELS[item.role] ?? item.role,
       is_active_display: item.is_active ? 'actif' : 'inactif',
       community_count: item.communities?.length?.toString() ?? '0',
     })),
@@ -59,10 +66,10 @@ export class UserListComponent implements OnInit {
   readonly columns: ColumnDef[] = [
     { key: 'display_name', label: 'Nom', sortable: true, bold: true, width: '200px' },
     { key: 'email', label: 'Email', sortable: true },
-    { key: 'role', label: 'Rôle', sortable: true, type: 'status-badge', width: '120px' },
+    { key: 'role_display', label: 'Rôle', sortable: true, type: 'status-badge', width: '120px' },
     { key: 'is_active_display', label: 'Statut', type: 'status-badge', width: '100px' },
     { key: 'community_count', label: 'Communautés', width: '120px' },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ];
 
   ngOnInit(): void {

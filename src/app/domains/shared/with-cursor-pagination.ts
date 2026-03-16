@@ -8,7 +8,7 @@ import {
   withComputed,
   WritableStateSource,
 } from '@ngrx/signals';
-import { pipe, switchMap, tap, catchError, filter, EMPTY, Observable } from 'rxjs';
+import { pipe, switchMap, tap, catchError, filter, EMPTY, Observable, expand, reduce } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -136,6 +136,50 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
         // refresh() reloads the first page. If called with filters, uses those; if called with
         // undefined, re-uses the last applied filters (preserves current filter context).
         // This differs from load(), which always requires explicit filters.
+        loadAll: rxMethod<Record<string, string> | undefined>(
+          pipe(
+            tap((filters) => {
+              currentFilters = filters;
+              patch(store, {
+                items: [],
+                cursor: null,
+                hasMore: false,
+                isLoading: true,
+                error: null,
+              });
+            }),
+            switchMap((filters) => {
+              const fetchPage = (cursor: string | null): Observable<PaginatedResponse<T>> =>
+                config.loader({ cursor, limit, filters });
+
+              return fetchPage(null).pipe(
+                expand((response) =>
+                  response.pagination.has_next_page && response.pagination.cursors.end_cursor
+                    ? fetchPage(response.pagination.cursors.end_cursor)
+                    : EMPTY
+                ),
+                reduce((acc, response) => [...acc, ...response.data], [] as T[]),
+                tap((allItems) => {
+                  patch(store, {
+                    items: allItems,
+                    cursor: null,
+                    hasMore: false,
+                    isLoading: false,
+                    totalCount: allItems.length,
+                  });
+                }),
+                catchError((err) => {
+                  patch(store, {
+                    error: err?.message ?? 'Échec du chargement',
+                    isLoading: false,
+                  });
+                  return EMPTY;
+                }),
+              );
+            }),
+          ),
+        ),
+
         refresh: rxMethod<Record<string, string> | undefined>(
           pipe(
             tap((filters) => {

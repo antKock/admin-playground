@@ -141,17 +141,16 @@
 
   @if (data().length > 0) {
     <div class="table-footer" role="status" aria-live="polite" aria-atomic="true">
-      @if (totalCount() !== null) {
-        Affichage de {{ data().length }} sur {{ totalCount() }}
-      } @else {
-        Affichage de {{ data().length }}
+      <span class="table-footer-text">
+        @if (totalCount() !== null) {
+          Affichage de {{ data().length }} sur {{ totalCount() }}
+        } @else {
+          Affichage de {{ data().length }}
+        }
+      </span>
+      @if (isLoading()) {
+        <div class="loading-spinner loading-spinner-sm"></div>
       }
-    </div>
-  }
-
-  @if (isLoading() && data().length > 0) {
-    <div class="loading-more">
-      <div class="loading-spinner"></div>
     </div>
   }
 

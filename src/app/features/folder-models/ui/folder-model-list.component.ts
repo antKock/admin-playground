@@ -60,7 +60,7 @@ export class FolderModelListComponent implements OnInit {
       filterKey: 'funding_program_id',
       filterOptions: this.facade.fpOptions().map(fp => ({ id: fp.id, label: fp.label })),
     },
-    { key: 'updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
+    { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ]);
 
   readonly rows = computed(() =>
