@@ -5,152 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createIndicatorModelForm } from '@domains/indicator-models/forms/indicator-model.form';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-form',
-  imports: [ReactiveFormsModule, FormsModule, BreadcrumbComponent],
-  template: `
-    <div class="p-6 max-w-2xl">
-      <app-breadcrumb [items]="formBreadcrumbs()" />
-      <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ formTitle }}
-      </h1>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
-          <input
-            id="name"
-            formControlName="name"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('name')"
-          />
-          @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Label technique *</label>
-          <input
-            id="technical_label"
-            formControlName="technical_label"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('technical_label')"
-          />
-          @if (showError('technical_label')) {
-            <p class="mt-1 text-sm text-error">Le label technique est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="type" class="block text-sm font-medium text-text-primary mb-1">Type *</label>
-          <select
-            id="type"
-            formControlName="type"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('type')"
-          >
-            <option value="" disabled>Sélectionner un type</option>
-            <option value="text">Texte</option>
-            <option value="number">Nombre</option>
-            <option value="group">Groupe</option>
-          </select>
-          @if (showError('type')) {
-            <p class="mt-1 text-sm text-error">Le type est obligatoire.</p>
-          }
-        </div>
-
-        @if (form.get('type')?.value !== 'group') {
-          <div>
-            <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
-            <input
-              id="unit"
-              formControlName="unit"
-              class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-          </div>
-        }
-
-        @if (form.get('type')?.value === 'group') {
-          <div class="border border-border rounded-lg p-4">
-            <h3 class="text-sm font-semibold text-text-primary mb-3">Indicateurs enfants</h3>
-
-            @if (attachedChildren().length > 0) {
-              <div class="space-y-1 mb-3">
-                @for (child of attachedChildren(); track child.id) {
-                  <div class="flex items-center justify-between px-3 py-2 border border-border rounded-lg bg-surface-base">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm text-text-primary">{{ child.name }}</span>
-                      <span class="text-xs text-text-tertiary">({{ child.type }})</span>
-                    </div>
-                    <button type="button" class="text-xs text-error hover:underline" (click)="detachChild(child.id)">Retirer</button>
-                  </div>
-                }
-              </div>
-            } @else {
-              <p class="text-sm text-text-tertiary mb-3">Aucun indicateur enfant sélectionné.</p>
-            }
-
-            <input
-              type="text"
-              placeholder="Rechercher des indicateurs..."
-              class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand text-sm mb-2"
-              [ngModel]="searchTerm()"
-              (ngModelChange)="searchTerm.set($event)"
-              [ngModelOptions]="{standalone: true}"
-            />
-
-            @if (filteredAvailable().length > 0) {
-              <div class="max-h-48 overflow-y-auto space-y-1">
-                @for (indicator of filteredAvailable(); track indicator.id) {
-                  <div class="flex items-center justify-between px-3 py-1.5 border border-border rounded text-sm">
-                    <div class="flex items-center gap-2">
-                      <span class="text-text-primary">{{ indicator.name }}</span>
-                      <span class="text-xs text-text-tertiary">({{ indicator.type }})</span>
-                    </div>
-                    <button type="button" class="text-xs text-brand hover:underline" (click)="attachChild(indicator)">+ Ajouter</button>
-                  </div>
-                }
-              </div>
-            } @else if (searchTerm()) {
-              <p class="text-xs text-text-tertiary">Aucun indicateur disponible.</p>
-            }
-          </div>
-        }
-
-        <div>
-          <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button
-            type="submit"
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-            [disabled]="submitting()"
-          >
-            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-            (click)="goBack()"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
+  imports: [ReactiveFormsModule, FormsModule, BreadcrumbComponent, FormFieldComponent],
+  templateUrl: './indicator-model-form.component.html',
 })
 export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
@@ -169,15 +32,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   readonly attachedChildren = signal<{ id: string; name: string; type: string }[]>([]);
   readonly searchTerm = signal('');
 
-  readonly filteredAvailable = computed(() => {
-    const attached = new Set(this.attachedChildren().map(c => c.id));
-    const term = this.searchTerm().toLowerCase();
-    return this.facade.items()
-      .filter(i => i.type !== 'group')
-      .filter(i => i.id !== this.editId)
-      .filter(i => !attached.has(i.id))
-      .filter(i => !term || i.name.toLowerCase().includes(term));
-  });
+  readonly filteredAvailable = this.facade.availableChildIndicators;
 
   private static readonly ENTITY_LABEL = 'Modèles d\'indicateur';
   private static readonly EDIT_TITLE = 'Modifier le modèle d\'indicateur';
@@ -222,6 +77,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
           this.attachedChildren.set(
             item.children.map(c => ({ id: c.id, name: c.name, type: c.type })),
           );
+          this.facade.setExcludeChildrenIds(item.children.map(c => c.id));
         }
       }
     });
@@ -230,6 +86,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
+    this.facade.setEditItemId(this.editId);
 
     // Load all indicators for the children picker
     this.facade.load();
@@ -243,26 +100,33 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
       if (type !== 'group') {
         this.attachedChildren.set([]);
         this.searchTerm.set('');
+        this.facade.setChildSearchTerm('');
+        this.facade.setExcludeChildrenIds([]);
       }
     });
   }
 
   ngOnDestroy(): void {
     this.facade.clearSelection();
+    this.facade.setEditItemId(null);
+    this.facade.setChildSearchTerm('');
+    this.facade.setExcludeChildrenIds([]);
   }
 
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
+  onChildSearch(term: string): void {
+    this.searchTerm.set(term);
+    this.facade.setChildSearchTerm(term);
   }
 
   attachChild(indicator: { id: string; name: string; type: string }): void {
     this.attachedChildren.update(list => [...list, { id: indicator.id, name: indicator.name, type: indicator.type }]);
+    this.facade.setExcludeChildrenIds(this.attachedChildren().map(c => c.id));
     this.form.markAsDirty();
   }
 
   detachChild(id: string): void {
     this.attachedChildren.update(list => list.filter(c => c.id !== id));
+    this.facade.setExcludeChildrenIds(this.attachedChildren().map(c => c.id));
     this.form.markAsDirty();
   }
 
@@ -275,15 +139,10 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
     }
 
     const raw = this.form.getRawValue();
-    const data = {
-      name: raw.name!,
-      technical_label: raw.technical_label!,
-      description: raw.description,
-      type: raw.type! as 'text' | 'number' | 'group',
-      unit: raw.type === 'group' ? null : raw.unit,
-      status: 'draft' as const,
-      children_ids: raw.type === 'group' ? this.attachedChildren().map(c => c.id) : null,
-    };
+    const data = this.facade.prepareIndicatorData(
+      { name: raw.name!, technical_label: raw.technical_label!, description: raw.description, type: raw.type!, unit: raw.unit },
+      this.attachedChildren().map(c => c.id),
+    );
     this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {

@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { BuildingDomainStore } from '@domains/building/building.store';
 import { BuildingCreate, BuildingUpdate } from '@domains/building/building.models';
 import { SiteDomainStore } from '@domains/site/site.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { BuildingFeatureStore } from './building.store';

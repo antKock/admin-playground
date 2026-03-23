@@ -1,0 +1,57 @@
+<!-- CTA Button -->
+<div class="add-indicator-cta" [class.open]="isOpen()" (click)="!isOpen() && open()">
+  <lucide-icon [img]="PlusIcon" [size]="16" />
+  Attacher un indicateur
+</div>
+
+<!-- Picker Panel -->
+@if (isOpen()) {
+  <div class="indicator-picker">
+    <div class="indicator-picker-search">
+      <lucide-icon [img]="SearchIcon" [size]="14" style="color: var(--color-text-tertiary);" />
+      <input
+        #searchInput
+        type="text"
+        placeholder="Rechercher des indicateurs par nom ou label technique..."
+        (input)="onSearchInput($event)"
+        (keydown.escape)="close()"
+      />
+    </div>
+    <div class="indicator-picker-list">
+      @for (indicator of filtered(); track indicator.id) {
+        @if (isAttached(indicator.id)) {
+          <div class="indicator-picker-item already-attached">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">{{ indicator.name }}</span>
+              <span class="indicator-picker-meta">
+                {{ indicator.technical_label }}
+                <app-status-badge [status]="indicator.type" />
+              </span>
+            </div>
+            <div class="indicator-picker-item-right">Déjà attaché</div>
+          </div>
+        } @else {
+          <button class="indicator-picker-item" (click)="onAttach(indicator)">
+            <div class="indicator-picker-item-left">
+              <span class="indicator-picker-name">{{ indicator.name }}</span>
+              <span class="indicator-picker-meta">
+                {{ indicator.technical_label }}
+                <app-status-badge [status]="indicator.type" />
+              </span>
+            </div>
+            <div class="indicator-picker-item-right">+ Attacher</div>
+          </button>
+        }
+      }
+      @if (filtered().length === 0) {
+        <div class="indicator-picker-item" style="justify-content: center; color: var(--color-text-secondary);">
+          Aucun indicateur trouvé
+        </div>
+      }
+    </div>
+    <div class="indicator-picker-footer">
+      <span>{{ footerLabel() }}</span>
+      <span style="color: var(--color-text-disabled, #c4c4cc);">Échap pour fermer</span>
+    </div>
+  </div>
+}

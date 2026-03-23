@@ -1,0 +1,122 @@
+<div class="p-6 max-w-2xl">
+  <app-breadcrumb [items]="formBreadcrumbs()" />
+  <h1 class="text-2xl font-bold text-text-primary mb-6">
+    {{ formTitle }}
+  </h1>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
+      <input
+        id="name"
+        formControlName="name"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    <app-form-field label="Label technique *" [control]="form.get('technical_label')!" errorMessage="Le label technique est obligatoire." fieldId="technical_label">
+      <input
+        id="technical_label"
+        formControlName="technical_label"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    <app-form-field label="Type *" [control]="form.get('type')!" errorMessage="Le type est obligatoire." fieldId="type">
+      <select
+        id="type"
+        formControlName="type"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      >
+        <option value="" disabled>Sélectionner un type</option>
+        <option value="text">Texte</option>
+        <option value="number">Nombre</option>
+        <option value="group">Groupe</option>
+      </select>
+    </app-form-field>
+
+    @if (form.get('type')?.value !== 'group') {
+      <div>
+        <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
+        <input
+          id="unit"
+          formControlName="unit"
+          class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+      </div>
+    }
+
+    @if (form.get('type')?.value === 'group') {
+      <div class="border border-border rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-text-primary mb-3">Indicateurs enfants</h3>
+
+        @if (attachedChildren().length > 0) {
+          <div class="space-y-1 mb-3">
+            @for (child of attachedChildren(); track child.id) {
+              <div class="flex items-center justify-between px-3 py-2 border border-border rounded-lg bg-surface-base">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-text-primary">{{ child.name }}</span>
+                  <span class="text-xs text-text-tertiary">({{ child.type }})</span>
+                </div>
+                <button type="button" class="text-xs text-error hover:underline" (click)="detachChild(child.id)">Retirer</button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-text-tertiary mb-3">Aucun indicateur enfant sélectionné.</p>
+        }
+
+        <input
+          type="text"
+          placeholder="Rechercher des indicateurs..."
+          class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand text-sm mb-2"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onChildSearch($event)"
+          [ngModelOptions]="{standalone: true}"
+        />
+
+        @if (filteredAvailable().length > 0) {
+          <div class="max-h-48 overflow-y-auto space-y-1">
+            @for (indicator of filteredAvailable(); track indicator.id) {
+              <div class="flex items-center justify-between px-3 py-1.5 border border-border rounded text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-text-primary">{{ indicator.name }}</span>
+                  <span class="text-xs text-text-tertiary">({{ indicator.type }})</span>
+                </div>
+                <button type="button" class="text-xs text-brand hover:underline" (click)="attachChild(indicator)">+ Ajouter</button>
+              </div>
+            }
+          </div>
+        } @else if (searchTerm()) {
+          <p class="text-xs text-text-tertiary">Aucun indicateur disponible.</p>
+        }
+      </div>
+    }
+
+    <div>
+      <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="3"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      ></textarea>
+    </div>
+
+    <div class="flex gap-3 pt-4">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+        (click)="goBack()"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</div>

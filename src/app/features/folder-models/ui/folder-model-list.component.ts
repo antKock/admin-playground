@@ -8,32 +8,7 @@ import { FolderModelFacade } from '../folder-model.facade';
 @Component({
   selector: 'app-folder-model-list',
   imports: [DataTableComponent, LucideAngularModule],
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Modèles de dossier</h1>
-        <button
-          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-          (click)="router.navigate(['/folder-models/new'])"
-        >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un modèle de dossier
-        </button>
-      </div>
-
-      <app-data-table
-        [columns]="columns()"
-        [data]="rows()"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [totalCount]="facade.totalCount()"
-        [emptyMessage]="hasLoaded() ? (hasActiveFilters() ? 'Aucun modèle de dossier ne correspond à vos filtres.' : 'Aucun modèle de dossier trouvé.') : null"
-        (rowClick)="onRowClick($event)"
-        (loadMore)="onLoadMore()"
-        (filterChange)="onFilterChange($event)"
-        (clearFiltersClick)="clearFilters()"
-      />
-    </div>
-  `,
+  templateUrl: './folder-model-list.component.html',
 })
 export class FolderModelListComponent implements OnInit {
   protected readonly PlusIcon = Plus;

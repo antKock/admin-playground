@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { CommunityFacade } from './community.facade';
 import { CommunityRead } from '@domains/communities/community.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockCommunity: CommunityRead = {
   id: 'comm-1',
@@ -180,6 +180,108 @@ describe('CommunityFacade', () => {
     });
   });
 
+  function wrapPaginated(data: any[]) {
+    return { data, pagination: { total_count: data.length, page_size: 200, has_next_page: false, has_previous_page: false, cursors: { start_cursor: null, end_cursor: null }, _links: { self: '', next: null, prev: null, first: '' } } };
+  }
+
+  describe('filteredAllUsers', () => {
+    const mockUsers = [
+      { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'alice@test.com', communities: [] },
+      { id: 'u2', first_name: 'Bob', last_name: 'Martin', email: 'bob@example.com', communities: [] },
+      { id: 'u3', first_name: 'Charlie', last_name: 'Durand', email: 'charlie@test.com', communities: [] },
+    ] as any[];
+
+    function loadUsers() {
+      facade.loadUsers();
+      // loadAllUsers now paginates: first page, then checks has_next_page
+      const req = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      req.flush(wrapPaginated(mockUsers));
+    }
+
+    it('should return all users when search query is empty', () => {
+      loadUsers();
+      facade.setUserSearchQuery('');
+      expect(facade.filteredAllUsers().length).toBe(3);
+    });
+
+    it('should filter users by first name', () => {
+      loadUsers();
+      facade.setUserSearchQuery('alice');
+      expect(facade.filteredAllUsers().length).toBe(1);
+      expect(facade.filteredAllUsers()[0].id).toBe('u1');
+    });
+
+    it('should filter users by last name', () => {
+      loadUsers();
+      facade.setUserSearchQuery('martin');
+      expect(facade.filteredAllUsers().length).toBe(1);
+      expect(facade.filteredAllUsers()[0].id).toBe('u2');
+    });
+
+    it('should filter users by email', () => {
+      loadUsers();
+      facade.setUserSearchQuery('@test.com');
+      expect(facade.filteredAllUsers().length).toBe(2);
+    });
+
+    it('should be case-insensitive', () => {
+      loadUsers();
+      facade.setUserSearchQuery('ALICE');
+      expect(facade.filteredAllUsers().length).toBe(1);
+    });
+
+    it('should reset search query', () => {
+      facade.setUserSearchQuery('hello');
+      facade.setUserSearchQuery('');
+      expect(facade.userSearchQuery()).toBe('');
+    });
+  });
+
+  describe('communityUsers', () => {
+    const mockUsersWithCommunities = [
+      { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'alice@test.com', communities: [{ id: 'comm-1', name: 'Test Community' }] },
+      { id: 'u2', first_name: 'Bob', last_name: 'Martin', email: 'bob@example.com', communities: [{ id: 'comm-2', name: 'Other Community' }] },
+      { id: 'u3', first_name: 'Charlie', last_name: 'Durand', email: 'charlie@test.com', communities: [] },
+    ] as any[];
+
+    it('should return empty when no community selected', () => {
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(mockUsersWithCommunities));
+      expect(facade.communityUsers()).toEqual([]);
+    });
+
+    it('should return users assigned to selected community', () => {
+      facade.select('comm-1');
+      const reqs = httpTesting.match((r) => r.url.includes('communities'));
+      reqs.find(r => r.request.url.endsWith('/comm-1'))!.flush(mockCommunity);
+      reqs.find(r => r.request.url.includes('/parents'))!.flush([]);
+      reqs.find(r => r.request.url.includes('/children'))!.flush([]);
+
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(mockUsersWithCommunities));
+
+      expect(facade.communityUsers().length).toBe(1);
+      expect(facade.communityUsers()[0].id).toBe('u1');
+    });
+
+    it('should handle users without communities array', () => {
+      const usersNoCommunities = [
+        { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'a@t.com' },
+      ] as any[];
+
+      facade.select('comm-1');
+      const reqs = httpTesting.match((r) => r.url.includes('communities'));
+      reqs.find(r => r.request.url.endsWith('/comm-1'))!.flush(mockCommunity);
+      reqs.find(r => r.request.url.includes('/parents'))!.flush([]);
+      reqs.find(r => r.request.url.includes('/children'))!.flush([]);
+
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(usersNoCommunities));
+
+      expect(facade.communityUsers().length).toBe(0);
+    });
+  });
+
   describe('assignUser', () => {
     it('should trigger mutation, show toast, and reload users on success', async () => {
       const assignPromise = facade.assignUser('comm-1', 'user-1');
@@ -194,8 +296,8 @@ describe('CommunityFacade', () => {
       expect(successSpy).toHaveBeenCalledWith('Utilisateur assigné à la communauté');
 
       // After success, it reloads users
-      const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
-      usersReq.flush([]);
+      const usersReq = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      usersReq.flush(wrapPaginated([]));
     });
 
     it('should show error toast on assign failure', async () => {
@@ -224,8 +326,8 @@ describe('CommunityFacade', () => {
       expect(successSpy).toHaveBeenCalledWith('Utilisateur retiré de la communauté');
 
       // After success, it reloads users
-      const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
-      usersReq.flush([]);
+      const usersReq = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      usersReq.flush(wrapPaginated([]));
     });
   });
 });

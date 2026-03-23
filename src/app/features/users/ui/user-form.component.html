@@ -1,0 +1,95 @@
+<div class="p-6 max-w-2xl">
+  @if (isEditMode) {
+    <app-breadcrumb [items]="[
+      { label: 'Utilisateurs', route: '/users' },
+      { label: itemName() ?? '...', route: '/users/' + editId },
+      { label: 'Modifier' }
+    ]" />
+  } @else {
+    <app-breadcrumb [items]="[
+      { label: 'Utilisateurs', route: '/users' },
+      { label: 'Nouvel utilisateur' }
+    ]" />
+  }
+  <h1 class="text-2xl font-bold text-text-primary mb-6">
+    {{ isEditMode ? 'Modifier l\'utilisateur' : 'Créer un utilisateur' }}
+  </h1>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <app-form-field label="Email *" [control]="form.get('email')!" errorMessage="Un email valide est obligatoire." fieldId="email">
+      <input
+        id="email"
+        formControlName="email"
+        type="email"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    <app-form-field label="Prénom *" [control]="form.get('first_name')!" errorMessage="Le prénom est obligatoire." fieldId="first_name">
+      <input
+        id="first_name"
+        formControlName="first_name"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    <app-form-field label="Nom *" [control]="form.get('last_name')!" errorMessage="Le nom est obligatoire." fieldId="last_name">
+      <input
+        id="last_name"
+        formControlName="last_name"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    @if (!isEditMode) {
+      <app-form-field label="Mot de passe *" [control]="form.get('password')!" errorMessage="Le mot de passe est obligatoire." fieldId="password">
+        <input
+          id="password"
+          formControlName="password"
+          type="password"
+          class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+      </app-form-field>
+    }
+
+    <app-form-field label="Rôle *" [control]="form.get('role')!" errorMessage="Le rôle est obligatoire." fieldId="role">
+      <select
+        id="role"
+        formControlName="role"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      >
+        <option [ngValue]="null" disabled>Sélectionner un rôle</option>
+        @for (role of facade.roles(); track role) {
+          <option [value]="role">{{ role }}</option>
+        }
+      </select>
+    </app-form-field>
+
+    <div class="flex items-center gap-3">
+      <input
+        id="is_active"
+        formControlName="is_active"
+        type="checkbox"
+        class="h-4 w-4 rounded border-border text-brand focus:ring-brand"
+      />
+      <label for="is_active" class="text-sm font-medium text-text-primary">Actif</label>
+    </div>
+
+    <div class="flex gap-3 pt-4">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+        (click)="goBack()"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</div>

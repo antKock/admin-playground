@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { AuthService } from './auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 
 export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+  const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  if (authStore.isAuthenticated()) {
     return true;
   }
 
@@ -18,19 +18,19 @@ export const authGuard: CanActivateFn = (route, state) => {
 
 /** Blocks "collectivite" users from accessing the admin UI. */
 export const adminGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+  const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  if (!authService.isAuthenticated()) {
+  if (!authStore.isAuthenticated()) {
     return router.createUrlTree(['/login'], {
       queryParams: { returnUrl: state.url },
     });
   }
 
-  const role = authService.userRole();
+  const role = authStore.userRole();
   if (role === 'collectivite') {
-    authService.logout();
-    return false;
+    authStore.logout();
+    return router.createUrlTree(['/login']);
   }
 
   return true;
@@ -38,10 +38,10 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
 /** Redirects authenticated users away from the login page. */
 export const loginGuard: CanActivateFn = () => {
-  const authService = inject(AuthService);
+  const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  if (authStore.isAuthenticated()) {
     return router.createUrlTree(['/']);
   }
   return true;

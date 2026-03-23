@@ -22,23 +22,8 @@ const DEFAULT_COLORS = { bg: 'bg-surface-muted', text: 'text-text-secondary', bo
 
 @Component({
   selector: 'app-status-badge',
-  template: `
-    <span class="status-badge" [class]="badgeClasses()">
-      {{ displayLabel() }}
-    </span>
-  `,
-  styles: `
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 9999px;
-      padding: 2px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 1.4;
-      border-width: 1px;
-    }
-  `,
+  templateUrl: './status-badge.component.html',
+  styleUrl: './status-badge.component.css',
 })
 export class StatusBadgeComponent {
   readonly status = input.required<string>();

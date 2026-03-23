@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { authGuard, adminGuard } from './auth.guard';
+import { authGuard, adminGuard, loginGuard } from './auth.guard';
 
 /** Build a fake JWT with the given payload (no signature verification in tests). */
 function fakeJwt(payload: Record<string, unknown>): string {
@@ -48,7 +48,7 @@ describe('authGuard', () => {
   });
 
   it('should allow navigation when authenticated', () => {
-    localStorage.setItem('laureat_admin_jwt', 'test-token');
+    localStorage.setItem('laureat_admin_jwt', fakeJwt({ email: 'a@b.com', role: 'admin' }));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -100,7 +100,7 @@ describe('adminGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should block collectivite users', () => {
+  it('should redirect collectivite users to login', () => {
     localStorage.setItem('laureat_admin_jwt', fakeJwt({ role: 'collectivite', email: 'u@b.com' }));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -111,7 +111,9 @@ describe('adminGuard', () => {
     const mockState = { url: '/' } as Parameters<typeof adminGuard>[1];
 
     const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
-    expect(result).toBe(false);
+    expect(result).not.toBe(true);
+    expect(result).not.toBe(false);
+    expect(result.toString()).toContain('login');
   });
 
   it('should redirect to login when not authenticated', () => {
@@ -126,5 +128,41 @@ describe('adminGuard', () => {
     const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
     expect(result).not.toBe(true);
     expect(result).not.toBe(false);
+  });
+});
+
+describe('loginGuard', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('should allow access to login when not authenticated', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const result = TestBed.runInInjectionContext(() =>
+      loginGuard({} as Parameters<typeof loginGuard>[0], {} as Parameters<typeof loginGuard>[1]),
+    );
+    expect(result).toBe(true);
+  });
+
+  it('should redirect authenticated users away from login', () => {
+    localStorage.setItem('laureat_admin_jwt', fakeJwt({ email: 'a@b.com', role: 'admin' }));
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+
+    const result = TestBed.runInInjectionContext(() =>
+      loginGuard({} as Parameters<typeof loginGuard>[0], {} as Parameters<typeof loginGuard>[1]),
+    );
+    expect(result).not.toBe(true);
+    expect(String(result)).toContain('/');
   });
 });

@@ -1,0 +1,24 @@
+<app-list-page-layout
+  title="Agents"
+  createLabel="Créer un agent"
+  createRoute="/agents/new"
+  [hasLoaded]="hasLoaded()"
+  [isEmpty]="facade.isEmpty()"
+  [hasMore]="facade.hasMore()"
+  [emptyMessage]="emptyMessage() ?? ''"
+  (loadMore)="onLoadMore()"
+>
+  <app-data-table table
+    [columns]="columns()"
+    [data]="rows()"
+    [isLoading]="facade.isLoading()"
+    [hasMore]="facade.hasMore()"
+    [totalCount]="facade.totalCount()"
+    [emptyMessage]="emptyMessage()"
+    (rowClick)="onRowClick($event)"
+    (linkClick)="onLinkClick($event)"
+    (loadMore)="onLoadMore()"
+    (filterChange)="onFilterChange($event)"
+    (clearFiltersClick)="clearFilters()"
+  />
+</app-list-page-layout>

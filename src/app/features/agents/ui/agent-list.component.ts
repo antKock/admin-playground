@@ -1,44 +1,17 @@
 import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { navigateToLink } from '@app/shared/utils/navigate-to-link';
 import { AgentFacade } from '../agent.facade';
 
 @Component({
   selector: 'app-agent-list',
-  imports: [DataTableComponent, LucideAngularModule],
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Agents</h1>
-        <button
-          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-          (click)="router.navigate(['/agents/new'])"
-        >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
-        </button>
-      </div>
-
-      <app-data-table
-        [columns]="columns()"
-        [data]="rows()"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [totalCount]="facade.totalCount()"
-        [emptyMessage]="emptyMessage()"
-        (rowClick)="onRowClick($event)"
-        (linkClick)="onLinkClick($event)"
-        (loadMore)="onLoadMore()"
-        (filterChange)="onFilterChange($event)"
-        (clearFiltersClick)="clearFilters()"
-      />
-    </div>
-  `,
+  imports: [DataTableComponent, ListPageLayoutComponent],
+  templateUrl: './agent-list.component.html',
 })
 export class AgentListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(AgentFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
@@ -90,19 +63,7 @@ export class AgentListComponent implements OnInit {
     { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ]);
 
-  private readonly agentTypeLabels: Record<string, string> = {
-    energy_performance_advisor: 'Conseiller en performance énergétique',
-    other: 'Autre',
-  };
-
-  readonly rows = computed(() =>
-    this.facade.items().map(agent => ({
-      ...agent,
-      displayName: [agent.first_name, agent.last_name].filter(Boolean).join(' ') || '—',
-      community_name: agent.community?.name ?? '—',
-      agent_type: this.agentTypeLabels[agent.agent_type] ?? agent.agent_type,
-    })),
-  );
+  readonly rows = this.facade.formattedAgentRows;
 
   ngOnInit(): void {
     this.facade.loadAssociationData();

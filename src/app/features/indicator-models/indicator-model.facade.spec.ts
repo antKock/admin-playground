@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { IndicatorModelFacade } from './indicator-model.facade';
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockIndicatorModel: IndicatorModel = {
   id: 'im-1',
@@ -198,6 +198,56 @@ describe('IndicatorModelFacade', () => {
 
       const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('indicator-models/im-1'));
       detailReq.flush({ ...mockIndicatorModel, status: 'published' });
+    });
+  });
+
+  describe('availableChildIndicators', () => {
+    it('should filter by type, editId, excluded children, and search term', () => {
+      facade.load();
+      const groupItem = { ...mockIndicatorModel, id: 'im-group', type: 'group', name: 'Group' };
+      const textItem = { ...mockIndicatorModel, id: 'im-text', type: 'text', name: 'Text' };
+      const numItem = { ...mockIndicatorModel, id: 'im-num', type: 'number', name: 'Number' };
+      httpTesting.expectOne((r) => r.method === 'GET').flush({
+        ...mockPaginatedResponse,
+        data: [groupItem, textItem, numItem],
+      });
+
+      // Group types should be excluded
+      expect(facade.availableChildIndicators().map(i => i.id)).toEqual(['im-text', 'im-num']);
+
+      // Exclude by editId
+      facade.setEditItemId('im-text');
+      expect(facade.availableChildIndicators().map(i => i.id)).toEqual(['im-num']);
+
+      // Exclude children
+      facade.setEditItemId(null);
+      facade.setExcludeChildrenIds(['im-text']);
+      expect(facade.availableChildIndicators().map(i => i.id)).toEqual(['im-num']);
+
+      // Search term
+      facade.setExcludeChildrenIds([]);
+      facade.setChildSearchTerm('Num');
+      expect(facade.availableChildIndicators().map(i => i.id)).toEqual(['im-num']);
+    });
+  });
+
+  describe('prepareIndicatorData', () => {
+    it('should include children_ids for group type', () => {
+      const result = facade.prepareIndicatorData(
+        { name: 'Test', technical_label: 'test', description: null, type: 'group', unit: null },
+        ['child-1', 'child-2'],
+      );
+      expect(result.children_ids).toEqual(['child-1', 'child-2']);
+      expect(result.unit).toBeNull();
+    });
+
+    it('should set children_ids to null for non-group type', () => {
+      const result = facade.prepareIndicatorData(
+        { name: 'Test', technical_label: 'test', description: null, type: 'number', unit: 'kg' },
+        ['child-1'],
+      );
+      expect(result.children_ids).toBeNull();
+      expect(result.unit).toBe('kg');
     });
   });
 

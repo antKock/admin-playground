@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { ActionThemeFacade } from './action-theme.facade';
 import { ActionTheme } from '@domains/action-themes/action-theme.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockActionTheme: ActionTheme = {
   id: 'at-1',

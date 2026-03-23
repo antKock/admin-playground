@@ -1,0 +1,10 @@
+<div class="p-6 max-w-2xl">
+  <app-breadcrumb [items]="breadcrumbs()" />
+  <h1 class="text-2xl font-bold text-text-primary mb-6">{{ title() }}</h1>
+
+  <ng-content />
+
+  @if (isDirty()) {
+    <app-save-bar [count]="1" [saving]="isSaving()" (save)="save.emit()" (discard)="cancel.emit()" />
+  }
+</div>

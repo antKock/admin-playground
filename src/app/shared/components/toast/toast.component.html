@@ -1,0 +1,25 @@
+<div class="toast-container">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div
+      class="toast"
+      [class.toast-success]="toast.type === 'success'"
+      [class.toast-error]="toast.type === 'error'"
+      [class.toast-info]="toast.type === 'info'"
+      role="alert"
+      aria-live="assertive"
+      (click)="toastService.dismiss(toast.id)"
+      (keydown.enter)="toastService.dismiss(toast.id)"
+      tabindex="0"
+    >
+      <lucide-icon
+        [img]="getIcon(toast.type)"
+        [size]="18"
+        class="toast-icon"
+      ></lucide-icon>
+      <span class="toast-message">{{ toast.message }}</span>
+      <button class="toast-close" (click)="toastService.dismiss(toast.id)">
+        <lucide-icon [img]="X" [size]="14"></lucide-icon>
+      </button>
+    </div>
+  }
+</div>

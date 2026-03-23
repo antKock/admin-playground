@@ -1,0 +1,18 @@
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.confirm-dialog {
+  background: var(--color-surface-base);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 480px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}

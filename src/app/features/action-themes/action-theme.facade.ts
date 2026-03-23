@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { ActionTheme, ActionThemeCreate, ActionThemeUpdate } from '@domains/action-themes/action-theme.models';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActionThemeFeatureStore } from './action-theme.store';

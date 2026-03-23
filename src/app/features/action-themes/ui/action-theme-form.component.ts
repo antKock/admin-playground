@@ -4,94 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 import { createActionThemeForm } from '@domains/action-themes/forms/action-theme.form';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
-  template: `
-    <div class="p-6 max-w-2xl">
-      <app-breadcrumb [items]="formBreadcrumbs()" />
-      <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ formTitle }}
-      </h1>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
-          <input
-            id="name"
-            formControlName="name"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('name')"
-          />
-          @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Label technique *</label>
-          <input
-            id="technical_label"
-            formControlName="technical_label"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand font-mono"
-            [class.border-error]="showError('technical_label')"
-          />
-          @if (showError('technical_label')) {
-            <p class="mt-1 text-sm text-error">Le label technique est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label for="icon" class="block text-sm font-medium text-text-primary mb-1">Icône</label>
-            <input
-              id="icon"
-              formControlName="icon"
-              class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-          </div>
-          <div>
-            <label for="color" class="block text-sm font-medium text-text-primary mb-1">Couleur</label>
-            <input
-              id="color"
-              formControlName="color"
-              class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            />
-          </div>
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button
-            type="submit"
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-            [disabled]="submitting()"
-          >
-            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-            (click)="goBack()"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  templateUrl: './action-theme-form.component.html',
 })
 export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
@@ -150,11 +70,6 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {

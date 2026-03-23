@@ -3,97 +3,15 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createCommunityForm } from '@domains/communities/forms/community.form';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
-  template: `
-    <div class="p-6 max-w-2xl">
-      @if (isEditMode) {
-        <app-breadcrumb [items]="[
-          { label: 'Communautés', route: '/communities' },
-          { label: itemName() ?? '...', route: '/communities/' + editId },
-          { label: 'Modifier' }
-        ]" />
-      } @else {
-        <app-breadcrumb [items]="[
-          { label: 'Communautés', route: '/communities' },
-          { label: 'Nouvelle communauté' }
-        ]" />
-      }
-      <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Modifier la communauté' : 'Créer une communauté' }}
-      </h1>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
-          <input
-            id="name"
-            formControlName="name"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('name')"
-          />
-          @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="siret" class="block text-sm font-medium text-text-primary mb-1">SIRET *</label>
-          <input
-            id="siret"
-            formControlName="siret"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('siret')"
-          />
-          @if (showError('siret')) {
-            <p class="mt-1 text-sm text-error">Le SIRET doit contenir exactement 14 chiffres.</p>
-          }
-        </div>
-
-        <div>
-          <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire public</label>
-          <textarea
-            id="public_comment"
-            formControlName="public_comment"
-            rows="3"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div>
-          <label for="internal_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire interne</label>
-          <textarea
-            id="internal_comment"
-            formControlName="internal_comment"
-            rows="3"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button
-            type="submit"
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-            [disabled]="submitting()"
-          >
-            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-            (click)="goBack()"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  templateUrl: './community-form.component.html',
 })
 export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
@@ -133,11 +51,6 @@ export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {

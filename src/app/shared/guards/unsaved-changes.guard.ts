@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanDeactivateFn } from '@angular/router';
 
-import { ConfirmDialogService } from '../services/confirm-dialog.service';
+import { ConfirmDialogService } from '../components/confirm-dialog/confirm-dialog.service';
 
 export interface HasUnsavedChanges {
   hasUnsavedChanges(): boolean;

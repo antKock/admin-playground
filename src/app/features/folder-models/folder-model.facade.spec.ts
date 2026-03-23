@@ -7,7 +7,7 @@ import { FolderModelFacade } from './folder-model.facade';
 import { FolderModel } from '@domains/folder-models/folder-model.models';
 import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockFolderModel: FolderModel = {
   id: 'fm-1',

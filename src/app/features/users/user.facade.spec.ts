@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { UserFacade } from './user.facade';
 import { UserRead } from '@domains/users/user.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockUser: UserRead = {
   id: 'user-1',

@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { FundingProgramCreate, FundingProgramUpdate } from '@domains/funding-programs/funding-program.models';
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { FundingProgramFeatureStore } from './funding-program.store';

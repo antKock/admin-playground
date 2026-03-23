@@ -1,0 +1,9 @@
+@if (label()) {
+  <label [attr.for]="fieldId() || null" class="block text-sm font-medium text-text-secondary mb-1">{{ label() }}@if (required()) { <span class="text-text-error ml-0.5">*</span>}</label>
+}
+<div [class.border-error-wrapper]="showError">
+  <ng-content />
+</div>
+@if (showError) {
+  <p [id]="errorId" role="alert" class="mt-1 text-sm text-error">{{ errorMessage() }}</p>
+}

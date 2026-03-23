@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { SiteDomainStore } from '@domains/site/site.store';
 import { SiteCreate, SiteUpdate } from '@domains/site/site.models';
 import { CommunityDomainStore } from '@domains/communities/community.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { SiteFeatureStore } from './site.store';

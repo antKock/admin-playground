@@ -1,0 +1,71 @@
+<div class="p-6 max-w-2xl">
+  <app-breadcrumb [items]="formBreadcrumbs()" />
+  <h1 class="text-2xl font-bold text-text-primary mb-6">
+    {{ formTitle }}
+  </h1>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
+      <input
+        id="name"
+        formControlName="name"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      />
+    </app-form-field>
+
+    <div>
+      <label for="usage" class="block text-sm font-medium text-text-primary mb-1">Usage</label>
+      <textarea
+        id="usage"
+        formControlName="usage"
+        rows="2"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      ></textarea>
+    </div>
+
+    <div>
+      <label for="external_id" class="block text-sm font-medium text-text-primary mb-1">ID externe</label>
+      <input
+        id="external_id"
+        formControlName="external_id"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand font-mono"
+      />
+    </div>
+
+    <app-form-field label="Site *" [control]="form.get('site_id')!" errorMessage="Le site est obligatoire." fieldId="site_id">
+      <select
+        id="site_id"
+        formControlName="site_id"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+      >
+        @if (facade.siteLoading()) {
+          <option value="" disabled>Chargement...</option>
+        } @else if (facade.siteOptions().length === 0) {
+          <option value="" disabled>Aucun site disponible</option>
+        } @else {
+          <option value="" disabled>Sélectionner un site</option>
+          @for (s of facade.siteOptions(); track s.id) {
+            <option [value]="s.id">{{ s.name }}</option>
+          }
+        }
+      </select>
+    </app-form-field>
+
+    <div class="flex gap-3 pt-4">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+        (click)="goBack()"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</div>

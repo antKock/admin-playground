@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { BuildingFacade } from './building.facade';
 import { Building } from '@domains/building/building.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockBuilding: Building = {
   id: 'bldg-1',

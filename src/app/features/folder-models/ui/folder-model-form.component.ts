@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createFolderModelForm } from '@domains/folder-models/forms/folder-model.form';
 import { MultiSelectorComponent } from '@app/shared/components/multi-selector/multi-selector.component';
@@ -10,80 +11,8 @@ import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-form',
-  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent],
-  template: `
-    <div class="p-6 max-w-2xl">
-      @if (isEditMode) {
-        <app-breadcrumb [items]="[
-          { label: 'Modèles de dossier', route: '/folder-models' },
-          { label: facade.selectedItem()?.name ?? '...', route: '/folder-models/' + editId },
-          { label: 'Modifier' }
-        ]" />
-      } @else {
-        <app-breadcrumb [items]="[
-          { label: 'Modèles de dossier', route: '/folder-models' },
-          { label: 'Nouveau modèle de dossier' }
-        ]" />
-      }
-      <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ isEditMode ? 'Modifier le modèle de dossier' : 'Créer un modèle de dossier' }}
-      </h1>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
-          <input
-            id="name"
-            formControlName="name"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('name')"
-          />
-          @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1">Programmes de financement</label>
-          <app-multi-selector
-            [options]="facade.fpOptions()"
-            [selectedIds]="fpIds"
-            [loading]="facade.fpLoading()"
-            [hasError]="false"
-            placeholder="Sélectionner des programmes de financement..."
-            (selectionChange)="onFpSelectionChange($event)"
-          />
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button
-            type="submit"
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-            [disabled]="submitting()"
-          >
-            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-            (click)="goBack()"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
+  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent, FormFieldComponent],
+  templateUrl: './folder-model-form.component.html',
 })
 export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
@@ -126,11 +55,6 @@ export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onFpSelectionChange(ids: string[]): void {

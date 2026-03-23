@@ -12,10 +12,11 @@ import {
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
+import { buildIndicatorCards } from './use-cases/build-indicator-cards';
 import { ActionModelFeatureStore } from './action-model.store';
 
 // Backend currently expects string defaults — convert null to the backend's expected defaults.
@@ -80,6 +81,13 @@ export class ActionModelFacade {
   private readonly _paramEdits = signal<Map<string, IndicatorParams>>(new Map());
 
   readonly paramEdits = this._paramEdits.asReadonly();
+
+  // Display-ready indicator cards for detail component
+  readonly indicatorCards = computed(() => buildIndicatorCards({
+    attached: this.attachedIndicators(),
+    available: this.availableIndicators(),
+    paramEdits: this._paramEdits(),
+  }));
 
   private static childKey(parentId: string, childId: string): string {
     return `${parentId}:${childId}`;
@@ -224,7 +232,7 @@ export class ActionModelFacade {
   async saveParamEdits(actionModelId: string): Promise<void> {
     const edits = this._paramEdits();
     for (const [, params] of edits) {
-      for (const rule of [params.hidden_rule, params.required_rule, params.disabled_rule]) {
+      for (const rule of [params.hidden_rule, params.required_rule, params.disabled_rule, params.default_value_rule, params.duplicable_rule, params.constrained_rule]) {
         if (rule != null && rule !== 'true' && rule !== 'false') {
           const trimmed = rule.trim();
           if (trimmed) {

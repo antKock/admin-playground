@@ -1,0 +1,78 @@
+<!-- Reusable prose display block -->
+<ng-template #proseDisplay let-parts>
+  <em class="tk-pfx">{{ parts.prefix }}</em>
+  @if (parts.content) {
+    <span [innerHTML]="parts.content"></span>
+  }
+  @if (parts.branches) {
+    <ul class="rule-or-list">
+      @for (branch of parts.branches; track branch) {
+        <li [innerHTML]="branch"></li>
+      }
+    </ul>
+  }
+</ng-template>
+
+<div class="rule-field" [class.has-error]="hasBlockingErrors()">
+  <div class="rule-field-header">
+    <span class="rule-field-label">{{ label() }}</span>
+    <div class="mode-toggle">
+      <button type="button" class="toggle-seg" [class.active]="activeMode() === 'texte'" (click)="switchMode('texte')">Texte</button>
+      <button type="button" class="toggle-seg" [class.active]="activeMode() === 'json'" (click)="switchMode('json')">JSON</button>
+    </div>
+  </div>
+
+  <!-- TEXTE READ MODE -->
+  @if (editorState() === 'texte-read') {
+    @let parts = proseParts();
+    @if (parts) {
+      <div class="prose-read-zone" (click)="enterTexteEdit()">
+        <button class="prose-edit-btn" type="button">Modifier</button>
+        <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
+      </div>
+    }
+  }
+
+  <!-- TEXTE EDIT MODE -->
+  @if (editorState() === 'texte-edit') {
+    <div class="prose-cm-host" #proseCmHost></div>
+    @if (parseResult(); as result) {
+      <div class="validation-row">
+        @if (result.success && unknownVarCount() > 0) {
+          <span class="validation-badge warning">Avertissement — {{ unknownVarCount() }} variable(s) inconnue(s)</span>
+        } @else if (result.success) {
+          <span class="validation-badge valid">Valide{{ orBranchCount() > 1 ? ' — ' + orBranchCount() + ' branches OR' : '' }}</span>
+        } @else if (result.errors.some(e => !e.atEnd)) {
+          <span class="validation-badge error">{{ result.errors.find(e => !e.atEnd)?.message }}</span>
+        }
+      </div>
+    }
+  }
+
+  <!-- JSON READ MODE -->
+  @if (editorState() === 'json-read') {
+    @let parts = proseParts();
+    @if (parts) {
+      <div class="prose-mirror read-only">
+        <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
+      </div>
+    }
+    <pre class="json-read-zone" (click)="enterJsonEdit()">{{ formattedJson() }}</pre>
+  }
+
+  <!-- JSON EDIT MODE -->
+  @if (editorState() === 'json-edit') {
+    @let parts = jsonEditProseParts();
+    @if (parts) {
+      <div class="prose-mirror read-only">
+        <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
+      </div>
+    }
+    @if (errorMessage()) {
+      <div class="rule-prose" [class.rule-error]="hasError()" [class.rule-warning]="!hasError()">
+        <em>{{ errorMessage() }}</em>
+      </div>
+    }
+    <div class="cm-host" #editorHost></div>
+  }
+</div>

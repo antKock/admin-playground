@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter, Router } from '@angular/router';
 
 import { authInterceptor, _resetRefreshState } from './auth.interceptor';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 /** Flush the microtask queue so Promise-based chains (from → switchMap) resolve. */
 async function flushMicrotasks() {

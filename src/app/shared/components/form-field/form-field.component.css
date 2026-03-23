@@ -1,0 +1,9 @@
+.app-form-field {
+  display: block;
+}
+
+.border-error-wrapper input,
+.border-error-wrapper select,
+.border-error-wrapper textarea {
+  border-color: var(--color-error, #ef4444) !important;
+}

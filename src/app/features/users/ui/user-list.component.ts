@@ -14,30 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-user-list',
   imports: [DataTableComponent, LucideAngularModule],
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Utilisateurs</h1>
-        <button
-          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-          (click)="router.navigate(['/users/new'])"
-        >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un utilisateur
-        </button>
-      </div>
-
-      <app-data-table
-        [columns]="columns"
-        [data]="rows()"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [totalCount]="facade.totalCount()"
-        [emptyMessage]="hasLoaded() ? 'Aucun utilisateur trouvé.' : null"
-        (rowClick)="onRowClick($event)"
-        (loadMore)="onLoadMore()"
-      />
-    </div>
-  `,
+  templateUrl: './user-list.component.html',
 })
 export class UserListComponent implements OnInit {
   protected readonly PlusIcon = Plus;

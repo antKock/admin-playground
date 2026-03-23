@@ -8,63 +8,8 @@ export interface SectionDef {
 
 @Component({
   selector: 'app-section-anchors',
-  template: `
-    <nav class="section-anchors" role="navigation" aria-label="Page sections">
-      @for (section of sections(); track section.targetId) {
-        <button
-          class="anchor-pill"
-          [class.anchor-pill-active]="currentActiveSection() === section.targetId"
-          (click)="scrollTo(section.targetId)"
-        >
-          {{ section.label }}
-          @if (section.count !== undefined) {
-            <span class="count-badge">{{ section.count }}</span>
-          }
-        </button>
-      }
-    </nav>
-  `,
-  styles: `
-    .section-anchors {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .anchor-pill {
-      padding: 6px 12px;
-      font-size: 13px;
-      border-radius: 9999px;
-      background-color: var(--color-surface-muted);
-      color: var(--color-text-secondary);
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.15s;
-    }
-
-    .anchor-pill:hover {
-      background-color: var(--color-surface-mid);
-    }
-
-    .anchor-pill-active {
-      background-color: var(--color-surface-active);
-      color: var(--color-brand);
-      font-weight: 600;
-    }
-
-    .count-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 4px;
-      padding: 0 6px;
-      font-size: 11px;
-      line-height: 18px;
-      border-radius: 10px;
-      background: var(--color-surface-elevated, var(--color-surface-subtle));
-      color: var(--color-text-tertiary);
-    }
-  `,
+  templateUrl: './section-anchors.component.html',
+  styleUrl: './section-anchors.component.css',
 })
 export class SectionAnchorsComponent implements OnInit, OnDestroy {
   readonly sections = input.required<SectionDef[]>();

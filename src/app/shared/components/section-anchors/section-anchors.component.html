@@ -1,0 +1,14 @@
+<nav class="section-anchors" role="navigation" aria-label="Page sections">
+  @for (section of sections(); track section.targetId) {
+    <button
+      class="anchor-pill"
+      [class.anchor-pill-active]="currentActiveSection() === section.targetId"
+      (click)="scrollTo(section.targetId)"
+    >
+      {{ section.label }}
+      @if (section.count !== undefined) {
+        <span class="count-badge">{{ section.count }}</span>
+      }
+    </button>
+  }
+</nav>

@@ -1,0 +1,7 @@
+<div class="param-summary">
+  @for (hint of hintList(); track hint.label) {
+    <span class="param-hint" [class]="hint.stateClass" [appTooltip]="hint.tooltip">
+      <lucide-icon [img]="hint.icon" [size]="16" />
+    </span>
+  }
+</div>

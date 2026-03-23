@@ -1,0 +1,67 @@
+# generated: 2026-03-23
+# project: admin-playground
+# version: v2
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts/v2
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - v2 focuses on structural refactoring, ACTEE compliance, and documentation — no new features
+# - Execution order is sequential: E15 → E16 → E17 (each epic prepares the next)
+# - Epic 15 must complete before Epic 16 (file moves before logic extraction)
+# - Epic 16 must complete before Epic 17 (patterns must exist before documentation)
+
+generated: 2026-03-23
+project: admin-playground
+version: v2
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/v2
+
+development_status:
+  # Epic 15: Code Organization & Maintainability
+  epic-15: backlog
+  15-1-externalize-templates-styles-shared-components: ready-for-dev
+  15-2-externalize-templates-feature-core-components: ready-for-dev
+  15-3-co-locate-api-inspector-files: ready-for-dev
+  15-4-co-locate-jsonlogic-files: ready-for-dev
+  15-5-co-locate-service-files-with-components: ready-for-dev
+  epic-15-retrospective: optional
+
+  # Epic 16: ACTEE Compliance & Reusable Patterns
+  epic-16: in-progress
+  16-1-extract-simple-business-logic-to-facades: done
+  16-2-extract-action-model-indicator-cards-logic: done
+  16-3-extract-indicator-model-form-logic: done
+  16-4-migrate-authservice-to-authstore: done
+  16-5-create-formfieldcomponent-migrate-forms: done
+  16-6-create-tooltipdirective: done
+  16-7-create-apiinspectorcontainercomponent: done
+  16-8-create-shared-layout-components: done
+  epic-16-retrospective: optional
+
+  # Epic 17: Developer Documentation & Handover
+  epic-17: in-progress
+  17-1-document-withcursorpagination-pattern: review
+  17-2-write-actee-developer-guide: review
+  17-3-document-known-limitations-recommendations: review
+  epic-17-retrospective: optional

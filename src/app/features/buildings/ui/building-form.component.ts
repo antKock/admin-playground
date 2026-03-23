@@ -4,95 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 import { createBuildingForm } from '@domains/building/forms/building.form';
 import { BuildingFacade } from '../building.facade';
 
 @Component({
   selector: 'app-building-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
-  template: `
-    <div class="p-6 max-w-2xl">
-      <app-breadcrumb [items]="formBreadcrumbs()" />
-      <h1 class="text-2xl font-bold text-text-primary mb-6">
-        {{ formTitle }}
-      </h1>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
-          <input
-            id="name"
-            formControlName="name"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('name')"
-          />
-          @if (showError('name')) {
-            <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-          }
-        </div>
-
-        <div>
-          <label for="usage" class="block text-sm font-medium text-text-primary mb-1">Usage</label>
-          <textarea
-            id="usage"
-            formControlName="usage"
-            rows="2"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          ></textarea>
-        </div>
-
-        <div>
-          <label for="external_id" class="block text-sm font-medium text-text-primary mb-1">ID externe</label>
-          <input
-            id="external_id"
-            formControlName="external_id"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand font-mono"
-          />
-        </div>
-
-        <div>
-          <label for="site_id" class="block text-sm font-medium text-text-primary mb-1">Site *</label>
-          <select
-            id="site_id"
-            formControlName="site_id"
-            class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-            [class.border-error]="showError('site_id')"
-          >
-            @if (facade.siteLoading()) {
-              <option value="" disabled>Chargement...</option>
-            } @else if (facade.siteOptions().length === 0) {
-              <option value="" disabled>Aucun site disponible</option>
-            } @else {
-              <option value="" disabled>Sélectionner un site</option>
-              @for (s of facade.siteOptions(); track s.id) {
-                <option [value]="s.id">{{ s.name }}</option>
-              }
-            }
-          </select>
-          @if (showError('site_id')) {
-            <p class="mt-1 text-sm text-error">Le site est obligatoire.</p>
-          }
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button
-            type="submit"
-            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-            [disabled]="submitting()"
-          >
-            {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-            (click)="goBack()"
-          >
-            Annuler
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  templateUrl: './building-form.component.html',
 })
 export class BuildingFormComponent implements OnInit, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
@@ -159,11 +78,6 @@ export class BuildingFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {
