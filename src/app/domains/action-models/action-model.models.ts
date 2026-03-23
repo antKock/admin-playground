@@ -9,3 +9,6 @@ export type ActionModelUpdate = components['schemas']['ActionModelUpdate'];
 export type IndicatorModelWithAssociation = components['schemas']['IndicatorModelWithAssociation'];
 // Payload for attaching/updating an indicator model's params on an action model.
 export type IndicatorModelAssociationInput = components['schemas']['IndicatorModelAssociationInput'];
+// Child indicator within a group association (read + input).
+export type ChildIndicatorModelWithAssociation = components['schemas']['ChildIndicatorModelWithAssociation'];
+export type ChildIndicatorModelAssociationInput = components['schemas']['ChildIndicatorModelAssociationInput'];

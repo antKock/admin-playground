@@ -5,26 +5,22 @@ import { Observable } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { applyFilters } from '@domains/shared/api.utils';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { AgentRead, AgentCreate, AgentUpdate, AgentStatus } from './agent.models';
 
 const BASE_URL = `${environment.apiBaseUrl}/agents/`;
 
 export function agentListLoader(
   http: HttpClient,
-  params: { cursor: string | null; limit: number; filters?: Record<string, string> },
+  params: { cursor: string | null; limit: number; filters?: FilterParams },
 ): Observable<PaginatedResponse<AgentRead>> {
   let httpParams = new HttpParams();
   if (params.cursor) {
     httpParams = httpParams.set('cursor', params.cursor);
   }
   httpParams = httpParams.set('limit', params.limit.toString());
-  if (params.filters) {
-    for (const [key, value] of Object.entries(params.filters)) {
-      if (value) {
-        httpParams = httpParams.set(key, value);
-      }
-    }
-  }
+  httpParams = applyFilters(httpParams, params.filters);
   return http.get<PaginatedResponse<AgentRead>>(BASE_URL, { params: httpParams });
 }
 

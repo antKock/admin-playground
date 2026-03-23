@@ -46,7 +46,7 @@ describe('FolderModelListComponent', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'funding_program_id', values: ['fp-123'] });
     expect(component.activeFilters()).toEqual({ funding_program_id: ['fp-123'] });
-    expect(loadSpy).toHaveBeenCalledWith({ funding_program_id: 'fp-123' });
+    expect(loadSpy).toHaveBeenCalledWith({ funding_program_id: ['fp-123'] });
   });
 
   it('should clear filters and reload with empty filters', () => {

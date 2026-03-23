@@ -19,6 +19,8 @@ import {
   IndicatorCardComponent,
   IndicatorCardData,
   IndicatorParams,
+  ChildCardData,
+  ChildParamsChangeEvent,
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { ParamState } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
@@ -144,11 +146,13 @@ import { ActionModelFacade } from '../action-model.facade';
                   <app-indicator-card
                     [indicator]="card"
                     [params]="getParams(card.id)"
+                    [childParams]="getChildParamsMap(card.id)"
                     [modified]="isModified(card.id)"
                     modelType="action"
                     [modelId]="model()!.id"
                     (remove)="onDetach($event)"
                     (paramsChange)="onParamsChange(card.id, $event)"
+                    (childParamsChange)="onChildParamsChange(card.id, $event)"
                   />
                 </div>
               }
@@ -238,6 +242,20 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
       const edited = edits.get(im.id);
       const p = edited ?? im;
       const full = availableMap.get(im.id);
+      const children: ChildCardData[] | undefined = im.children?.map((child) => ({
+        id: child.id,
+        name: child.name,
+        technical_label: child.technical_label,
+        type: child.type,
+        paramHints: {
+          visibility: this.ruleState(child.hidden_rule, 'false'),
+          required: this.ruleState(child.required_rule, 'false'),
+          editable: this.ruleState(child.disabled_rule, 'false'),
+          defaultValue: this.ruleState(child.default_value_rule, 'false'),
+          duplicable: this.ruleState(child.duplicable_rule, 'false'),
+          constrained: this.ruleState(child.constrained_rule, 'false'),
+        },
+      }));
       return {
         id: im.id,
         name: im.name,
@@ -251,6 +269,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
           duplicable: this.ruleState(p.duplicable_rule, 'false'),
           constrained: this.ruleState(p.constrained_rule, 'false'),
         },
+        children: children?.length ? children : undefined,
       };
     });
   });
@@ -312,6 +331,20 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
   onParamsChange(indicatorId: string, params: IndicatorParams): void {
     this.facade.updateParams(indicatorId, params);
+  }
+
+  getChildParamsMap(parentId: string): Record<string, IndicatorParams> {
+    const attached = this.facade.attachedIndicators().find((im) => im.id === parentId);
+    if (!attached?.children?.length) return {};
+    const map: Record<string, IndicatorParams> = {};
+    for (const child of attached.children) {
+      map[child.id] = this.facade.getParamsForChild(parentId, child.id);
+    }
+    return map;
+  }
+
+  onChildParamsChange(parentId: string, event: ChildParamsChangeEvent): void {
+    this.facade.updateChildParams(parentId, event.childId, event.params);
   }
 
   async onSave(): Promise<void> {

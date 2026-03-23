@@ -8,6 +8,7 @@ import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-m
 import { IndicatorModelCreate, IndicatorModelUpdate } from '@domains/indicator-models/indicator-model.models';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { IndicatorModelFeatureStore } from './indicator-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -49,7 +50,7 @@ export class IndicatorModelFacade {
   );
 
   // Intention methods
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

@@ -9,6 +9,7 @@ import { FolderModelCreate, FolderModelUpdate } from '@domains/folder-models/fol
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { FolderModelFeatureStore } from './folder-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -47,7 +48,7 @@ export class FolderModelFacade {
     this.fpDomainStore.loadAll(undefined);
   }
 
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

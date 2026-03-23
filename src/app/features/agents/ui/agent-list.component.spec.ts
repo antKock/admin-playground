@@ -57,7 +57,7 @@ describe('AgentListComponent', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'status', values: ['draft'] });
     expect(component.hasActiveFilters()).toBe(true);
-    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft' });
+    expect(loadSpy).toHaveBeenCalledWith({ status: ['draft'] });
   });
 
   it('should clear filters and reload with empty filters', () => {
@@ -77,6 +77,6 @@ describe('AgentListComponent', () => {
   it('should support multi-select filter values', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'status', values: ['draft', 'completed'] });
-    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft,completed' });
+    expect(loadSpy).toHaveBeenCalledWith({ status: ['draft', 'completed'] });
   });
 });

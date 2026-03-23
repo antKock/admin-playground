@@ -8,6 +8,7 @@ import { CommunityDomainStore } from '@domains/communities/community.store';
 import { CommunityCreate, CommunityUpdate, UserRead } from '@domains/communities/community.models';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { CommunityFeatureStore } from './community.store';
 
 @Injectable({ providedIn: 'root' })
@@ -62,7 +63,7 @@ export class CommunityFacade {
   );
 
   // Intention methods
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

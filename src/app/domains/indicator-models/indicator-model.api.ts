@@ -6,6 +6,8 @@ import { map } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { applyFilters } from '@domains/shared/api.utils';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActionModel } from '@domains/action-models/action-model.models';
 import { IndicatorModel, IndicatorModelCreate, IndicatorModelUpdate } from './indicator-model.models';
 
@@ -13,20 +15,14 @@ const BASE_URL = `${environment.apiBaseUrl}/indicator-models/`;
 
 export function indicatorModelListLoader(
   http: HttpClient,
-  params: { cursor: string | null; limit: number; filters?: Record<string, string> },
+  params: { cursor: string | null; limit: number; filters?: FilterParams },
 ): Observable<PaginatedResponse<IndicatorModel>> {
   let httpParams = new HttpParams();
   if (params.cursor) {
     httpParams = httpParams.set('cursor', params.cursor);
   }
   httpParams = httpParams.set('limit', params.limit.toString());
-  if (params.filters) {
-    for (const [key, value] of Object.entries(params.filters)) {
-      if (value) {
-        httpParams = httpParams.set(key, value);
-      }
-    }
-  }
+  httpParams = applyFilters(httpParams, params.filters);
   return http.get<PaginatedResponse<IndicatorModel>>(BASE_URL, { params: httpParams });
 }
 

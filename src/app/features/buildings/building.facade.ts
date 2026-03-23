@@ -9,6 +9,7 @@ import { BuildingCreate, BuildingUpdate } from '@domains/building/building.model
 import { SiteDomainStore } from '@domains/site/site.store';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { BuildingFeatureStore } from './building.store';
 
 @Injectable({ providedIn: 'root' })
@@ -56,7 +57,7 @@ export class BuildingFacade {
   });
 
   // Intention methods
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

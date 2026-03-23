@@ -5,13 +5,17 @@ import { Injectable, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ActionModelDomainStore } from '@domains/action-models/action-model.store';
-import { ActionModelCreate, ActionModelUpdate, IndicatorModelAssociationInput } from '@domains/action-models/action-model.models';
+import {
+  ActionModelCreate, ActionModelUpdate, IndicatorModelAssociationInput,
+  IndicatorModelWithAssociation, ChildIndicatorModelAssociationInput,
+} from '@domains/action-models/action-model.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { ToastService } from '@app/shared/services/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActionModelFeatureStore } from './action-model.store';
 
 // Backend currently expects string defaults — convert null to the backend's expected defaults.
@@ -68,7 +72,8 @@ export class ActionModelFacade {
 
   // --- Indicator parameter edit sub-system ---
   // Tracks unsaved changes to indicator params (rules) before persisting.
-  // _paramEdits is a Map<indicatorModelId, modified IndicatorParams>. UI edits accumulate here;
+  // _paramEdits is a Map<key, modified IndicatorParams>. Keys are either an indicator ID
+  // (for parent indicators) or "parentId:childId" (for child indicators within a group).
   // unsavedCount/modifiedIds derive which indicators have diverged from server state.
   // saveParamEdits() validates all JSON rules, then sends the full association list to the API.
   // discardParamEdits() clears the map without saving.
@@ -76,14 +81,23 @@ export class ActionModelFacade {
 
   readonly paramEdits = this._paramEdits.asReadonly();
 
+  private static childKey(parentId: string, childId: string): string {
+    return `${parentId}:${childId}`;
+  }
+
   readonly unsavedCount = computed(() => {
     const edits = this._paramEdits();
     const attached = this.attachedIndicators();
     let count = 0;
-    for (const [id, edited] of edits) {
-      const original = attached.find((im) => im.id === id);
-      if (original && this.isParamModified(original, edited)) {
-        count++;
+    for (const [key, edited] of edits) {
+      if (key.includes(':')) {
+        const [parentId, childId] = key.split(':');
+        const parent = attached.find((im) => im.id === parentId);
+        const child = parent?.children?.find((c) => c.id === childId);
+        if (child && this.isParamModified(child, edited)) count++;
+      } else {
+        const original = attached.find((im) => im.id === key);
+        if (original && this.isParamModified(original, edited)) count++;
       }
     }
     return count;
@@ -93,10 +107,15 @@ export class ActionModelFacade {
     const edits = this._paramEdits();
     const attached = this.attachedIndicators();
     const ids: string[] = [];
-    for (const [id, edited] of edits) {
-      const original = attached.find((im) => im.id === id);
-      if (original && this.isParamModified(original, edited)) {
-        ids.push(id);
+    for (const [key, edited] of edits) {
+      if (key.includes(':')) {
+        const [parentId, childId] = key.split(':');
+        const parent = attached.find((im) => im.id === parentId);
+        const child = parent?.children?.find((c) => c.id === childId);
+        if (child && this.isParamModified(child, edited)) ids.push(key);
+      } else {
+        const original = attached.find((im) => im.id === key);
+        if (original && this.isParamModified(original, edited)) ids.push(key);
       }
     }
     return ids;
@@ -140,9 +159,61 @@ export class ActionModelFacade {
     };
   }
 
+  /** Builds an API association input for an attached indicator, preserving children associations. */
+  private toAssociationInput(
+    im: IndicatorModelWithAssociation,
+    paramsOverride?: IndicatorParams,
+  ): IndicatorModelAssociationInput {
+    const p = paramsOverride ?? this.toIndicatorParams(im);
+    const input: IndicatorModelAssociationInput = {
+      indicator_model_id: im.id,
+      hidden_rule: ruleForApi(p.hidden_rule, 'false'),
+      required_rule: ruleForApi(p.required_rule, 'false'),
+      disabled_rule: ruleForApi(p.disabled_rule, 'false'),
+      default_value_rule: ruleForApi(p.default_value_rule, 'false'),
+      duplicable_rule: ruleForApi(p.duplicable_rule, 'false'),
+      constrained_rule: ruleForApi(p.constrained_rule, 'false'),
+    };
+    if (im.children?.length) {
+      const edits = this._paramEdits();
+      input.children_associations = im.children.map((child): ChildIndicatorModelAssociationInput => {
+        const childEdited = edits.get(ActionModelFacade.childKey(im.id, child.id));
+        const cp = childEdited ?? this.toIndicatorParams(child);
+        return {
+          indicator_model_id: child.id,
+          hidden_rule: ruleForApi(cp.hidden_rule, 'false'),
+          required_rule: ruleForApi(cp.required_rule, 'false'),
+          disabled_rule: ruleForApi(cp.disabled_rule, 'false'),
+          default_value_rule: ruleForApi(cp.default_value_rule, 'false'),
+          duplicable_rule: ruleForApi(cp.duplicable_rule, 'false'),
+          constrained_rule: ruleForApi(cp.constrained_rule, 'false'),
+        };
+      });
+    }
+    return input;
+  }
+
+  getParamsForChild(parentId: string, childId: string): IndicatorParams {
+    const key = ActionModelFacade.childKey(parentId, childId);
+    const edited = this._paramEdits().get(key);
+    if (edited) return edited;
+    const parent = this.attachedIndicators().find((im) => im.id === parentId);
+    const child = parent?.children?.find((c) => c.id === childId);
+    if (!child) {
+      return { hidden_rule: null, required_rule: null, disabled_rule: null, default_value_rule: null, duplicable_rule: null, constrained_rule: null };
+    }
+    return this.toIndicatorParams(child);
+  }
+
   updateParams(indicatorId: string, params: IndicatorParams): void {
     const next = new Map(this._paramEdits());
     next.set(indicatorId, params);
+    this._paramEdits.set(next);
+  }
+
+  updateChildParams(parentId: string, childId: string, params: IndicatorParams): void {
+    const next = new Map(this._paramEdits());
+    next.set(ActionModelFacade.childKey(parentId, childId), params);
     this._paramEdits.set(next);
   }
 
@@ -171,16 +242,7 @@ export class ActionModelFacade {
     const attached = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = attached.map((im) => {
       const edited = edits.get(im.id);
-      const params = edited ?? this.toIndicatorParams(im);
-      return {
-        indicator_model_id: im.id,
-        hidden_rule: ruleForApi(params.hidden_rule, 'false'),
-        required_rule: ruleForApi(params.required_rule, 'false'),
-        disabled_rule: ruleForApi(params.disabled_rule, 'false'),
-        default_value_rule: ruleForApi(params.default_value_rule, 'false'),
-        duplicable_rule: ruleForApi(params.duplicable_rule, 'false'),
-        constrained_rule: ruleForApi(params.constrained_rule, 'false'),
-      };
+      return this.toAssociationInput(im, edited ?? undefined);
     });
     const result = await this.domainStore.updateMutation({
       id: actionModelId,
@@ -205,7 +267,7 @@ export class ActionModelFacade {
     this.imDomainStore.loadAll(undefined);
   }
 
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 
@@ -291,15 +353,7 @@ export class ActionModelFacade {
       return;
     }
     const associations: IndicatorModelAssociationInput[] = [
-      ...current.map((im) => ({
-        indicator_model_id: im.id,
-        hidden_rule: im.hidden_rule,
-        required_rule: im.required_rule,
-        disabled_rule: im.disabled_rule,
-        default_value_rule: im.default_value_rule,
-        duplicable_rule: im.duplicable_rule,
-        constrained_rule: im.constrained_rule,
-      })),
+      ...current.map((im) => this.toAssociationInput(im)),
       {
         indicator_model_id: indicatorModelId,
         hidden_rule: 'false',
@@ -326,15 +380,7 @@ export class ActionModelFacade {
     const current = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = current
       .filter((im) => im.id !== indicatorModelId)
-      .map((im) => ({
-        indicator_model_id: im.id,
-        hidden_rule: im.hidden_rule,
-        required_rule: im.required_rule,
-        disabled_rule: im.disabled_rule,
-        default_value_rule: im.default_value_rule,
-        duplicable_rule: im.duplicable_rule,
-        constrained_rule: im.constrained_rule,
-      }));
+      .map((im) => this.toAssociationInput(im));
     const result = await this.domainStore.updateMutation({
       id: actionModelId,
       data: { indicator_model_associations: associations },
@@ -351,16 +397,8 @@ export class ActionModelFacade {
     const current = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = reorderedIds
       .map((id) => current.find((im) => im.id === id))
-      .filter(Boolean)
-      .map((im) => ({
-        indicator_model_id: im!.id,
-        hidden_rule: im!.hidden_rule,
-        required_rule: im!.required_rule,
-        disabled_rule: im!.disabled_rule,
-        default_value_rule: im!.default_value_rule,
-        duplicable_rule: im!.duplicable_rule,
-        constrained_rule: im!.constrained_rule,
-      }));
+      .filter((im): im is IndicatorModelWithAssociation => !!im)
+      .map((im) => this.toAssociationInput(im));
     // Fire-and-forget for optimistic UI — component reorders locally, server confirms or reverts
     this.domainStore.updateMutation({
       id: actionModelId,

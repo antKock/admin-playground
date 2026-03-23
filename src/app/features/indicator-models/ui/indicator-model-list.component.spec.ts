@@ -60,7 +60,7 @@ describe('IndicatorModelListComponent', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'type', values: ['number'] });
     expect(component.activeFilters()).toEqual({ type: ['number'] });
-    expect(loadSpy).toHaveBeenCalledWith({ type: 'number' });
+    expect(loadSpy).toHaveBeenCalledWith({ type: ['number'] });
   });
 
   it('should clear filters and reload with empty filters', () => {
@@ -71,10 +71,10 @@ describe('IndicatorModelListComponent', () => {
     expect(loadSpy).toHaveBeenCalledWith({});
   });
 
-  it('should join multi-select filter values with commas', () => {
+  it('should pass multi-select filter values as arrays', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'status', values: ['draft', 'published'] });
     expect(component.activeFilters()).toEqual({ status: ['draft', 'published'] });
-    expect(loadSpy).toHaveBeenCalledWith({ status: 'draft,published' });
+    expect(loadSpy).toHaveBeenCalledWith({ status: ['draft', 'published'] });
   });
 });
