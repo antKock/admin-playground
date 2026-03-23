@@ -193,6 +193,7 @@ describe('CommunityFacade', () => {
 
     function loadUsers() {
       facade.loadUsers();
+      // loadAllUsers now paginates: first page, then checks has_next_page
       const req = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
       req.flush(wrapPaginated(mockUsers));
     }

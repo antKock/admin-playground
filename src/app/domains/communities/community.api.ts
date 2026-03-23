@@ -1,7 +1,7 @@
 // API layer — standalone functions, no inject() calls.
 // List/detail return Observables (used by rxMethod). Mutations return config objects (consumed by httpMutation).
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, expand, reduce, EMPTY } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -40,11 +40,24 @@ export function deleteCommunityRequest(id: string) {
   return { url: `${BASE_URL}${id}`, method: 'DELETE' };
 }
 
-// User assignment endpoints — fetch all users via the standard /users/ endpoint
+// User assignment endpoints — fetch all users by paginating through /users/
+const USERS_URL = `${environment.apiBaseUrl}/users/`;
+
 export function loadAllUsers(http: HttpClient): Observable<UserRead[]> {
-  return http.get<PaginatedResponse<UserRead>>(`${environment.apiBaseUrl}/users/`, {
-    params: new HttpParams().set('limit', '200'),
-  }).pipe(map(response => response.data));
+  const fetchPage = (cursor: string | null) => {
+    let params = new HttpParams().set('limit', '20');
+    if (cursor) params = params.set('cursor', cursor);
+    return http.get<PaginatedResponse<UserRead>>(USERS_URL, { params });
+  };
+
+  return fetchPage(null).pipe(
+    expand(response =>
+      response.pagination.has_next_page && response.pagination.cursors.end_cursor
+        ? fetchPage(response.pagination.cursors.end_cursor)
+        : EMPTY,
+    ),
+    reduce((acc, response) => [...acc, ...response.data], [] as UserRead[]),
+  );
 }
 
 export function assignUserRequest(params: { communityId: string; userId: string }) {
