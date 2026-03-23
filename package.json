@@ -1,10 +1,12 @@
 {
-  "name": "admin-playground",
+  "name": "laureat-v2-admin",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build -c ${NG_CONFIG:-production}",
+    "build:staging": "ng build -c staging",
+    "build:production": "ng build -c production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",

@@ -1,9 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://laureatv2-api-staging.osc-fr1.scalingo.io/$1"
-    },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
