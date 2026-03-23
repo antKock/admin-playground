@@ -50,7 +50,7 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-23 — Pending
+## Changeset: 2026-03-23 — Applied (baseline reset: 2026-03-23)
 
 ### Actions
 | Change | Action | Status |
