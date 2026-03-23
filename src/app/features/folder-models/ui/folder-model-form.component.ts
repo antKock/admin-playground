@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createFolderModelForm } from '@domains/folder-models/forms/folder-model.form';
 import { MultiSelectorComponent } from '@app/shared/components/multi-selector/multi-selector.component';
@@ -11,7 +12,7 @@ import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-form',
-  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, MultiSelectorComponent, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './folder-model-form.component.html',
 })
 export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
@@ -25,6 +26,24 @@ export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
   editId: string | null = null;
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createFolderModelForm(this.fb);
+
+  get formTitle(): string {
+    return this.isEditMode ? 'Modifier le modèle de dossier' : 'Créer un modèle de dossier';
+  }
+
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
+    if (this.isEditMode) {
+      return [
+        { label: 'Modèles de dossier', route: '/folder-models' },
+        { label: this.facade.selectedItem()?.name ?? '...', route: '/folder-models/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: 'Modèles de dossier', route: '/folder-models' },
+      { label: 'Nouveau modèle de dossier' },
+    ];
+  });
 
   // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
@@ -84,24 +103,6 @@ export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

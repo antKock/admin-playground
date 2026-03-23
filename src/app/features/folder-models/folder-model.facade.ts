@@ -35,10 +35,19 @@ export class FolderModelFacade {
   readonly fpOptions = this.featureStore.fpOptions;
   readonly fpLoading = this.featureStore.fpLoading;
 
-  // Per-mutation CRUD status signals (projected through feature store)
-  readonly createIsPending = this.featureStore.createIsPending;
-  readonly updateIsPending = this.featureStore.updateIsPending;
-  readonly deleteIsPending = this.featureStore.deleteIsPending;
+  // Display-ready rows for list components
+  readonly formattedRows = computed(() =>
+    this.items().map((item) => ({
+      ...item,
+      funding_programs_display:
+        item.funding_programs?.map((fp) => fp.name).join(', ') || '—',
+    })),
+  );
+
+  // Per-mutation status signals (directly from domain store)
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
   readonly anyMutationPending = computed(() =>
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
   );

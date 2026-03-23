@@ -1,21 +1,24 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './community-list.component.html',
 })
 export class CommunityListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(CommunityFacade);
   readonly router = inject(Router);
-  // Prevents empty-state flash on first render — stays false until the first load completes.
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return 'Aucune communauté trouvée.';
+  });
 
   constructor() {
     effect(() => {

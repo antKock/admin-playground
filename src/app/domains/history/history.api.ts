@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActivityFilters, ActivityResponse, EntityVersionSnapshot, VersionComparison } from './history.models';
 
 const BASE_URL = `${environment.apiBaseUrl}/history/`;
@@ -26,6 +27,16 @@ export function entityActivityLoader(
   );
 }
 
+/** Adapter for withCursorPagination — expects entity_type and entity_id in filters. */
+export function entityActivityListLoader(
+  http: HttpClient,
+  params: { cursor: string | null; limit: number; filters?: FilterParams },
+): Observable<PaginatedResponse<ActivityResponse>> {
+  const entityType = params.filters?.['entity_type'] as string ?? '';
+  const entityId = params.filters?.['entity_id'] as string ?? '';
+  return entityActivityLoader(http, { entityType, entityId, cursor: params.cursor, limit: params.limit });
+}
+
 export function globalActivityLoader(
   http: HttpClient,
   filters?: ActivityFilters,
@@ -40,6 +51,21 @@ export function globalActivityLoader(
     `${BASE_URL}activities`,
     { params: httpParams },
   );
+}
+
+/** Adapter for withCursorPagination — maps FilterParams to ActivityFilters. */
+export function globalActivityListLoader(
+  http: HttpClient,
+  params: { cursor: string | null; limit: number; filters?: FilterParams },
+): Observable<PaginatedResponse<ActivityResponse>> {
+  const filters: ActivityFilters = {
+    entity_type: params.filters?.['entity_type'] as string | undefined,
+    action: params.filters?.['action'] as ActivityFilters['action'],
+    since: params.filters?.['since'] as string | undefined,
+    cursor: params.cursor ?? undefined,
+    limit: params.limit,
+  };
+  return globalActivityLoader(http, filters);
 }
 
 export function entityStateAtDate(

@@ -11,6 +11,12 @@ import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { UserFeatureStore } from './user.store';
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  cdm: 'CDM',
+  collectivite: 'Collectivite',
+};
+
 @Injectable({ providedIn: 'root' })
 export class UserFacade {
   private readonly domainStore = inject(UserDomainStore);
@@ -37,6 +43,17 @@ export class UserFacade {
   readonly allCommunities = this.featureStore.allCommunities;
   readonly isLoadingCommunities = this.featureStore.isLoadingCommunities;
   readonly communitiesError = this.featureStore.communitiesError;
+
+  // Display-ready rows for list components
+  readonly formattedRows = computed(() =>
+    this.items().map((item) => ({
+      ...item,
+      display_name: [item.first_name, item.last_name].filter(Boolean).join(' ') || '—',
+      role_display: ROLE_LABELS[item.role] ?? item.role,
+      is_active_display: item.is_active ? 'actif' : 'inactif',
+      community_count: item.communities?.length?.toString() ?? '0',
+    })),
+  );
 
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;

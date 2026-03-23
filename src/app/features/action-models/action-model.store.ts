@@ -32,11 +32,6 @@ export const ActionModelFeatureStore = signalStore(
       totalLoaded: computed(() => domainStore.totalLoaded()),
       totalCount: computed(() => domainStore.totalCount()),
 
-      // Per-mutation status signals
-      createIsPending: computed(() => domainStore.createMutationIsPending()),
-      updateIsPending: computed(() => domainStore.updateMutationIsPending()),
-      deleteIsPending: computed(() => domainStore.deleteMutationIsPending()),
-
       // Cross-domain signals for FP/AT dropdowns
       fpOptions: computed(() => fpStore.items() as FundingProgram[]),
       atOptions: computed(() => atStore.items() as ActionTheme[]),

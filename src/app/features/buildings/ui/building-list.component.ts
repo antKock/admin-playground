@@ -1,17 +1,16 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { BuildingFacade } from '../building.facade';
 
 @Component({
   selector: 'app-building-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './building-list.component.html',
 })
 export class BuildingListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(BuildingFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});

@@ -1,6 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, DestroyRef, signal, computed, effect } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
+import { Component, inject, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
 import { LucideAngularModule, X, Eye, GitCompareArrows } from 'lucide-angular';
 
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -12,7 +10,6 @@ import {
   entityTypeLabel,
   groupByDay,
 } from '@domains/history/history.utils';
-import { entityStateAtDate, compareEntityVersions } from '@domains/history/history.api';
 
 const LAST_VISIT_KEY_PREFIX = 'activity-last-visit-';
 
@@ -23,14 +20,12 @@ const LAST_VISIT_KEY_PREFIX = 'activity-last-visit-';
 })
 export class ActivityFeedPageComponent implements OnInit, OnDestroy {
   readonly facade = inject(ActivityFeedFacade);
-  private readonly http = inject(HttpClient);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly X = X;
   readonly Eye = Eye;
   readonly GitCompareArrows = GitCompareArrows;
 
-  readonly detailPanel = signal<DetailPanel | null>(null);
+  readonly detailPanel = this.facade.detailPanel;
 
   readonly dayGroups = computed(() => groupByDay(this.facade.filteredActivities()));
 
@@ -110,10 +105,10 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
   actionBadgeClass = actionBadgeClass;
   entityTypeLabel = entityTypeLabel;
 
-  // ── Detail panel (carried over from old implementation) ──────────────
+  // ── Detail panel ──────────────
 
   closeDetail(): void {
-    this.detailPanel.set(null);
+    this.facade.closeDetail();
   }
 
   onBackdropClick(event: MouseEvent): void {
@@ -141,51 +136,10 @@ export class ActivityFeedPageComponent implements OnInit, OnDestroy {
   }
 
   onViewState(activity: ActivityResponse): void {
-    const title = `État: ${activity.entity_display_name || activity.entity_id}`;
-    this.detailPanel.set({ type: 'state', title, loading: true, error: null, stateData: null, comparison: null });
-
-    entityStateAtDate(this.http, activity.entity_type, activity.entity_id, activity.created_at)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.detailPanel.set({ type: 'state', title, loading: false, error: null, stateData: response.data, comparison: null });
-        },
-        error: (err) => {
-          this.detailPanel.set({ type: 'state', title, loading: false, error: detailErrorMessage(err), stateData: null, comparison: null });
-        },
-      });
+    this.facade.viewEntityState(activity);
   }
 
   onCompare(activity: ActivityResponse): void {
-    const title = `Diff: ${activity.entity_display_name || activity.entity_id}`;
-    this.detailPanel.set({ type: 'compare', title, loading: true, error: null, stateData: null, comparison: null });
-
-    const date2 = activity.created_at;
-    const date1 = new Date(new Date(date2).getTime() - 1).toISOString();
-
-    compareEntityVersions(this.http, activity.entity_type, activity.entity_id, date1, date2)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (comparison) => {
-          this.detailPanel.set({ type: 'compare', title, loading: false, error: null, stateData: null, comparison });
-        },
-        error: (err) => {
-          this.detailPanel.set({ type: 'compare', title, loading: false, error: detailErrorMessage(err), stateData: null, comparison: null });
-        },
-      });
+    this.facade.compareVersions(activity);
   }
-}
-
-interface DetailPanel {
-  type: 'state' | 'compare';
-  title: string;
-  loading: boolean;
-  error: string | null;
-  stateData: Record<string, unknown> | null;
-  comparison: VersionComparison | null;
-}
-
-function detailErrorMessage(err: { status?: number }): string {
-  if (err?.status === 404) return 'Aucun snapshot trouvé pour cette date.';
-  return 'Erreur lors du chargement.';
 }

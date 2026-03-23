@@ -35,6 +35,14 @@ export class FundingProgramFacade {
   readonly fmOptions = this.featureStore.fmOptions;
   readonly fmLoading = this.featureStore.fmLoading;
 
+  // Display-ready rows for list components
+  readonly formattedRows = computed(() =>
+    this.items().map((item) => ({
+      ...item,
+      active_display: item.is_active ? 'Actif' : 'Inactif',
+    })),
+  );
+
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;
   readonly updateIsPending = this.domainStore.updateMutationIsPending;

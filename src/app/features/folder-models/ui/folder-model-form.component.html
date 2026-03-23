@@ -1,20 +1,11 @@
-<div class="p-6 max-w-2xl">
-  @if (isEditMode) {
-    <app-breadcrumb [items]="[
-      { label: 'Modèles de dossier', route: '/folder-models' },
-      { label: facade.selectedItem()?.name ?? '...', route: '/folder-models/' + editId },
-      { label: 'Modifier' }
-    ]" />
-  } @else {
-    <app-breadcrumb [items]="[
-      { label: 'Modèles de dossier', route: '/folder-models' },
-      { label: 'Nouveau modèle de dossier' }
-    ]" />
-  }
-  <h1 class="text-2xl font-bold text-text-primary mb-6">
-    {{ isEditMode ? 'Modifier le modèle de dossier' : 'Créer un modèle de dossier' }}
-  </h1>
-
+<app-form-page-layout
+  [breadcrumbs]="formBreadcrumbs()"
+  [title]="formTitle"
+  [isSaving]="submitting()"
+  [isDirty]="form.dirty"
+  (save)="onSubmit()"
+  (cancel)="goBack()"
+>
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
@@ -45,22 +36,5 @@
         (selectionChange)="onFpSelectionChange($event)"
       />
     </div>
-
-    <div class="flex gap-3 pt-4">
-      <button
-        type="submit"
-        class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-        [disabled]="submitting()"
-      >
-        {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-      </button>
-      <button
-        type="button"
-        class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-        (click)="goBack()"
-      >
-        Annuler
-      </button>
-    </div>
   </form>
-</div>
+</app-form-page-layout>

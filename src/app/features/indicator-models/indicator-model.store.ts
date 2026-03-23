@@ -22,11 +22,6 @@ export const IndicatorModelFeatureStore = signalStore(
       totalLoaded: computed(() => domainStore.totalLoaded()),
       totalCount: computed(() => domainStore.totalCount()),
 
-      // Per-mutation status signals
-      createIsPending: computed(() => domainStore.createMutationIsPending()),
-      updateIsPending: computed(() => domainStore.updateMutationIsPending()),
-      deleteIsPending: computed(() => domainStore.deleteMutationIsPending()),
-
       // Usage visibility signals
       usedInModels: computed(() => domainStore.usedInActionModels()),
       usageCount: computed(() => domainStore.usedInActionModels().length),

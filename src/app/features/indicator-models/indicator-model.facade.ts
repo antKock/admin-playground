@@ -35,10 +35,19 @@ export class IndicatorModelFacade {
   readonly isLoadingUsage = this.featureStore.isLoadingUsage;
   readonly usageError = this.featureStore.usageError;
 
-  // Per-mutation CRUD status signals (projected through feature store)
-  readonly createIsPending = this.featureStore.createIsPending;
-  readonly updateIsPending = this.featureStore.updateIsPending;
-  readonly deleteIsPending = this.featureStore.deleteIsPending;
+  // Per-mutation status signals (directly from domain store)
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
+
+  // Display-ready rows for list components
+  readonly formattedRows = computed(() =>
+    this.items().map((item) => ({
+      ...item,
+      type_display: item.type,
+      unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
+    })),
+  );
 
   // Per-mutation lifecycle status signals
   readonly publishIsPending = this.domainStore.publishMutationIsPending;

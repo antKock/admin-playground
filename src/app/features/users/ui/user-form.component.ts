@@ -1,16 +1,17 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createUserForm } from '@domains/users/forms/user.form';
 import { UserFacade } from '../user.facade';
 
 @Component({
   selector: 'app-user-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './user-form.component.html',
 })
 export class UserFormComponent implements OnInit, HasUnsavedChanges {
@@ -28,6 +29,24 @@ export class UserFormComponent implements OnInit, HasUnsavedChanges {
   });
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createUserForm(this.fb, undefined, this.isEditMode);
+
+  get formTitle(): string {
+    return this.isEditMode ? 'Modifier l\'utilisateur' : 'Créer un utilisateur';
+  }
+
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
+    if (this.isEditMode) {
+      return [
+        { label: 'Utilisateurs', route: '/users' },
+        { label: this.itemName() ?? '...', route: '/users/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: 'Utilisateurs', route: '/users' },
+      { label: 'Nouvel utilisateur' },
+    ];
+  });
 
   private formPatched = false;
 
@@ -79,24 +98,6 @@ export class UserFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

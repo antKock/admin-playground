@@ -26,11 +26,6 @@ export const FolderModelFeatureStore = signalStore(
       totalLoaded: computed(() => domainStore.totalLoaded()),
       totalCount: computed(() => domainStore.totalCount()),
 
-      // Per-mutation status signals
-      createIsPending: computed(() => domainStore.createMutationIsPending()),
-      updateIsPending: computed(() => domainStore.updateMutationIsPending()),
-      deleteIsPending: computed(() => domainStore.deleteMutationIsPending()),
-
       // Cross-domain signals for FP multi-selector
       fpOptions: computed(() =>
         (fpStore.items() as FundingProgram[]).map((fp) => ({ id: fp.id, label: fp.name })),

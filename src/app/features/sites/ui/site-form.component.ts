@@ -1,16 +1,17 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
 import { createSiteForm } from '@domains/site/forms/site.form';
 import { SiteFacade } from '../site.facade';
 
 @Component({
   selector: 'app-site-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './site-form.component.html',
 })
 export class SiteFormComponent implements OnInit, HasUnsavedChanges {
@@ -96,24 +97,6 @@ export class SiteFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

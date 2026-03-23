@@ -162,7 +162,10 @@ export const ThingDomainStore = signalStore(
 
 **Composition order matters:** `withState → withProps → withFeature(pagination) → withMutations → withMethods`
 
-**Optional: use-cases/ subfolder** — For complex pure logic (e.g., ~40-line data transformations), extract to a dedicated use-case file: `src/app/features/xxx/use-cases/build-yyy.ts`. The facade then calls the pure function inside a `computed()`. See `src/app/features/action-models/use-cases/build-indicator-cards.ts` for a real example.
+**Optional: use-cases/ subfolder** — For complex pure logic (e.g., ~40-line data transformations), extract to a dedicated use-case file: `src/app/features/xxx/use-cases/build-yyy.ts`. The facade calls the pure function inside a `computed()` or an intention method. Examples:
+- `build-indicator-cards.ts` — pure function mapping attached indicators to display cards
+- `build-association-inputs.ts` — pure functions building API payloads for indicator associations
+- `indicator-param-editor.ts` — factory function creating a signal-based editor for unsaved parameter changes
 
 ### 4. Form Factory (`src/app/domains/things/forms/thing.form.ts`)
 
@@ -202,9 +205,7 @@ export const ThingFeatureStore = signalStore(
       detailError: computed(() => ds.detailError()),
       isEmpty: computed(() => ds.isEmpty()),
       totalCount: computed(() => ds.totalCount()),
-      createIsPending: computed(() => ds.createMutationIsPending()),
-      updateIsPending: computed(() => ds.updateMutationIsPending()),
-      deleteIsPending: computed(() => ds.deleteMutationIsPending()),
+      // Cross-domain signals go here (e.g., dropdown options from other stores)
     };
   }),
 );
@@ -222,10 +223,15 @@ export class ThingFacade {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
-  // Readonly signals from feature store
+  // Data signals from feature store
   readonly items = this.featureStore.items;
   readonly selectedItem = this.featureStore.selectedItem;
-  // ... all other signals ...
+  // ... all other data signals ...
+
+  // Mutation status signals directly from domain store (never through feature store)
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
 
   // Intention methods
   load(filters?: FilterParams): void { this.domainStore.load(filters); }
