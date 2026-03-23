@@ -7,12 +7,23 @@ Open requests from frontend to backend. Verified at each API changelog review �
 ## P1 — High priority
 
 ### 3. JWT role claim for frontend authorization
-**Reported:** 2026-03-16 (UAT Epic 14)
-**Impact:** Cannot reliably guard admin UI against "Collectivité" users.
+**Reported:** 2026-03-16 (UAT Epic 14) | **Updated:** 2026-03-23 (UAT Epic 16)
+**Impact:** Cannot guard admin UI against "Collectivité" users — they have full access.
+**Status:** Confirmed never worked. Frontend `adminGuard` checks `payload['role'] === 'collectivite'` but the JWT does not appear to contain a `role` claim at all.
 **Questions:**
-1. Does the JWT include a `role` claim?
-2. If not, what claim name is used, or should one be added?
-3. Should backend also enforce role checks on admin API endpoints?
+1. Does the JWT include a `role` claim? If so, what is the exact key and value for collectivité users?
+2. If not, should one be added? Frontend is ready to consume `payload['role']`.
+3. Should backend also enforce role checks on admin API endpoints (defense in depth)?
+
+### 12. Agent update returns 403 — PUT `/agents/{id}` forbidden for admin users
+**Reported:** 2026-03-23 (UAT Epic 16)
+**Impact:** Admin users cannot edit existing agents. POST `/agents/` (create) works, PUT `/agents/{id}` (update) returns 403 "user doesn't have access" with identical payload structure.
+**Details:**
+- Both POST and PUT send the same fields: `first_name, last_name, email, phone, position, agent_type, community_id, public_comment, internal_comment`
+- The requesting user is an admin with full create permissions
+- The 403 is returned by the backend before processing the body
+- Frontend code for agent update has not changed — this appears to be a backend authorization policy issue
+**Request:** Verify that admin users have PUT permission on `/agents/{id}`. If this is intentional, document which roles can update agents.
 
 ---
 
@@ -38,9 +49,10 @@ Open requests from frontend to backend. Verified at each API changelog review �
 **Note:** As of 2026-03-06, `technical_label` appeared missing from `IndicatorModelRead` itself — needs verification (possible spec generation bug).
 
 ### 8. Deprecate `GET /auth/users` in favor of `GET /users/`
-**Reported:** 2026-03-05
-**Impact:** Two endpoints for the same resource creates confusion. `/auth/users` returns flat array, `/users/` returns paginated response.
-**Request:** Deprecate `/auth/users`, add `community_id` filter to `GET /users/`.
+**Reported:** 2026-03-05 | **Updated:** 2026-03-23
+**Impact:** `/auth/users` now returns 404 on staging. Frontend switched to paginated `GET /users/` with expand/reduce to fetch all pages.
+**Status:** Frontend workaround deployed. `/auth/users` appears to have been removed server-side.
+**Request:** Confirm `/auth/users` is intentionally removed. Add `community_id` filter to `GET /users/` so the community user picker can filter server-side instead of fetching all users.
 
 ---
 
