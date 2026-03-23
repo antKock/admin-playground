@@ -12,6 +12,7 @@ import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-m
 import { ToastService } from '@app/shared/services/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActionModelFeatureStore } from './action-model.store';
 
 // Backend currently expects string defaults — convert null to the backend's expected defaults.
@@ -205,7 +206,7 @@ export class ActionModelFacade {
     this.imDomainStore.loadAll(undefined);
   }
 
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

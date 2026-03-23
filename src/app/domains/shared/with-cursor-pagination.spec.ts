@@ -3,14 +3,14 @@ import { signalStore } from '@ngrx/signals';
 import { Observable, of, throwError } from 'rxjs';
 
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { withCursorPagination } from './with-cursor-pagination';
+import { withCursorPagination, FilterParams } from './with-cursor-pagination';
 
 interface TestItem {
   id: string;
   name: string;
 }
 
-type LoaderParams = { cursor: string | null; limit: number; filters?: Record<string, string> };
+type LoaderParams = { cursor: string | null; limit: number; filters?: FilterParams };
 
 function createMockResponse(
   data: TestItem[],

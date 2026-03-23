@@ -2844,6 +2844,107 @@ export interface components {
             rnb_ids?: string[] | null;
         };
         /**
+         * ChildIndicatorModelAssociationInput
+         * @description Input for child indicator association params within a group.
+         */
+        ChildIndicatorModelAssociationInput: {
+            /**
+             * Indicator Model Id
+             * Format: uuid
+             */
+            indicator_model_id: string;
+            /**
+             * Hidden Rule
+             * @default false
+             */
+            hidden_rule: string;
+            /**
+             * Required Rule
+             * @default false
+             */
+            required_rule: string;
+            /**
+             * Disabled Rule
+             * @default false
+             */
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
+        };
+        /**
+         * ChildIndicatorModelWithAssociation
+         * @description Child indicator model with association metadata (read).
+         */
+        ChildIndicatorModelWithAssociation: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Technical Label */
+            technical_label: string;
+            /** Description */
+            description?: string | null;
+            type: components["schemas"]["IndicatorModelType"];
+            /** Unit */
+            unit?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Last Updated At
+             * Format: date-time
+             */
+            last_updated_at: string;
+            /**
+             * Hidden Rule
+             * @default false
+             */
+            hidden_rule: string;
+            /**
+             * Required Rule
+             * @default false
+             */
+            required_rule: string;
+            /**
+             * Disabled Rule
+             * @default false
+             */
+            disabled_rule: string;
+            /**
+             * Default Value Rule
+             * @default false
+             */
+            default_value_rule: string;
+            /**
+             * Duplicable Rule
+             * @default false
+             */
+            duplicable_rule: string;
+            /**
+             * Constrained Rule
+             * @default false
+             */
+            constrained_rule: string;
+        };
+        /**
          * CommunityCreate
          * @description Schema for creating a new Community.
          */
@@ -3315,6 +3416,8 @@ export interface components {
              * @default false
              */
             constrained_rule: string;
+            /** Children Associations */
+            children_associations?: components["schemas"]["ChildIndicatorModelAssociationInput"][] | null;
         };
         /**
          * IndicatorModelBrief
@@ -3486,6 +3589,8 @@ export interface components {
              * @default false
              */
             constrained_rule: string;
+            /** Children */
+            children?: components["schemas"]["ChildIndicatorModelWithAssociation"][] | null;
         };
         /**
          * IndicatorRead
@@ -4684,7 +4789,7 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by community ID */
-                community_id?: string | null;
+                community_id?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -5392,13 +5497,13 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by funding program ID */
-                funding_program_id?: string | null;
+                funding_program_id?: string[] | null;
                 /** @description Filter by action theme ID */
-                action_theme_id?: string | null;
+                action_theme_id?: string[] | null;
                 /** @description Filter by linked indicator model ID */
-                indicator_model_id?: string | null;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
+                indicator_model_id?: string[] | null;
+                /** @description Filter by status */
+                status?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -5689,9 +5794,9 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by action model ID */
-                action_model_id?: string | null;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
+                action_model_id?: string[] | null;
+                /** @description Filter by status */
+                status?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -6048,8 +6153,8 @@ export interface operations {
                 cursor?: string | null;
                 /** @description Number of results per page */
                 limit?: number;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
+                /** @description Filter by status */
+                status?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -6403,7 +6508,7 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by funding program ID */
-                funding_program_id?: string | null;
+                funding_program_id?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -6600,9 +6705,9 @@ export interface operations {
                 cursor?: string | null;
                 /** @description Number of results per page */
                 limit?: number;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
-                funding_program_id?: string | null;
+                /** @description Filter by status */
+                status?: string[] | null;
+                funding_program_id?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -6866,9 +6971,9 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by community ID */
-                community_id?: string | null;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
+                community_id?: string[] | null;
+                /** @description Filter by status */
+                status?: string[] | null;
                 include_deleted?: boolean;
             };
             header?: never;
@@ -7065,7 +7170,7 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by community */
-                community_id?: string | null;
+                community_id?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -7263,7 +7368,7 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by site */
-                site_id?: string | null;
+                site_id?: string[] | null;
             };
             header?: never;
             path?: never;
@@ -7491,11 +7596,11 @@ export interface operations {
                 /** @description Number of results per page */
                 limit?: number;
                 /** @description Filter by action model ID */
-                action_model_id?: string | null;
+                action_model_id?: string[] | null;
                 /** @description Filter by indicator type */
-                type?: components["schemas"]["IndicatorModelType"] | null;
-                /** @description Filter by status (comma-separated) */
-                status?: string | null;
+                type?: components["schemas"]["IndicatorModelType"][] | null;
+                /** @description Filter by status */
+                status?: string[] | null;
             };
             header?: never;
             path?: never;

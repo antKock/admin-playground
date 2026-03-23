@@ -8,6 +8,7 @@ import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.stor
 import { ActionTheme, ActionThemeCreate, ActionThemeUpdate } from '@domains/action-themes/action-theme.models';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { ActionThemeFeatureStore } from './action-theme.store';
 
 @Injectable({ providedIn: 'root' })
@@ -45,7 +46,7 @@ export class ActionThemeFacade {
   );
 
   // Intention methods
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

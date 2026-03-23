@@ -23,11 +23,13 @@ export interface CursorPaginationState {
   totalCount: number | null;
 }
 
+export type FilterParams = Record<string, string | string[]>;
+
 export interface CursorPaginationConfig<T> {
   loader: (params: {
     cursor: string | null;
     limit: number;
-    filters?: Record<string, string>;
+    filters?: FilterParams;
   }) => Observable<PaginatedResponse<T>>;
   defaultLimit?: number;
 }
@@ -56,7 +58,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
       totalLoaded: computed(() => (state['items']() as T[]).length),
     })),
     withMethods((store: Record<string, unknown> & WritableStateSource<object>) => {
-      let currentFilters: Record<string, string> | undefined;
+      let currentFilters: FilterParams | undefined;
 
       const items = store['items'] as () => T[];
       const cursor = store['cursor'] as () => string | null;
@@ -64,7 +66,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
       const isLoading = store['isLoading'] as () => boolean;
 
       return {
-        load: rxMethod<Record<string, string> | undefined>(
+        load: rxMethod<FilterParams | undefined>(
           pipe(
             tap((filters) => {
               currentFilters = filters;
@@ -136,7 +138,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
         // refresh() reloads the first page. If called with filters, uses those; if called with
         // undefined, re-uses the last applied filters (preserves current filter context).
         // This differs from load(), which always requires explicit filters.
-        loadAll: rxMethod<Record<string, string> | undefined>(
+        loadAll: rxMethod<FilterParams | undefined>(
           pipe(
             tap((filters) => {
               currentFilters = filters;
@@ -180,7 +182,7 @@ export function withCursorPagination<T>(config: CursorPaginationConfig<T>) {
           ),
         ),
 
-        refresh: rxMethod<Record<string, string> | undefined>(
+        refresh: rxMethod<FilterParams | undefined>(
           pipe(
             tap((filters) => {
               currentFilters = filters ?? currentFilters;

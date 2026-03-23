@@ -104,12 +104,12 @@ export class FolderModelListComponent implements OnInit {
     this.facade.load(this.buildFilters());
   }
 
-  private buildFilters(): Record<string, string> {
-    const filters: Record<string, string> = {};
+  private buildFilters(): Record<string, string[]> {
+    const filters: Record<string, string[]> = {};
     const active = this.activeFilters();
     for (const [key, values] of Object.entries(active)) {
       if (values.length > 0) {
-        filters[key] = values.join(',');
+        filters[key] = values;
       }
     }
     return filters;

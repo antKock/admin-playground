@@ -9,6 +9,7 @@ import { FundingProgramCreate, FundingProgramUpdate } from '@domains/funding-pro
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
 import { ToastService } from '@app/shared/services/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { FundingProgramFeatureStore } from './funding-program.store';
 
 @Injectable({ providedIn: 'root' })
@@ -47,7 +48,7 @@ export class FundingProgramFacade {
     this.fmDomainStore.loadAll(undefined);
   }
 
-  load(filters?: Record<string, string>): void {
+  load(filters?: FilterParams): void {
     this.domainStore.load(filters);
   }
 

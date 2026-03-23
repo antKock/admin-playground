@@ -35,7 +35,7 @@ describe('FundingProgramListComponent', () => {
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.onFilterChange({ key: 'active_only', values: ['true'] });
     expect(component.activeFilters()).toEqual({ active_only: ['true'] });
-    expect(loadSpy).toHaveBeenCalledWith({ active_only: 'true' });
+    expect(loadSpy).toHaveBeenCalledWith({ active_only: ['true'] });
   });
 
   it('should clear filters and reload with empty filters', () => {
