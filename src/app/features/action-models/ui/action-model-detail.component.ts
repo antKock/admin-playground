@@ -19,6 +19,7 @@ import {
   IndicatorCardComponent,
   IndicatorCardData,
   IndicatorParams,
+  ChildCardData,
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { ParamState } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
@@ -238,6 +239,20 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
       const edited = edits.get(im.id);
       const p = edited ?? im;
       const full = availableMap.get(im.id);
+      const children: ChildCardData[] | undefined = im.children?.map((child) => ({
+        id: child.id,
+        name: child.name,
+        technical_label: child.technical_label,
+        type: child.type,
+        paramHints: {
+          visibility: this.ruleState(child.hidden_rule, 'false'),
+          required: this.ruleState(child.required_rule, 'false'),
+          editable: this.ruleState(child.disabled_rule, 'false'),
+          defaultValue: this.ruleState(child.default_value_rule, 'false'),
+          duplicable: this.ruleState(child.duplicable_rule, 'false'),
+          constrained: this.ruleState(child.constrained_rule, 'false'),
+        },
+      }));
       return {
         id: im.id,
         name: im.name,
@@ -251,6 +266,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
           duplicable: this.ruleState(p.duplicable_rule, 'false'),
           constrained: this.ruleState(p.constrained_rule, 'false'),
         },
+        children: children?.length ? children : undefined,
       };
     });
   });

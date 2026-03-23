@@ -7,12 +7,21 @@ import { ParamHintIconsComponent, ParamHints } from '../param-hint-icons/param-h
 import { ToggleRowComponent } from '../toggle-row/toggle-row.component';
 import { RuleFieldComponent } from '../rule-field/rule-field.component';
 
+export interface ChildCardData {
+  id: string;
+  name: string;
+  technical_label?: string;
+  type: string;
+  paramHints: ParamHints;
+}
+
 export interface IndicatorCardData {
   id: string;
   name: string;
   technical_label?: string;
   type: string;
   paramHints: ParamHints;
+  children?: ChildCardData[];
 }
 
 export interface IndicatorParams {
@@ -175,7 +184,7 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
           </div>
 
           <!-- Constrained Values -->
-          <div class="param-section last">
+          <div class="param-section" [class.last]="!indicator().children?.length">
             <app-toggle-row
               label="Valeurs contraintes"
               [icon]="BracesIcon"
@@ -192,6 +201,28 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
               />
             }
           </div>
+
+          <!-- Children -->
+          @if (indicator().children?.length) {
+            <div class="children-section">
+              <div class="children-label">Indicateurs enfants</div>
+              @for (child of indicator().children!; track child.id) {
+                <div class="child-indicator">
+                  <div class="child-header">
+                    <div>
+                      <span class="child-name">{{ child.name }}</span>
+                      <span class="child-technical">
+                        {{ child.technical_label }}
+                        &nbsp;
+                        <app-status-badge [status]="child.type" />
+                      </span>
+                    </div>
+                    <app-param-hint-icons [hints]="child.paramHints" />
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
     </div>
@@ -317,6 +348,48 @@ export function isRuleOverridden(field: RuleField, value: string | null): boolea
     .param-section:last-child {
       border-bottom: none;
       padding-bottom: 0;
+    }
+
+    .children-section {
+      padding-top: 12px;
+      border-top: 1px solid var(--color-stroke-standard);
+    }
+    .children-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 8px;
+    }
+    .child-indicator {
+      background: var(--color-surface-subtle, #fafafa);
+      border: 1px solid var(--color-stroke-standard);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+    }
+    .child-indicator:last-child {
+      margin-bottom: 0;
+    }
+    .child-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .child-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+    .child-technical {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      margin-top: 2px;
     }
 
 `],

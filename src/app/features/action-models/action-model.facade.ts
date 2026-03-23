@@ -5,7 +5,10 @@ import { Injectable, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ActionModelDomainStore } from '@domains/action-models/action-model.store';
-import { ActionModelCreate, ActionModelUpdate, IndicatorModelAssociationInput } from '@domains/action-models/action-model.models';
+import {
+  ActionModelCreate, ActionModelUpdate, IndicatorModelAssociationInput,
+  IndicatorModelWithAssociation, ChildIndicatorModelAssociationInput,
+} from '@domains/action-models/action-model.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -141,6 +144,35 @@ export class ActionModelFacade {
     };
   }
 
+  /** Builds an API association input for an attached indicator, preserving children associations. */
+  private toAssociationInput(
+    im: IndicatorModelWithAssociation,
+    paramsOverride?: IndicatorParams,
+  ): IndicatorModelAssociationInput {
+    const p = paramsOverride ?? this.toIndicatorParams(im);
+    const input: IndicatorModelAssociationInput = {
+      indicator_model_id: im.id,
+      hidden_rule: ruleForApi(p.hidden_rule, 'false'),
+      required_rule: ruleForApi(p.required_rule, 'false'),
+      disabled_rule: ruleForApi(p.disabled_rule, 'false'),
+      default_value_rule: ruleForApi(p.default_value_rule, 'false'),
+      duplicable_rule: ruleForApi(p.duplicable_rule, 'false'),
+      constrained_rule: ruleForApi(p.constrained_rule, 'false'),
+    };
+    if (im.children?.length) {
+      input.children_associations = im.children.map((child): ChildIndicatorModelAssociationInput => ({
+        indicator_model_id: child.id,
+        hidden_rule: child.hidden_rule,
+        required_rule: child.required_rule,
+        disabled_rule: child.disabled_rule,
+        default_value_rule: child.default_value_rule,
+        duplicable_rule: child.duplicable_rule,
+        constrained_rule: child.constrained_rule,
+      }));
+    }
+    return input;
+  }
+
   updateParams(indicatorId: string, params: IndicatorParams): void {
     const next = new Map(this._paramEdits());
     next.set(indicatorId, params);
@@ -172,16 +204,7 @@ export class ActionModelFacade {
     const attached = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = attached.map((im) => {
       const edited = edits.get(im.id);
-      const params = edited ?? this.toIndicatorParams(im);
-      return {
-        indicator_model_id: im.id,
-        hidden_rule: ruleForApi(params.hidden_rule, 'false'),
-        required_rule: ruleForApi(params.required_rule, 'false'),
-        disabled_rule: ruleForApi(params.disabled_rule, 'false'),
-        default_value_rule: ruleForApi(params.default_value_rule, 'false'),
-        duplicable_rule: ruleForApi(params.duplicable_rule, 'false'),
-        constrained_rule: ruleForApi(params.constrained_rule, 'false'),
-      };
+      return this.toAssociationInput(im, edited ?? undefined);
     });
     const result = await this.domainStore.updateMutation({
       id: actionModelId,
@@ -292,15 +315,7 @@ export class ActionModelFacade {
       return;
     }
     const associations: IndicatorModelAssociationInput[] = [
-      ...current.map((im) => ({
-        indicator_model_id: im.id,
-        hidden_rule: im.hidden_rule,
-        required_rule: im.required_rule,
-        disabled_rule: im.disabled_rule,
-        default_value_rule: im.default_value_rule,
-        duplicable_rule: im.duplicable_rule,
-        constrained_rule: im.constrained_rule,
-      })),
+      ...current.map((im) => this.toAssociationInput(im)),
       {
         indicator_model_id: indicatorModelId,
         hidden_rule: 'false',
@@ -327,15 +342,7 @@ export class ActionModelFacade {
     const current = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = current
       .filter((im) => im.id !== indicatorModelId)
-      .map((im) => ({
-        indicator_model_id: im.id,
-        hidden_rule: im.hidden_rule,
-        required_rule: im.required_rule,
-        disabled_rule: im.disabled_rule,
-        default_value_rule: im.default_value_rule,
-        duplicable_rule: im.duplicable_rule,
-        constrained_rule: im.constrained_rule,
-      }));
+      .map((im) => this.toAssociationInput(im));
     const result = await this.domainStore.updateMutation({
       id: actionModelId,
       data: { indicator_model_associations: associations },
@@ -352,16 +359,8 @@ export class ActionModelFacade {
     const current = this.attachedIndicators();
     const associations: IndicatorModelAssociationInput[] = reorderedIds
       .map((id) => current.find((im) => im.id === id))
-      .filter(Boolean)
-      .map((im) => ({
-        indicator_model_id: im!.id,
-        hidden_rule: im!.hidden_rule,
-        required_rule: im!.required_rule,
-        disabled_rule: im!.disabled_rule,
-        default_value_rule: im!.default_value_rule,
-        duplicable_rule: im!.duplicable_rule,
-        constrained_rule: im!.constrained_rule,
-      }));
+      .filter((im): im is IndicatorModelWithAssociation => !!im)
+      .map((im) => this.toAssociationInput(im));
     // Fire-and-forget for optimistic UI — component reorders locally, server confirms or reverts
     this.domainStore.updateMutation({
       id: actionModelId,
