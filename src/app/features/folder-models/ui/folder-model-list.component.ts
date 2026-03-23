@@ -1,21 +1,27 @@
 import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './folder-model-list.component.html',
 })
 export class FolderModelListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(FolderModelFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun modèle de dossier ne correspond à vos filtres.'
+      : 'Aucun modèle de dossier trouvé.';
+  });
 
   constructor() {
     effect(() => {
@@ -38,13 +44,7 @@ export class FolderModelListComponent implements OnInit {
     { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ]);
 
-  readonly rows = computed(() =>
-    this.facade.items().map((item) => ({
-      ...item,
-      funding_programs_display:
-        item.funding_programs?.map((fp) => fp.name).join(', ') || '—',
-    })),
-  );
+  readonly rows = this.facade.formattedRows;
 
   ngOnInit(): void {
     this.facade.loadAssociationData();

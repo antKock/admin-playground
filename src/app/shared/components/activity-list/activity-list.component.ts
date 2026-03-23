@@ -25,7 +25,7 @@ export class ActivityListComponent {
       const type = this.entityType();
       const id = this.entityId();
       if (type && id) {
-        this.store.load(type, id);
+        this.store.load({ entity_type: type, entity_id: id });
       }
     });
   }
@@ -54,6 +54,6 @@ export class ActivityListComponent {
   }
 
   onLoadMore(): void {
-    this.store.loadMore(this.entityType(), this.entityId());
+    this.store.loadMore();
   }
 }

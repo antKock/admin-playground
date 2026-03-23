@@ -1,16 +1,17 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { createActionThemeForm } from '@domains/action-themes/forms/action-theme.form';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './action-theme-form.component.html',
 })
 export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
@@ -28,7 +29,7 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
     return this.isEditMode ? 'Modifier le thème d\'action' : 'Créer un thème d\'action';
   }
 
-  readonly formBreadcrumbs = computed(() => {
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
     if (this.isEditMode) {
       return [
         { label: 'Thèmes d\'action', route: '/action-themes' },
@@ -93,24 +94,6 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

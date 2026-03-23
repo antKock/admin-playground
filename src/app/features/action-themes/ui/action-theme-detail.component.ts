@@ -5,6 +5,7 @@ import { MetadataGridComponent, MetadataField } from '@app/shared/components/met
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -12,7 +13,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, BreadcrumbComponent, ActivityListComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, BreadcrumbComponent, ActivityListComponent, DetailPageLayoutComponent],
   templateUrl: './action-theme-detail.component.html',
 })
 export class ActionThemeDetailComponent implements OnInit, OnDestroy {
@@ -23,7 +24,6 @@ export class ActionThemeDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly theme = this.facade.selectedItem;
-  readonly skeletonFields = Array(6).fill(0);
 
   readonly errorBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Thèmes d\'action', route: '/action-themes' },

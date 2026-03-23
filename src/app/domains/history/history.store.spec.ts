@@ -33,7 +33,7 @@ describe('HistoryStore', () => {
   });
 
   it('should load activities for an entity', () => {
-    store.load('ActionModel', 'abc-123');
+    store.load({ entity_type: 'ActionModel', entity_id: 'abc-123' });
     expect(store.isLoading()).toBe(true);
 
     const req = httpTesting.expectOne((r) =>
@@ -70,7 +70,7 @@ describe('HistoryStore', () => {
   });
 
   it('should handle load error', () => {
-    store.load('ActionModel', 'abc-123');
+    store.load({ entity_type: 'ActionModel', entity_id: 'abc-123' });
 
     const req = httpTesting.expectOne((r) =>
       r.url.includes('/history/ActionModel/abc-123/activities'),

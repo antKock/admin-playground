@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -11,7 +12,7 @@ import { SiteFacade } from '../site.facade';
 
 @Component({
   selector: 'app-site-detail',
-  imports: [MetadataGridComponent, BreadcrumbComponent, ActivityListComponent],
+  imports: [MetadataGridComponent, BreadcrumbComponent, DetailPageLayoutComponent, ActivityListComponent],
   templateUrl: './site-detail.component.html',
 })
 export class SiteDetailComponent implements OnInit, OnDestroy {
@@ -22,7 +23,6 @@ export class SiteDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly site = this.facade.selectedItem;
-  readonly skeletonFields = Array(6).fill(0);
 
   readonly errorBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Sites', route: '/sites' },

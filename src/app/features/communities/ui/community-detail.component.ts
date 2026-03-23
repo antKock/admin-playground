@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -13,7 +14,7 @@ import { CommunityUsersComponent } from './community-users.component';
 
 @Component({
   selector: 'app-community-detail',
-  imports: [MetadataGridComponent, CommunityUsersComponent, ActivityListComponent, BreadcrumbComponent, RouterLink],
+  imports: [MetadataGridComponent, CommunityUsersComponent, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent, RouterLink],
   templateUrl: './community-detail.component.html',
 })
 export class CommunityDetailComponent implements OnInit, OnDestroy {
@@ -25,8 +26,6 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly community = this.facade.selectedItem;
-
-  readonly skeletonFields = Array(6).fill(0);
 
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const c = this.community();

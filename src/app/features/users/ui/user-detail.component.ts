@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -18,7 +19,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-user-detail',
-  imports: [MetadataGridComponent, UserCommunitiesComponent, ActivityListComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, UserCommunitiesComponent, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent],
   templateUrl: './user-detail.component.html',
 })
 export class UserDetailComponent implements OnInit, OnDestroy {
@@ -29,8 +30,6 @@ export class UserDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly user = this.facade.selectedItem;
-
-  readonly skeletonFields = Array(7).fill(0);
 
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const u = this.user();

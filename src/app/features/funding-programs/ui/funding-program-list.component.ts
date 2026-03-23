@@ -1,21 +1,27 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { FundingProgramFacade } from '../funding-program.facade';
 
 @Component({
   selector: 'app-funding-program-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './funding-program-list.component.html',
 })
 export class FundingProgramListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(FundingProgramFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return this.hasActiveFilters()
+      ? 'Aucun programme de financement ne correspond à vos filtres.'
+      : 'Aucun programme de financement trouvé.';
+  });
 
   constructor() {
     effect(() => {
@@ -25,12 +31,7 @@ export class FundingProgramListComponent implements OnInit {
     });
   }
 
-  readonly rows = computed(() =>
-    this.facade.items().map((item) => ({
-      ...item,
-      active_display: item.is_active ? 'Actif' : 'Inactif',
-    })),
-  );
+  readonly rows = this.facade.formattedRows;
 
   readonly columns: ColumnDef[] = [
     { key: 'name', label: 'Nom', sortable: true, bold: true, width: '250px' },

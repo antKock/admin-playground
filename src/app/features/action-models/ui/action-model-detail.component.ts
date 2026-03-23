@@ -5,6 +5,7 @@ import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
@@ -32,6 +33,7 @@ import { ActionModelFacade } from '../action-model.facade';
     IndicatorCardComponent,
     SaveBarComponent,
     BreadcrumbComponent,
+    DetailPageLayoutComponent,
     SectionAnchorsComponent,
     CdkDropList,
     CdkDrag,
@@ -47,8 +49,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;
-
-  readonly skeletonFields = Array(6).fill(0);
 
   readonly errorBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Modèles d\'action', route: '/action-models' },

@@ -40,6 +40,15 @@ export class IndicatorModelFacade {
   readonly updateIsPending = this.featureStore.updateIsPending;
   readonly deleteIsPending = this.featureStore.deleteIsPending;
 
+  // Display-ready rows for list components
+  readonly formattedRows = computed(() =>
+    this.items().map((item) => ({
+      ...item,
+      type_display: item.type,
+      unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
+    })),
+  );
+
   // Per-mutation lifecycle status signals
   readonly publishIsPending = this.domainStore.publishMutationIsPending;
   readonly disableIsPending = this.domainStore.disableMutationIsPending;

@@ -1,26 +1,24 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { UserFacade } from '../user.facade';
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Admin',
-  cdm: 'CDM',
-  collectivite: 'Collectivite',
-};
 
 @Component({
   selector: 'app-user-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './user-list.component.html',
 })
 export class UserListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(UserFacade);
   readonly router = inject(Router);
   readonly hasLoaded = signal(false);
+
+  readonly emptyMessage = computed(() => {
+    if (!this.hasLoaded()) return null;
+    return 'Aucun utilisateur trouvé.';
+  });
 
   constructor() {
     effect(() => {
@@ -30,15 +28,7 @@ export class UserListComponent implements OnInit {
     });
   }
 
-  readonly rows = computed(() =>
-    this.facade.items().map((item) => ({
-      ...item,
-      display_name: [item.first_name, item.last_name].filter(Boolean).join(' ') || '—',
-      role_display: ROLE_LABELS[item.role] ?? item.role,
-      is_active_display: item.is_active ? 'actif' : 'inactif',
-      community_count: item.communities?.length?.toString() ?? '0',
-    })),
-  );
+  readonly rows = this.facade.formattedRows;
 
   readonly columns: ColumnDef[] = [
     { key: 'display_name', label: 'Nom', sortable: true, bold: true, width: '200px' },

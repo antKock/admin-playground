@@ -1,18 +1,19 @@
-import { Component, inject, OnInit, OnDestroy, computed, effect, signal, ElementRef, HostListener, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, effect, signal, ElementRef, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
 
 import { createIndicatorModelForm } from '@domains/indicator-models/forms/indicator-model.form';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-form',
-  imports: [ReactiveFormsModule, FormsModule, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './indicator-model-form.component.html',
 })
 export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsavedChanges {
@@ -43,7 +44,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
     return this.isEditMode ? IndicatorModelFormComponent.EDIT_TITLE : IndicatorModelFormComponent.CREATE_TITLE;
   }
 
-  readonly formBreadcrumbs = computed(() => {
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
     if (this.isEditMode) {
       return [
         { label: IndicatorModelFormComponent.ENTITY_LABEL, route: '/indicator-models' },
@@ -154,24 +155,6 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

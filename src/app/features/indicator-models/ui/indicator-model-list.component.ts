@@ -1,17 +1,16 @@
 import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './indicator-model-list.component.html',
 })
 export class IndicatorModelListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(IndicatorModelFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
@@ -24,13 +23,7 @@ export class IndicatorModelListComponent implements OnInit {
       : 'Aucun modèle d\'indicateur trouvé.';
   });
 
-  readonly rows = computed(() =>
-    this.facade.items().map((item) => ({
-      ...item,
-      type_display: item.type,
-      unit_display: item.type === 'number' ? (item.unit ?? '—') : '',
-    })),
-  );
+  readonly rows = this.facade.formattedRows;
 
   constructor() {
     effect(() => {

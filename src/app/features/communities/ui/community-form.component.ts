@@ -1,16 +1,17 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createCommunityForm } from '@domains/communities/forms/community.form';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './community-form.component.html',
 })
 export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
@@ -25,6 +26,24 @@ export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
   readonly itemName = computed(() => this.facade.selectedItem()?.name);
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createCommunityForm(this.fb);
+
+  get formTitle(): string {
+    return this.isEditMode ? 'Modifier la communauté' : 'Créer une communauté';
+  }
+
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
+    if (this.isEditMode) {
+      return [
+        { label: 'Communautés', route: '/communities' },
+        { label: this.itemName() ?? '...', route: '/communities/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: 'Communautés', route: '/communities' },
+      { label: 'Nouvelle communauté' },
+    ];
+  });
 
   // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
@@ -73,24 +92,6 @@ export class CommunityFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

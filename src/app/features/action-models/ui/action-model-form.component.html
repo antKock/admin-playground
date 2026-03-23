@@ -1,13 +1,11 @@
-<div class="p-6 max-w-2xl">
-  @if (isEditMode) {
-    <app-breadcrumb [items]="editBreadcrumbs()" />
-  } @else {
-    <app-breadcrumb [items]="createBreadcrumbs" />
-  }
-  <h1 class="text-2xl font-bold text-text-primary mb-6">
-    {{ heading() }}
-  </h1>
-
+<app-form-page-layout
+  [breadcrumbs]="formBreadcrumbs()"
+  [title]="formTitle"
+  [isSaving]="submitting()"
+  [isDirty]="form.dirty"
+  (save)="onSubmit()"
+  (cancel)="goBack()"
+>
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
@@ -66,22 +64,5 @@
         }
       </select>
     </app-form-field>
-
-    <div class="flex gap-3 pt-4">
-      <button
-        type="submit"
-        class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
-        [disabled]="submitting()"
-      >
-        {{ submitting() ? 'Enregistrement...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
-      </button>
-      <button
-        type="button"
-        class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
-        (click)="goBack()"
-      >
-        Annuler
-      </button>
-    </div>
   </form>
-</div>
+</app-form-page-layout>

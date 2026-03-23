@@ -5,6 +5,7 @@ import { MetadataGridComponent, MetadataField } from '@app/shared/components/met
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
@@ -13,7 +14,7 @@ import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, RouterLink, ActivityListComponent, BreadcrumbComponent, SectionAnchorsComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, RouterLink, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent, SectionAnchorsComponent],
   templateUrl: './indicator-model-detail.component.html',
 })
 export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
@@ -24,8 +25,6 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
   readonly router = inject(Router);
 
   readonly model = this.facade.selectedItem;
-
-  readonly skeletonFields = Array(7).fill(0);
 
   readonly errorBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Modèles d\'indicateur', route: '/indicator-models' },

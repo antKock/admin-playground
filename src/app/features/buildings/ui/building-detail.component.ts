@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
@@ -13,7 +14,7 @@ import { BuildingFacade } from '../building.facade';
 
 @Component({
   selector: 'app-building-detail',
-  imports: [MetadataGridComponent, BreadcrumbComponent, ActivityListComponent, FormsModule, LucideAngularModule],
+  imports: [MetadataGridComponent, BreadcrumbComponent, DetailPageLayoutComponent, ActivityListComponent, FormsModule, LucideAngularModule],
   templateUrl: './building-detail.component.html',
 })
 export class BuildingDetailComponent implements OnInit, OnDestroy {
@@ -25,7 +26,6 @@ export class BuildingDetailComponent implements OnInit, OnDestroy {
   protected readonly XIcon = X;
 
   readonly building = this.facade.selectedItem;
-  readonly skeletonFields = Array(6).fill(0);
   readonly newRnbId = signal('');
 
   readonly errorBreadcrumbs: BreadcrumbItem[] = [
