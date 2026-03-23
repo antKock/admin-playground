@@ -9,5 +9,5 @@ export function getAgentTypeLabel(type: string): string {
 
 export function getAgentDisplayName(agent: { first_name?: string | null; last_name?: string | null } | null): string {
   if (!agent) return '';
-  return [agent.first_name, agent.last_name].filter(Boolean).join(' ') || '—';
+  return [agent.last_name, agent.first_name].filter(Boolean).join(' ') || '—';
 }

@@ -51,7 +51,7 @@ describe('ListPageLayoutComponent', () => {
   it('should render create button with route', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
-    const link = fixture.nativeElement.querySelector('a.btn-primary');
+    const link = fixture.nativeElement.querySelector('a[href]');
     expect(link).toBeTruthy();
     expect(link.textContent).toContain('Créer un agent');
   });

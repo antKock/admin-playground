@@ -159,7 +159,7 @@ describe('AgentFacade', () => {
 
       const rows = facade.formattedAgentRows();
       expect(rows.length).toBe(1);
-      expect(rows[0].displayName).toBe('John Doe');
+      expect(rows[0].displayName).toBe('Doe John');
       expect(rows[0].community_name).toBe('Test Community');
       expect(rows[0].agent_type).toBe('Conseiller en performance énergétique');
     });

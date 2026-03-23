@@ -1,9 +1,10 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule, Plus } from 'lucide-angular';
 
 @Component({
   selector: 'app-list-page-layout',
-  imports: [RouterLink],
+  imports: [RouterLink, LucideAngularModule],
   templateUrl: './list-page-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -17,4 +18,6 @@ export class ListPageLayoutComponent {
   readonly emptyMessage = input('Aucun élément trouvé');
 
   readonly loadMore = output<void>();
+
+  readonly PlusIcon = Plus;
 }

@@ -12,6 +12,7 @@ export class FormFieldComponent {
   readonly control = input.required<AbstractControl>();
   readonly errorMessage = input('Ce champ est requis');
   readonly fieldId = input('');
+  readonly required = input(false);
 
   get showError(): boolean {
     const ctrl = this.control();

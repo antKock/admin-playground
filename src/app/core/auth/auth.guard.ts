@@ -30,7 +30,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
   const role = authStore.userRole();
   if (role === 'collectivite') {
     authStore.logout();
-    return false;
+    return router.createUrlTree(['/login']);
   }
 
   return true;

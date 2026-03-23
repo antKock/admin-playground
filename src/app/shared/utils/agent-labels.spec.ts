@@ -21,8 +21,8 @@ describe('agent-labels', () => {
   });
 
   describe('getAgentDisplayName', () => {
-    it('should return full name when both parts exist', () => {
-      expect(getAgentDisplayName({ first_name: 'Jean', last_name: 'Dupont' })).toBe('Jean Dupont');
+    it('should return last name first when both parts exist', () => {
+      expect(getAgentDisplayName({ first_name: 'Jean', last_name: 'Dupont' })).toBe('Dupont Jean');
     });
 
     it('should return first name only when last name is null', () => {

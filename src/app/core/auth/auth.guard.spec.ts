@@ -100,7 +100,7 @@ describe('adminGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should reject collectivite users and trigger logout', () => {
+  it('should redirect collectivite users to login', () => {
     localStorage.setItem('laureat_admin_jwt', fakeJwt({ role: 'collectivite', email: 'u@b.com' }));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -111,8 +111,9 @@ describe('adminGuard', () => {
     const mockState = { url: '/' } as Parameters<typeof adminGuard>[1];
 
     const result = TestBed.runInInjectionContext(() => adminGuard(mockRoute, mockState));
-    // Guard returns false and delegates navigation to logout()
-    expect(result).toBe(false);
+    expect(result).not.toBe(true);
+    expect(result).not.toBe(false);
+    expect(result.toString()).toContain('login');
   });
 
   it('should redirect to login when not authenticated', () => {

@@ -180,6 +180,10 @@ describe('CommunityFacade', () => {
     });
   });
 
+  function wrapPaginated(data: any[]) {
+    return { data, pagination: { total_count: data.length, page_size: 200, has_next_page: false, has_previous_page: false, cursors: { start_cursor: null, end_cursor: null }, _links: { self: '', next: null, prev: null, first: '' } } };
+  }
+
   describe('filteredAllUsers', () => {
     const mockUsers = [
       { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'alice@test.com', communities: [] },
@@ -189,8 +193,8 @@ describe('CommunityFacade', () => {
 
     function loadUsers() {
       facade.loadUsers();
-      const req = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
-      req.flush(mockUsers);
+      const req = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      req.flush(wrapPaginated(mockUsers));
     }
 
     it('should return all users when search query is empty', () => {
@@ -241,7 +245,7 @@ describe('CommunityFacade', () => {
 
     it('should return empty when no community selected', () => {
       facade.loadUsers();
-      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(mockUsersWithCommunities);
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(mockUsersWithCommunities));
       expect(facade.communityUsers()).toEqual([]);
     });
 
@@ -253,7 +257,7 @@ describe('CommunityFacade', () => {
       reqs.find(r => r.request.url.includes('/children'))!.flush([]);
 
       facade.loadUsers();
-      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(mockUsersWithCommunities);
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(mockUsersWithCommunities));
 
       expect(facade.communityUsers().length).toBe(1);
       expect(facade.communityUsers()[0].id).toBe('u1');
@@ -271,7 +275,7 @@ describe('CommunityFacade', () => {
       reqs.find(r => r.request.url.includes('/children'))!.flush([]);
 
       facade.loadUsers();
-      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(usersNoCommunities);
+      httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/')).flush(wrapPaginated(usersNoCommunities));
 
       expect(facade.communityUsers().length).toBe(0);
     });
@@ -291,8 +295,8 @@ describe('CommunityFacade', () => {
       expect(successSpy).toHaveBeenCalledWith('Utilisateur assigné à la communauté');
 
       // After success, it reloads users
-      const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
-      usersReq.flush([]);
+      const usersReq = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      usersReq.flush(wrapPaginated([]));
     });
 
     it('should show error toast on assign failure', async () => {
@@ -321,8 +325,8 @@ describe('CommunityFacade', () => {
       expect(successSpy).toHaveBeenCalledWith('Utilisateur retiré de la communauté');
 
       // After success, it reloads users
-      const usersReq = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
-      usersReq.flush([]);
+      const usersReq = httpTesting.expectOne((r) => r.url.includes('/users/') && !r.url.includes('/communities/') && r.method === 'GET');
+      usersReq.flush(wrapPaginated([]));
     });
   });
 });

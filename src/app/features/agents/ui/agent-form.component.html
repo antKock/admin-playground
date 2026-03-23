@@ -27,7 +27,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4">
-      <app-form-field label="E-mail" [control]="form.get('email')!" errorMessage="Veuillez saisir une adresse e-mail valide." fieldId="email">
+      <app-form-field label="E-mail" [control]="form.get('email')!" errorMessage="Veuillez saisir une adresse e-mail valide." fieldId="email" [required]="true">
         <input
           id="email"
           type="email"
@@ -55,7 +55,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4">
-      <app-form-field label="Type d'agent *" [control]="form.get('agent_type')!" errorMessage="Le type d'agent est obligatoire." fieldId="agent_type">
+      <app-form-field label="Type d'agent" [control]="form.get('agent_type')!" errorMessage="Le type d'agent est obligatoire." fieldId="agent_type" [required]="true">
         <select
           id="agent_type"
           formControlName="agent_type"
@@ -66,7 +66,7 @@
           <option value="other">Autre</option>
         </select>
       </app-form-field>
-      <app-form-field label="Communauté *" [control]="form.get('community_id')!" errorMessage="La communauté est obligatoire." fieldId="community_id">
+      <app-form-field label="Communauté" [control]="form.get('community_id')!" errorMessage="La communauté est obligatoire." fieldId="community_id" [required]="true">
         @if (facade.communityLoading()) {
           <div class="w-full px-3 py-2 border border-border rounded-lg bg-surface-muted animate-pulse">
             <span class="text-text-secondary text-sm">Chargement des communautés...</span>

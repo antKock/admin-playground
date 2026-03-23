@@ -1,7 +1,7 @@
 // API layer — standalone functions, no inject() calls.
 // List/detail return Observables (used by rxMethod). Mutations return config objects (consumed by httpMutation).
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -40,9 +40,11 @@ export function deleteCommunityRequest(id: string) {
   return { url: `${BASE_URL}${id}`, method: 'DELETE' };
 }
 
-// User assignment endpoints
+// User assignment endpoints — fetch all users via the standard /users/ endpoint
 export function loadAllUsers(http: HttpClient): Observable<UserRead[]> {
-  return http.get<UserRead[]>(`${environment.apiBaseUrl}/auth/users`);
+  return http.get<PaginatedResponse<UserRead>>(`${environment.apiBaseUrl}/users/`, {
+    params: new HttpParams().set('limit', '200'),
+  }).pipe(map(response => response.data));
 }
 
 export function assignUserRequest(params: { communityId: string; userId: string }) {
