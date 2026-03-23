@@ -1,4 +1,5 @@
-import { Component, OnDestroy, input, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { ApiInspectorService } from './api-inspector.service';
 
 @Component({
   selector: 'app-api-inspector',
@@ -6,8 +7,10 @@ import { Component, OnDestroy, input, signal } from '@angular/core';
   templateUrl: './api-inspector.component.html',
 })
 export class ApiInspectorComponent implements OnDestroy {
-  readonly requestUrl = input<string | null>(null);
-  readonly responseBody = input<unknown>(null);
+  private readonly inspectorService = inject(ApiInspectorService);
+
+  readonly requestUrl = this.inspectorService.lastRequestUrl;
+  readonly responseBody = this.inspectorService.lastResponseBody;
 
   readonly isOpen = signal(false);
   readonly copyLabel = signal('Copier');

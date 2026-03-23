@@ -1,7 +1,7 @@
 // Facade — single entry point for UI components.
 // Exposes readonly signals (via feature store) and intention methods (via domain store).
 // Handles toast feedback, navigation, and error mapping so components stay presentation-only.
-import { Injectable, inject, computed } from '@angular/core';
+import { Injectable, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { CommunityDomainStore } from '@domains/communities/community.store';
@@ -40,6 +40,24 @@ export class CommunityFacade {
   readonly isLoadingChildren = this.featureStore.isLoadingChildren;
   readonly parentsError = this.featureStore.parentsError;
   readonly childrenError = this.featureStore.childrenError;
+
+  // User search — owned by facade so components stay presentation-only
+  private readonly _userSearchQuery = signal('');
+  readonly userSearchQuery = this._userSearchQuery.asReadonly();
+
+  setUserSearchQuery(query: string): void {
+    this._userSearchQuery.set(query);
+  }
+
+  readonly filteredAllUsers = computed<UserRead[]>(() => {
+    const query = this._userSearchQuery().toLowerCase();
+    const users = this.allUsers();
+    if (!query) return users;
+    return users.filter(u =>
+      `${u.first_name} ${u.last_name}`.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query),
+    );
+  });
 
   // Computed: users assigned to the currently selected community
   readonly communityUsers = computed<UserRead[]>(() => {

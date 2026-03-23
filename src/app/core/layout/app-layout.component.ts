@@ -2,8 +2,9 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, User, UserCog, BarChart3, LogOut, HelpCircle, Activity, MapPin, Building2 } from 'lucide-angular';
 
-import { AuthService } from '@app/core/auth/auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 import { OpenApiBannerComponent } from '@app/shared/components/openapi-banner/openapi-banner.component';
+import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
 
 
 interface NavItem {
@@ -14,14 +15,14 @@ interface NavItem {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, OpenApiBannerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, OpenApiBannerComponent, ApiInspectorComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.css',
 })
 export class AppLayoutComponent {
-  private readonly authService = inject(AuthService);
+  private readonly authStore = inject(AuthStore);
 
-  readonly userEmail = this.authService.userEmail;
+  readonly userEmail = this.authStore.userEmail;
   readonly LogOut = LogOut;
   readonly HelpCircle = HelpCircle;
 
@@ -43,6 +44,6 @@ export class AppLayoutComponent {
   ];
 
   onLogout(): void {
-    this.authService.logout();
+    this.authStore.logout();
   }
 }

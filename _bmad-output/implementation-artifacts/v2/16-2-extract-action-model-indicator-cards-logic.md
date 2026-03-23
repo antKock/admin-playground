@@ -1,6 +1,6 @@
 # Story 16.2: Extract Action-Model Indicator Cards Logic
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -16,28 +16,28 @@ so that action-model detail contains only display logic.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Analyze `serverCards` computed dependencies and data flow (AC: #1)
-  - [ ] 1.1 Map all inputs consumed by `serverCards` in `action-model-detail.component.ts` (~lines 236-275): selected action model, attached indicators, indicator metadata, rule fields
-  - [ ] 1.2 Identify the output type: `IndicatorCardData[]`
-  - [ ] 1.3 Document the transformation logic: attached indicators with parameter edits, child indicator card data, rule state hints (hidden_rule, required_rule, disabled_rule), parameter overrides, paramHints from rule fields
+- [x] Task 1: Analyze `serverCards` computed dependencies and data flow (AC: #1)
+  - [x] 1.1 Map all inputs consumed by `serverCards` in `action-model-detail.component.ts` (~lines 236-275): selected action model, attached indicators, indicator metadata, rule fields
+  - [x] 1.2 Identify the output type: `IndicatorCardData[]`
+  - [x] 1.3 Document the transformation logic: attached indicators with parameter edits, child indicator card data, rule state hints (hidden_rule, required_rule, disabled_rule), parameter overrides, paramHints from rule fields
 
-- [ ] Task 2: Create use-case or add to facade (AC: #1)
-  - [ ] 2.1 Decide on location: dedicated `src/app/features/action-models/use-cases/build-indicator-cards.ts` (preferred for complex logic) OR directly in `ActionModelFacade`
-  - [ ] 2.2 Create a pure function `buildIndicatorCards(...)` that accepts the required inputs and returns `IndicatorCardData[]`
-  - [ ] 2.3 Create `src/app/features/action-models/use-cases/build-indicator-cards.spec.ts` with unit tests covering: basic card mapping, child indicator nesting, rule state hints, parameter overrides, empty/null cases
-  - [ ] 2.4 Wire into `ActionModelFacade` as a computed signal: `readonly indicatorCards = computed(() => buildIndicatorCards(...))`
+- [x] Task 2: Create use-case or add to facade (AC: #1)
+  - [x] 2.1 Decide on location: dedicated `src/app/features/action-models/use-cases/build-indicator-cards.ts` (preferred for complex logic) OR directly in `ActionModelFacade`
+  - [x] 2.2 Create a pure function `buildIndicatorCards(...)` that accepts the required inputs and returns `IndicatorCardData[]`
+  - [x] 2.3 Create `src/app/features/action-models/use-cases/build-indicator-cards.spec.ts` with unit tests covering: basic card mapping, child indicator nesting, rule state hints, parameter overrides, empty/null cases
+  - [x] 2.4 Wire into `ActionModelFacade` as a computed signal: `readonly indicatorCards = computed(() => buildIndicatorCards(...))`
 
-- [ ] Task 3: Update component to consume facade signal (AC: #2)
-  - [ ] 3.1 Remove the `serverCards` computed from `action-model-detail.component.ts`
-  - [ ] 3.2 Replace with `readonly indicatorCards = this.facade.indicatorCards`
-  - [ ] 3.3 Update template references from `serverCards()` to `indicatorCards()`
+- [x] Task 3: Update component to consume facade signal (AC: #2)
+  - [x] 3.1 Remove the `serverCards` computed from `action-model-detail.component.ts`
+  - [x] 3.2 Replace with `readonly indicatorCards = computed(() => this._localCardOrder() ?? this.facade.indicatorCards())`
+  - [x] 3.3 Update effect to track `this.facade.indicatorCards()` instead of `this.serverCards()`
 
-- [ ] Task 4: Adapt existing tests (AC: #3)
-  - [ ] 4.1 Update `action-model-detail.component.spec.ts` to mock facade's `indicatorCards` signal
-  - [ ] 4.2 Remove any test logic that was testing the local `serverCards` computation
-  - [ ] 4.3 Ensure use-case spec covers all previously tested scenarios
+- [x] Task 4: Adapt existing tests (AC: #3)
+  - [x] 4.1 Update `action-model-detail.component.spec.ts` to mock facade's `indicatorCards` signal
+  - [x] 4.2 Remove any test logic that was testing the local `serverCards` computation
+  - [x] 4.3 Ensure use-case spec covers all previously tested scenarios
 
-- [ ] Task 5: Run `npx ng test --no-watch` and verify zero regressions (AC: #3)
+- [x] Task 5: Run `npx ng test --no-watch` and verify zero regressions (AC: #3)
 
 ## Dev Notes
 
@@ -69,10 +69,22 @@ so that action-model detail contains only display logic.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6 (1M context)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Created pure function `buildIndicatorCards()` in dedicated use-case file with `ruleState()` and `buildParamHints()` helpers
+- Created comprehensive unit tests (8 tests) covering: basic mapping, default hints, boolean rules, JSON rules, param edits, children, empty input, empty children
+- Wired into `ActionModelFacade` as `indicatorCards` computed signal
+- Removed `serverCards` computed and `ruleState` private method from detail component
+- Updated effect to track facade signal instead of local computed
+- All 84 test files (988 tests) pass with zero regressions
+
 ### File List
+
+- `src/app/features/action-models/use-cases/build-indicator-cards.ts` (new)
+- `src/app/features/action-models/use-cases/build-indicator-cards.spec.ts` (new)
+- `src/app/features/action-models/action-model.facade.ts` (modified)
+- `src/app/features/action-models/ui/action-model-detail.component.ts` (modified)

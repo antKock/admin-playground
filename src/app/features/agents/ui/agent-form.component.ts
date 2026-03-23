@@ -1,18 +1,21 @@
-import { Component, inject, OnInit, computed, effect, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, effect, ElementRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
+import { FormPageLayoutComponent } from '@app/shared/components/layouts/form-page-layout.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 
 import { createAgentForm } from '@domains/agents/forms/agent.form';
+import { getAgentDisplayName } from '@shared/utils/agent-labels';
 import { AgentFacade } from '../agent.facade';
 
 @Component({
   selector: 'app-agent-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, FormPageLayoutComponent],
   templateUrl: './agent-form.component.html',
 })
-export class AgentFormComponent implements OnInit, HasUnsavedChanges {
+export class AgentFormComponent implements OnInit, OnDestroy, HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -26,13 +29,23 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
     return this.isEditMode ? 'Modifier l\'agent' : 'Créer un agent';
   }
 
-  readonly agentDisplayName = computed(() => {
-    const a = this.facade.selectedItem();
-    if (!a) return '';
-    return [a.first_name, a.last_name].filter(Boolean).join(' ') || '—';
-  });
+  readonly agentDisplayName = computed(() => getAgentDisplayName(this.facade.selectedItem()));
   readonly submitting = computed(() => this.facade.createIsPending() || this.facade.updateIsPending());
   readonly form = createAgentForm(this.fb);
+
+  readonly formBreadcrumbs = computed<BreadcrumbItem[]>(() => {
+    if (this.isEditMode) {
+      return [
+        { label: 'Agents', route: '/agents' },
+        { label: this.agentDisplayName() || '...', route: '/agents/' + this.editId },
+        { label: 'Modifier' },
+      ];
+    }
+    return [
+      { label: 'Agents', route: '/agents' },
+      { label: 'Nouvel agent' },
+    ];
+  });
 
   // effect() watches selectedItem signal — patches form when item loads in edit mode (formPatched guards against re-runs).
   private formPatched = false;
@@ -57,6 +70,10 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
     });
   }
 
+  ngOnDestroy(): void {
+    this.facade.clearSelection();
+  }
+
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
@@ -69,10 +86,6 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
     }
   }
 
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
-  }
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -94,24 +107,6 @@ export class AgentFormComponent implements OnInit, HasUnsavedChanges {
 
   hasUnsavedChanges(): boolean {
     return this.form.dirty && !this.submitting();
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.form.dirty && !this.form.invalid && !this.submitting()) {
-        this.onSubmit();
-      }
-    }
-    if (event.key === 'Escape' && !this.isFormControlActive()) {
-      this.goBack();
-    }
-  }
-
-  private isFormControlActive(): boolean {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || tag === 'select';
   }
 
   goBack(): void {

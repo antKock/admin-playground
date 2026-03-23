@@ -4,7 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
 import { AppLayoutComponent } from './app-layout.component';
-import { AuthService } from '@app/core/auth/auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 
 describe('AppLayoutComponent', () => {
   beforeEach(async () => {
@@ -24,7 +24,7 @@ describe('AppLayoutComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render 8 navigation items', async () => {
+  it('should render 11 navigation items', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -88,10 +88,10 @@ describe('AppLayoutComponent', () => {
     expect(main?.tagName.toLowerCase()).toBe('main');
   });
 
-  it('should call AuthService.logout on logout click', async () => {
+  it('should call AuthStore.logout on logout click', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
-    const authService = TestBed.inject(AuthService);
-    const spy = vi.spyOn(authService, 'logout');
+    const authStore = TestBed.inject(AuthStore);
+    const spy = vi.spyOn(authStore, 'logout');
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const buttons = compiled.querySelectorAll('.header button');

@@ -180,6 +180,103 @@ describe('CommunityFacade', () => {
     });
   });
 
+  describe('filteredAllUsers', () => {
+    const mockUsers = [
+      { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'alice@test.com', communities: [] },
+      { id: 'u2', first_name: 'Bob', last_name: 'Martin', email: 'bob@example.com', communities: [] },
+      { id: 'u3', first_name: 'Charlie', last_name: 'Durand', email: 'charlie@test.com', communities: [] },
+    ] as any[];
+
+    function loadUsers() {
+      facade.loadUsers();
+      const req = httpTesting.expectOne((r) => r.url.includes('auth/users') && r.method === 'GET');
+      req.flush(mockUsers);
+    }
+
+    it('should return all users when search query is empty', () => {
+      loadUsers();
+      facade.setUserSearchQuery('');
+      expect(facade.filteredAllUsers().length).toBe(3);
+    });
+
+    it('should filter users by first name', () => {
+      loadUsers();
+      facade.setUserSearchQuery('alice');
+      expect(facade.filteredAllUsers().length).toBe(1);
+      expect(facade.filteredAllUsers()[0].id).toBe('u1');
+    });
+
+    it('should filter users by last name', () => {
+      loadUsers();
+      facade.setUserSearchQuery('martin');
+      expect(facade.filteredAllUsers().length).toBe(1);
+      expect(facade.filteredAllUsers()[0].id).toBe('u2');
+    });
+
+    it('should filter users by email', () => {
+      loadUsers();
+      facade.setUserSearchQuery('@test.com');
+      expect(facade.filteredAllUsers().length).toBe(2);
+    });
+
+    it('should be case-insensitive', () => {
+      loadUsers();
+      facade.setUserSearchQuery('ALICE');
+      expect(facade.filteredAllUsers().length).toBe(1);
+    });
+
+    it('should reset search query', () => {
+      facade.setUserSearchQuery('hello');
+      facade.setUserSearchQuery('');
+      expect(facade.userSearchQuery()).toBe('');
+    });
+  });
+
+  describe('communityUsers', () => {
+    const mockUsersWithCommunities = [
+      { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'alice@test.com', communities: [{ id: 'comm-1', name: 'Test Community' }] },
+      { id: 'u2', first_name: 'Bob', last_name: 'Martin', email: 'bob@example.com', communities: [{ id: 'comm-2', name: 'Other Community' }] },
+      { id: 'u3', first_name: 'Charlie', last_name: 'Durand', email: 'charlie@test.com', communities: [] },
+    ] as any[];
+
+    it('should return empty when no community selected', () => {
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(mockUsersWithCommunities);
+      expect(facade.communityUsers()).toEqual([]);
+    });
+
+    it('should return users assigned to selected community', () => {
+      facade.select('comm-1');
+      const reqs = httpTesting.match((r) => r.url.includes('communities'));
+      reqs.find(r => r.request.url.endsWith('/comm-1'))!.flush(mockCommunity);
+      reqs.find(r => r.request.url.includes('/parents'))!.flush([]);
+      reqs.find(r => r.request.url.includes('/children'))!.flush([]);
+
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(mockUsersWithCommunities);
+
+      expect(facade.communityUsers().length).toBe(1);
+      expect(facade.communityUsers()[0].id).toBe('u1');
+    });
+
+    it('should handle users without communities array', () => {
+      const usersNoCommunities = [
+        { id: 'u1', first_name: 'Alice', last_name: 'Dupont', email: 'a@t.com' },
+      ] as any[];
+
+      facade.select('comm-1');
+      const reqs = httpTesting.match((r) => r.url.includes('communities'));
+      reqs.find(r => r.request.url.endsWith('/comm-1'))!.flush(mockCommunity);
+      reqs.find(r => r.request.url.includes('/parents'))!.flush([]);
+      reqs.find(r => r.request.url.includes('/children'))!.flush([]);
+
+      facade.loadUsers();
+      httpTesting.expectOne((r) => r.url.includes('auth/users')).flush(usersNoCommunities);
+
+      expect(facade.communityUsers().length).toBe(0);
+    });
+  });
+
   describe('assignUser', () => {
     it('should trigger mutation, show toast, and reload users on success', async () => {
       const assignPromise = facade.assignUser('comm-1', 'user-1');

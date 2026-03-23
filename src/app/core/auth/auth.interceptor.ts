@@ -6,7 +6,7 @@ import { inject } from '@angular/core';
 import { BehaviorSubject, catchError, filter, switchMap, take, throwError, from, EMPTY } from 'rxjs';
 
 import { environment } from '@app/../environments/environment';
-import { AuthService } from './auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 import { ToastService } from '@shared/components/toast/toast.service';
 
 // Only inject the token for requests targeting our own API (not external URLs like CDN assets).
@@ -35,9 +35,9 @@ export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ) => {
-  const authService = inject(AuthService);
+  const authStore = inject(AuthStore);
   const toastService = inject(ToastService);
-  const token = authService.getToken();
+  const token = authStore.token();
 
   const authReq = token && isSameOrigin(req.url)
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
@@ -46,7 +46,7 @@ export const authInterceptor: HttpInterceptorFn = (
   return next(authReq).pipe(
     catchError((error) => {
       if (error.status === 401 && !isAuthEndpoint(req.url)) {
-        return handleUnauthorized(req, next, authService);
+        return handleUnauthorized(req, next, authStore);
       }
       if (error.status === 500) {
         toastService.error('Server error');
@@ -61,14 +61,14 @@ export const authInterceptor: HttpInterceptorFn = (
 function handleUnauthorized(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
-  authService: AuthService,
+  authStore: InstanceType<typeof AuthStore>,
 ) {
   if (!isRefreshing) {
     isRefreshing = true;
     refreshFailed = false;
     refreshSubject.next(null);
 
-    return from(authService.refresh()).pipe(
+    return from(authStore.refresh()).pipe(
       switchMap((newToken) => {
         isRefreshing = false;
         refreshSubject.next(newToken);
@@ -78,7 +78,7 @@ function handleUnauthorized(
         isRefreshing = false;
         refreshFailed = true;
         refreshSubject.next(null); // Unblock queued requests so they can check refreshFailed
-        authService.logout(location.pathname);
+        authStore.logout(location.pathname);
         return EMPTY;
       }),
     );

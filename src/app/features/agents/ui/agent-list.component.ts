@@ -1,18 +1,17 @@
 import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { DataTableComponent, ColumnDef } from '@app/shared/components/data-table/data-table.component';
+import { ListPageLayoutComponent } from '@app/shared/components/layouts/list-page-layout.component';
 import { navigateToLink } from '@app/shared/utils/navigate-to-link';
 import { AgentFacade } from '../agent.facade';
 
 @Component({
   selector: 'app-agent-list',
-  imports: [DataTableComponent, LucideAngularModule],
+  imports: [DataTableComponent, ListPageLayoutComponent],
   templateUrl: './agent-list.component.html',
 })
 export class AgentListComponent implements OnInit {
-  protected readonly PlusIcon = Plus;
   readonly facade = inject(AgentFacade);
   readonly router = inject(Router);
   readonly activeFilters = signal<Record<string, string[]>>({});
@@ -64,19 +63,7 @@ export class AgentListComponent implements OnInit {
     { key: 'last_updated_at', label: 'Mis à jour le', sortable: true, type: 'date', width: '175px' },
   ]);
 
-  private readonly agentTypeLabels: Record<string, string> = {
-    energy_performance_advisor: 'Conseiller en performance énergétique',
-    other: 'Autre',
-  };
-
-  readonly rows = computed(() =>
-    this.facade.items().map(agent => ({
-      ...agent,
-      displayName: [agent.first_name, agent.last_name].filter(Boolean).join(' ') || '—',
-      community_name: agent.community?.name ?? '—',
-      agent_type: this.agentTypeLabels[agent.agent_type] ?? agent.agent_type,
-    })),
-  );
+  readonly rows = this.facade.formattedAgentRows;
 
   ngOnInit(): void {
     this.facade.loadAssociationData();

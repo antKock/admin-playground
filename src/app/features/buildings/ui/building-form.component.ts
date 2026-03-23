@@ -4,12 +4,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 import { createBuildingForm } from '@domains/building/forms/building.form';
 import { BuildingFacade } from '../building.facade';
 
 @Component({
   selector: 'app-building-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './building-form.component.html',
 })
 export class BuildingFormComponent implements OnInit, HasUnsavedChanges {
@@ -77,11 +78,6 @@ export class BuildingFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {

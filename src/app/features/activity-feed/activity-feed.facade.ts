@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
-import { AuthService } from '@core/auth/auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 import { GlobalHistoryStore } from '@domains/history/history.store';
 import { ActivityFilters, ActivityScope, ActivityWithChildren } from '@domains/history/history.models';
 import { filterByScope, rollupIndicators } from '@domains/history/history.utils';
@@ -8,7 +8,7 @@ import { filterByScope, rollupIndicators } from '@domains/history/history.utils'
 @Injectable({ providedIn: 'root' })
 export class ActivityFeedFacade {
   private readonly store = inject(GlobalHistoryStore);
-  private readonly authService = inject(AuthService);
+  private readonly authStore = inject(AuthStore);
 
   readonly activities = this.store.activities;
   readonly isLoading = this.store.isLoading;
@@ -19,7 +19,7 @@ export class ActivityFeedFacade {
   readonly hideOwnActions = signal(false);
   readonly lastVisitTimestamp = signal<string | null>(null);
 
-  readonly currentUserId = computed(() => this.authService.userId());
+  readonly currentUserId = computed(() => this.authStore.userId());
 
   readonly filteredActivities = computed<ActivityWithChildren[]>(() => {
     let result = filterByScope(this.activities(), this.scope());

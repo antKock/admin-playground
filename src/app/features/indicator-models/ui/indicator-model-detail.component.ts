@@ -4,25 +4,22 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
-import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
-import { ApiInspectorService } from '@shared/api-inspector/api-inspector.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, RouterLink, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, SectionAnchorsComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, RouterLink, ActivityListComponent, BreadcrumbComponent, SectionAnchorsComponent],
   templateUrl: './indicator-model-detail.component.html',
 })
 export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(IndicatorModelFacade);
-  readonly inspectorService = inject(ApiInspectorService);
   private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
@@ -47,7 +44,6 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
     { label: 'Métadonnées', targetId: 'section-metadata' },
     { label: 'Utilisation', targetId: 'section-usage', count: this.facade.usageCount() },
     { label: 'Activité', targetId: 'section-activity' },
-    { label: 'Inspecteur API', targetId: 'section-api-inspector' },
   ]);
 
   readonly fields = computed<MetadataField[]>(() => {

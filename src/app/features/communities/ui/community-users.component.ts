@@ -1,13 +1,14 @@
-import { Component, inject, computed, signal, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
+import { TooltipDirective } from '@shared/directives/tooltip.directive';
 import { UserRead } from '@domains/communities/community.models';
 import { CommunityFacade } from '../community.facade';
 
 @Component({
   selector: 'app-community-users',
-  imports: [FormsModule],
+  imports: [FormsModule, TooltipDirective],
   templateUrl: './community-users.component.html',
 })
 export class CommunityUsersComponent {
@@ -27,27 +28,21 @@ export class CommunityUsersComponent {
 
   readonly assignedUsers = this.facade.communityUsers;
 
-  readonly filteredUsers = computed(() => {
-    const query = this.searchQuery().toLowerCase();
-    const users = this.facade.allUsers();
-    if (!query) return users;
-    return users.filter(u =>
-      `${u.first_name} ${u.last_name}`.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query),
-    );
-  });
+  readonly filteredUsers = this.facade.filteredAllUsers;
 
   togglePicker(): void {
     const next = !this.showPicker();
     this.showPicker.set(next);
     if (next) {
       this.searchQuery.set('');
+      this.facade.setUserSearchQuery('');
       this.facade.loadUsers();
     }
   }
 
   onSearch(query: string): void {
     this.searchQuery.set(query);
+    this.facade.setUserSearchQuery(query);
   }
 
   isAssigned(user: UserRead): boolean {

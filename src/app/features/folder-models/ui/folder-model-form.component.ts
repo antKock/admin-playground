@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createFolderModelForm } from '@domains/folder-models/forms/folder-model.form';
 import { MultiSelectorComponent } from '@app/shared/components/multi-selector/multi-selector.component';
@@ -10,7 +11,7 @@ import { FolderModelFacade } from '../folder-model.facade';
 
 @Component({
   selector: 'app-folder-model-form',
-  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, MultiSelectorComponent, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './folder-model-form.component.html',
 })
 export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
@@ -54,11 +55,6 @@ export class FolderModelFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onFpSelectionChange(ids: string[]): void {

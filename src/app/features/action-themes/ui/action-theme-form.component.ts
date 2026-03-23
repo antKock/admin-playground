@@ -4,12 +4,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 import { createActionThemeForm } from '@domains/action-themes/forms/action-theme.form';
 import { ActionThemeFacade } from '../action-theme.facade';
 
 @Component({
   selector: 'app-action-theme-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './action-theme-form.component.html',
 })
 export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
@@ -69,11 +70,6 @@ export class ActionThemeFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {

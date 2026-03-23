@@ -48,15 +48,15 @@ development_status:
   epic-15-retrospective: optional
 
   # Epic 16: ACTEE Compliance & Reusable Patterns
-  epic-16: backlog
-  16-1-extract-simple-business-logic-to-facades: ready-for-dev
-  16-2-extract-action-model-indicator-cards-logic: ready-for-dev
-  16-3-extract-indicator-model-form-logic: ready-for-dev
-  16-4-migrate-authservice-to-authstore: ready-for-dev
-  16-5-create-formfieldcomponent-migrate-forms: ready-for-dev
-  16-6-create-tooltipdirective: ready-for-dev
-  16-7-create-apiinspectorcontainercomponent: ready-for-dev
-  16-8-create-shared-layout-components: ready-for-dev
+  epic-16: in-progress
+  16-1-extract-simple-business-logic-to-facades: done
+  16-2-extract-action-model-indicator-cards-logic: done
+  16-3-extract-indicator-model-form-logic: done
+  16-4-migrate-authservice-to-authstore: done
+  16-5-create-formfieldcomponent-migrate-forms: done
+  16-6-create-tooltipdirective: done
+  16-7-create-apiinspectorcontainercomponent: done
+  16-8-create-shared-layout-components: done
   epic-16-retrospective: optional
 
   # Epic 17: Developer Documentation & Handover

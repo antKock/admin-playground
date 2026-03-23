@@ -5,18 +5,13 @@
   </h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-    <div>
-      <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
         id="name"
         formControlName="name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('name')"
       />
-      @if (showError('name')) {
-        <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div>
       <label for="usage" class="block text-sm font-medium text-text-primary mb-1">Usage</label>
@@ -37,13 +32,11 @@
       />
     </div>
 
-    <div>
-      <label for="site_id" class="block text-sm font-medium text-text-primary mb-1">Site *</label>
+    <app-form-field label="Site *" [control]="form.get('site_id')!" errorMessage="Le site est obligatoire." fieldId="site_id">
       <select
         id="site_id"
         formControlName="site_id"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('site_id')"
       >
         @if (facade.siteLoading()) {
           <option value="" disabled>Chargement...</option>
@@ -56,10 +49,7 @@
           }
         }
       </select>
-      @if (showError('site_id')) {
-        <p class="mt-1 text-sm text-error">Le site est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div class="flex gap-3 pt-4">
       <button

@@ -16,31 +16,21 @@
   </h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-    <div>
-      <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
         id="name"
         formControlName="name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('name')"
       />
-      @if (showError('name')) {
-        <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="siret" class="block text-sm font-medium text-text-primary mb-1">SIRET *</label>
+    <app-form-field label="SIRET *" [control]="form.get('siret')!" errorMessage="Le SIRET doit contenir exactement 14 chiffres." fieldId="siret">
       <input
         id="siret"
         formControlName="siret"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('siret')"
       />
-      @if (showError('siret')) {
-        <p class="mt-1 text-sm text-error">Le SIRET doit contenir exactement 14 chiffres.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div>
       <label for="public_comment" class="block text-sm font-medium text-text-primary mb-1">Commentaire public</label>

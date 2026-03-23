@@ -4,11 +4,9 @@ import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
-import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
-import { ApiInspectorService } from '@shared/api-inspector/api-inspector.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import {
@@ -19,10 +17,8 @@ import {
   IndicatorCardComponent,
   IndicatorCardData,
   IndicatorParams,
-  ChildCardData,
   ChildParamsChangeEvent,
 } from '@app/shared/components/indicator-card/indicator-card.component';
-import { ParamState } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { ActionModelFacade } from '../action-model.facade';
@@ -35,7 +31,6 @@ import { ActionModelFacade } from '../action-model.facade';
     IndicatorPickerComponent,
     IndicatorCardComponent,
     SaveBarComponent,
-    ApiInspectorComponent,
     BreadcrumbComponent,
     SectionAnchorsComponent,
     CdkDropList,
@@ -48,7 +43,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionModelFacade);
-  readonly inspectorService = inject(ApiInspectorService);
   private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
@@ -73,7 +67,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     { label: 'Métadonnées', targetId: 'section-metadata' },
     { label: 'Indicateurs', targetId: 'section-indicators', count: this.indicatorCards().length },
     { label: 'Activité', targetId: 'section-activity' },
-    { label: 'Inspecteur API', targetId: 'section-api-inspector' },
   ]);
 
   readonly fields = computed<MetadataField[]>(() => {
@@ -90,51 +83,10 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     ];
   });
 
-  private readonly serverCards = computed<IndicatorCardData[]>(() => {
-    const attached = this.facade.attachedIndicators();
-    const available = this.facade.availableIndicators();
-    const availableMap = new Map(available.map((a) => [a.id, a]));
-    const edits = this.facade.paramEdits();
-    return attached.map((im) => {
-      const edited = edits.get(im.id);
-      const p = edited ?? im;
-      const full = availableMap.get(im.id);
-      const children: ChildCardData[] | undefined = im.children?.map((child) => ({
-        id: child.id,
-        name: child.name,
-        technical_label: child.technical_label,
-        type: child.type,
-        paramHints: {
-          visibility: this.ruleState(child.hidden_rule, 'false'),
-          required: this.ruleState(child.required_rule, 'false'),
-          editable: this.ruleState(child.disabled_rule, 'false'),
-          defaultValue: this.ruleState(child.default_value_rule, 'false'),
-          duplicable: this.ruleState(child.duplicable_rule, 'false'),
-          constrained: this.ruleState(child.constrained_rule, 'false'),
-        },
-      }));
-      return {
-        id: im.id,
-        name: im.name,
-        technical_label: full?.technical_label,
-        type: im.type,
-        paramHints: {
-          visibility: this.ruleState(p.hidden_rule, 'false'),
-          required: this.ruleState(p.required_rule, 'false'),
-          editable: this.ruleState(p.disabled_rule, 'false'),
-          defaultValue: this.ruleState(p.default_value_rule, 'false'),
-          duplicable: this.ruleState(p.duplicable_rule, 'false'),
-          constrained: this.ruleState(p.constrained_rule, 'false'),
-        },
-        children: children?.length ? children : undefined,
-      };
-    });
-  });
-
   // Local override for optimistic drag-to-reorder — cleared when server data refreshes
   private readonly _localCardOrder = signal<IndicatorCardData[] | null>(null);
 
-  readonly indicatorCards = computed(() => this._localCardOrder() ?? this.serverCards());
+  readonly indicatorCards = computed(() => this._localCardOrder() ?? this.facade.indicatorCards());
 
   readonly attachedIds = computed(() => this.facade.attachedIndicators().map((im) => im.id));
 
@@ -150,7 +102,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   constructor() {
     // Clear local order override when server data changes
     effect(() => {
-      this.serverCards();
+      this.facade.indicatorCards();
       this._localCardOrder.set(null);
     });
   }
@@ -284,11 +236,5 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
   formatDate(value: string | null | undefined): string {
     return formatDateFr(value);
-  }
-
-  private ruleState(value: string | null, defaultVal: string): ParamState {
-    if (value == null || value === defaultVal) return 'off';
-    if (value === 'true' || value === 'false') return 'on';
-    return 'rule';
   }
 }

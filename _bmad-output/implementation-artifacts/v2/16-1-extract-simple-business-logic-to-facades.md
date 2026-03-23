@@ -1,6 +1,6 @@
 # Story 16.1: Extract Simple Business Logic to Facades
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -17,34 +17,34 @@ so that UI components contain only display logic and facade calls.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extract `filteredUsers` computed from community-users to CommunityFacade (AC: #1)
-  - [ ] 1.1 Analyze `filteredUsers` dependencies in `community-users.component.ts` (~line 108-116) — it filters `communityUsers` by name/email matching a search query signal
-  - [ ] 1.2 Add `getFilteredCommunityUsers(query: Signal<string>)` or a `filteredCommunityUsers` computed to `CommunityFacade`
-  - [ ] 1.3 Update `community-users.component.ts` to consume the facade signal instead of computing locally
-  - [ ] 1.4 Remove the local `filteredUsers` computed from the component
+- [x] Task 1: Extract `filteredUsers` computed from community-users to CommunityFacade (AC: #1)
+  - [x] 1.1 Analyze `filteredUsers` dependencies in `community-users.component.ts` (~line 108-116) — it filters `communityUsers` by name/email matching a search query signal
+  - [x] 1.2 Add `getFilteredCommunityUsers(query: Signal<string>)` or a `filteredCommunityUsers` computed to `CommunityFacade`
+  - [x] 1.3 Update `community-users.component.ts` to consume the facade signal instead of computing locally
+  - [x] 1.4 Remove the local `filteredUsers` computed from the component
 
-- [ ] Task 2: Create `shared/utils/agent-labels.ts` with agentTypeLabels map (AC: #2)
-  - [ ] 2.1 Create `src/app/shared/utils/agent-labels.ts` exporting `agentTypeLabels: Record<string, string>` map (`energy_performance_advisor` -> `'Conseiller en performance energetique'`, `other` -> `'Autre'`)
-  - [ ] 2.2 Export a helper function `getAgentTypeLabel(type: string): string` that falls back to the raw type if not in the map
-  - [ ] 2.3 Create `src/app/shared/utils/agent-labels.spec.ts` with unit tests
+- [x] Task 2: Create `shared/utils/agent-labels.ts` with agentTypeLabels map (AC: #2)
+  - [x] 2.1 Create `src/app/shared/utils/agent-labels.ts` exporting `agentTypeLabels: Record<string, string>` map (`energy_performance_advisor` -> `'Conseiller en performance energetique'`, `other` -> `'Autre'`)
+  - [x] 2.2 Export a helper function `getAgentTypeLabel(type: string): string` that falls back to the raw type if not in the map
+  - [x] 2.3 Create `src/app/shared/utils/agent-labels.spec.ts` with unit tests
 
-- [ ] Task 3: Update both agent-detail and agent-list to import from shared utility (AC: #2)
-  - [ ] 3.1 Update `agent-detail.component.ts` (~line 146-153) to import `getAgentTypeLabel` from `@shared/utils/agent-labels`
-  - [ ] 3.2 Update `agent-list.component.ts` (~line 93-96) to import `getAgentTypeLabel` from `@shared/utils/agent-labels`
-  - [ ] 3.3 Remove inline `agentTypeLabels` definitions from both components
+- [x] Task 3: Update both agent-detail and agent-list to import from shared utility (AC: #2)
+  - [x] 3.1 Update `agent-detail.component.ts` (~line 146-153) to import `getAgentTypeLabel` from `@shared/utils/agent-labels`
+  - [x] 3.2 Update `agent-list.component.ts` (~line 93-96) to import `getAgentTypeLabel` from `@shared/utils/agent-labels`
+  - [x] 3.3 Remove inline `agentTypeLabels` definitions from both components
 
-- [ ] Task 4: Extract row transformation from agent-list to AgentFacade (AC: #3)
-  - [ ] 4.1 Analyze row transformation logic in `agent-list.component.ts` that maps agents to display rows with label mappings
-  - [ ] 4.2 Add `formattedAgentRows` computed or method to `AgentFacade` using `getAgentTypeLabel`
-  - [ ] 4.3 Update `agent-list.component.ts` to consume facade rows instead of transforming locally
+- [x] Task 4: Extract row transformation from agent-list to AgentFacade (AC: #3)
+  - [x] 4.1 Analyze row transformation logic in `agent-list.component.ts` that maps agents to display rows with label mappings
+  - [x] 4.2 Add `formattedAgentRows` computed or method to `AgentFacade` using `getAgentTypeLabel`
+  - [x] 4.3 Update `agent-list.component.ts` to consume facade rows instead of transforming locally
 
-- [ ] Task 5: Adapt all existing tests to new locations (AC: #4)
-  - [ ] 5.1 Update `community-users.component.spec.ts` — mock facade's filtered users signal
-  - [ ] 5.2 Update `agent-detail.component.spec.ts` — remove inline label test, verify shared util import
-  - [ ] 5.3 Update `agent-list.component.spec.ts` — mock facade's formatted rows
-  - [ ] 5.4 Add facade-level tests for the extracted logic in respective facade spec files
+- [x] Task 5: Adapt all existing tests to new locations (AC: #4)
+  - [x] 5.1 Update `community-users.component.spec.ts` — mock facade's filtered users signal
+  - [x] 5.2 Update `agent-detail.component.spec.ts` — remove inline label test, verify shared util import
+  - [x] 5.3 Update `agent-list.component.spec.ts` — mock facade's formatted rows
+  - [x] 5.4 Add facade-level tests for the extracted logic in respective facade spec files
 
-- [ ] Task 6: Run `npx ng test --no-watch` and verify zero regressions (AC: #4)
+- [x] Task 6: Run `npx ng test --no-watch` and verify zero regressions (AC: #4)
 
 ## Dev Notes
 
@@ -73,10 +73,28 @@ so that UI components contain only display logic and facade calls.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6 (1M context)
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Extracted `filteredUsers` filtering logic from `community-users.component.ts` to `CommunityFacade` using `_userSearchQuery` signal + `filteredAllUsers` computed + `setUserSearchQuery()` method
+- Created `shared/utils/agent-labels.ts` with `agentTypeLabels` map and `getAgentTypeLabel()` helper function
+- Created unit tests in `agent-labels.spec.ts` for the shared utility
+- Removed inline `agentTypeLabels` from both `agent-detail.component.ts` and `agent-list.component.ts`
+- Extracted row transformation logic from `agent-list.component.ts` to `AgentFacade.formattedAgentRows` computed
+- Added facade-level tests for `formattedAgentRows` in `agent.facade.spec.ts` and `filteredAllUsers` in `community.facade.spec.ts`
+- All 83 test files (980 tests) pass with zero regressions
+
 ### File List
+
+- `src/app/shared/utils/agent-labels.ts` (new)
+- `src/app/shared/utils/agent-labels.spec.ts` (new)
+- `src/app/features/communities/community.facade.ts` (modified)
+- `src/app/features/communities/community.facade.spec.ts` (modified)
+- `src/app/features/communities/ui/community-users.component.ts` (modified)
+- `src/app/features/agents/agent.facade.ts` (modified)
+- `src/app/features/agents/agent.facade.spec.ts` (modified)
+- `src/app/features/agents/ui/agent-detail.component.ts` (modified)
+- `src/app/features/agents/ui/agent-list.component.ts` (modified)

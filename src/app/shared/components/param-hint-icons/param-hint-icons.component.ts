@@ -1,5 +1,6 @@
 import { Component, input, computed } from '@angular/core';
 import { LucideAngularModule, Asterisk, PenOff, Eye, Clipboard, Copy, Braces } from 'lucide-angular';
+import { TooltipDirective } from '@shared/directives/tooltip.directive';
 
 export type ParamState = 'off' | 'on' | 'rule';
 
@@ -23,7 +24,7 @@ const DEFAULT_HINTS: ParamHints = {
 
 @Component({
   selector: 'app-param-hint-icons',
-  imports: [LucideAngularModule],
+  imports: [LucideAngularModule, TooltipDirective],
   templateUrl: './param-hint-icons.component.html',
   styleUrl: './param-hint-icons.component.css',
 })

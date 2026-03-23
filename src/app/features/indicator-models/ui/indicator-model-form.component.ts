@@ -5,13 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createIndicatorModelForm } from '@domains/indicator-models/forms/indicator-model.form';
 import { IndicatorModelFacade } from '../indicator-model.facade';
 
 @Component({
   selector: 'app-indicator-model-form',
-  imports: [ReactiveFormsModule, FormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, FormsModule, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './indicator-model-form.component.html',
 })
 export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsavedChanges {
@@ -31,15 +32,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   readonly attachedChildren = signal<{ id: string; name: string; type: string }[]>([]);
   readonly searchTerm = signal('');
 
-  readonly filteredAvailable = computed(() => {
-    const attached = new Set(this.attachedChildren().map(c => c.id));
-    const term = this.searchTerm().toLowerCase();
-    return this.facade.items()
-      .filter(i => i.type !== 'group')
-      .filter(i => i.id !== this.editId)
-      .filter(i => !attached.has(i.id))
-      .filter(i => !term || i.name.toLowerCase().includes(term));
-  });
+  readonly filteredAvailable = this.facade.availableChildIndicators;
 
   private static readonly ENTITY_LABEL = 'Modèles d\'indicateur';
   private static readonly EDIT_TITLE = 'Modifier le modèle d\'indicateur';
@@ -84,6 +77,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
           this.attachedChildren.set(
             item.children.map(c => ({ id: c.id, name: c.name, type: c.type })),
           );
+          this.facade.setExcludeChildrenIds(item.children.map(c => c.id));
         }
       }
     });
@@ -92,6 +86,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   ngOnInit(): void {
     this.editId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.editId;
+    this.facade.setEditItemId(this.editId);
 
     // Load all indicators for the children picker
     this.facade.load();
@@ -105,26 +100,33 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
       if (type !== 'group') {
         this.attachedChildren.set([]);
         this.searchTerm.set('');
+        this.facade.setChildSearchTerm('');
+        this.facade.setExcludeChildrenIds([]);
       }
     });
   }
 
   ngOnDestroy(): void {
     this.facade.clearSelection();
+    this.facade.setEditItemId(null);
+    this.facade.setChildSearchTerm('');
+    this.facade.setExcludeChildrenIds([]);
   }
 
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
+  onChildSearch(term: string): void {
+    this.searchTerm.set(term);
+    this.facade.setChildSearchTerm(term);
   }
 
   attachChild(indicator: { id: string; name: string; type: string }): void {
     this.attachedChildren.update(list => [...list, { id: indicator.id, name: indicator.name, type: indicator.type }]);
+    this.facade.setExcludeChildrenIds(this.attachedChildren().map(c => c.id));
     this.form.markAsDirty();
   }
 
   detachChild(id: string): void {
     this.attachedChildren.update(list => list.filter(c => c.id !== id));
+    this.facade.setExcludeChildrenIds(this.attachedChildren().map(c => c.id));
     this.form.markAsDirty();
   }
 
@@ -137,15 +139,10 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
     }
 
     const raw = this.form.getRawValue();
-    const data = {
-      name: raw.name!,
-      technical_label: raw.technical_label!,
-      description: raw.description,
-      type: raw.type! as 'text' | 'number' | 'group',
-      unit: raw.type === 'group' ? null : raw.unit,
-      status: 'draft' as const,
-      children_ids: raw.type === 'group' ? this.attachedChildren().map(c => c.id) : null,
-    };
+    const data = this.facade.prepareIndicatorData(
+      { name: raw.name!, technical_label: raw.technical_label!, description: raw.description, type: raw.type!, unit: raw.unit },
+      this.attachedChildren().map(c => c.id),
+    );
     this.form.markAsPristine();
 
     if (this.isEditMode && this.editId) {

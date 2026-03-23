@@ -1,7 +1,7 @@
 // Facade — single entry point for UI components.
 // Exposes readonly signals (via feature store) and intention methods (via domain store).
 // Handles toast feedback, navigation, and error mapping so components stay presentation-only.
-import { Injectable, inject, computed } from '@angular/core';
+import { Injectable, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -48,6 +48,49 @@ export class IndicatorModelFacade {
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending() ||
     this.publishIsPending() || this.disableIsPending() || this.activateIsPending(),
   );
+
+  // Child indicator picker — filtering state
+  private readonly _childSearchTerm = signal('');
+  private readonly _excludeChildrenIds = signal<Set<string>>(new Set());
+  private readonly _editItemId = signal<string | null>(null);
+
+  setChildSearchTerm(term: string): void {
+    this._childSearchTerm.set(term);
+  }
+
+  setExcludeChildrenIds(ids: string[]): void {
+    this._excludeChildrenIds.set(new Set(ids));
+  }
+
+  setEditItemId(id: string | null): void {
+    this._editItemId.set(id);
+  }
+
+  readonly availableChildIndicators = computed(() => {
+    const excluded = this._excludeChildrenIds();
+    const term = this._childSearchTerm().toLowerCase();
+    const editId = this._editItemId();
+    return this.items()
+      .filter(i => i.type !== 'group')
+      .filter(i => i.id !== editId)
+      .filter(i => !excluded.has(i.id))
+      .filter(i => !term || i.name.toLowerCase().includes(term));
+  });
+
+  prepareIndicatorData(formValue: {
+    name: string; technical_label: string; description: string | null;
+    type: string; unit: string | null;
+  }, attachedChildrenIds: string[]): IndicatorModelCreate {
+    return {
+      name: formValue.name,
+      technical_label: formValue.technical_label,
+      description: formValue.description,
+      type: formValue.type as 'text' | 'number' | 'group',
+      unit: formValue.type === 'group' ? null : formValue.unit,
+      status: 'draft' as const,
+      children_ids: formValue.type === 'group' ? attachedChildrenIds : null,
+    };
+  }
 
   // Intention methods
   load(filters?: FilterParams): void {

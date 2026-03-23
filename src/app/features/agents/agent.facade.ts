@@ -10,6 +10,7 @@ import { CommunityDomainStore } from '@domains/communities/community.store';
 import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
+import { getAgentTypeLabel, getAgentDisplayName } from '@shared/utils/agent-labels';
 import { AgentFeatureStore } from './agent.store';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +35,16 @@ export class AgentFacade {
   // Cross-domain signals for community selector
   readonly communityOptions = this.featureStore.communityOptions;
   readonly communityLoading = this.featureStore.communityLoading;
+
+  // Display-ready rows for list components
+  readonly formattedAgentRows = computed(() =>
+    this.items().map(agent => ({
+      ...agent,
+      displayName: getAgentDisplayName(agent),
+      community_name: agent.community?.name ?? '—',
+      agent_type: getAgentTypeLabel(agent.agent_type),
+    })),
+  );
 
   // Per-mutation CRUD status signals
   readonly createIsPending = this.domainStore.createMutationIsPending;

@@ -12,83 +12,58 @@
     ]" />
   }
   <h1 class="text-2xl font-bold text-text-primary mb-6">
-    {{ isEditMode ? 'Modifier l\\'utilisateur' : 'Créer un utilisateur' }}
+    {{ isEditMode ? 'Modifier l\'utilisateur' : 'Créer un utilisateur' }}
   </h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-    <div>
-      <label for="email" class="block text-sm font-medium text-text-primary mb-1">Email *</label>
+    <app-form-field label="Email *" [control]="form.get('email')!" errorMessage="Un email valide est obligatoire." fieldId="email">
       <input
         id="email"
         formControlName="email"
         type="email"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('email')"
       />
-      @if (showError('email')) {
-        <p class="mt-1 text-sm text-error">Un email valide est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="first_name" class="block text-sm font-medium text-text-primary mb-1">Prénom *</label>
+    <app-form-field label="Prénom *" [control]="form.get('first_name')!" errorMessage="Le prénom est obligatoire." fieldId="first_name">
       <input
         id="first_name"
         formControlName="first_name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('first_name')"
       />
-      @if (showError('first_name')) {
-        <p class="mt-1 text-sm text-error">Le prénom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="last_name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
+    <app-form-field label="Nom *" [control]="form.get('last_name')!" errorMessage="Le nom est obligatoire." fieldId="last_name">
       <input
         id="last_name"
         formControlName="last_name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('last_name')"
       />
-      @if (showError('last_name')) {
-        <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     @if (!isEditMode) {
-      <div>
-        <label for="password" class="block text-sm font-medium text-text-primary mb-1">Mot de passe *</label>
+      <app-form-field label="Mot de passe *" [control]="form.get('password')!" errorMessage="Le mot de passe est obligatoire." fieldId="password">
         <input
           id="password"
           formControlName="password"
           type="password"
           class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-          [class.border-error]="showError('password')"
         />
-        @if (showError('password')) {
-          <p class="mt-1 text-sm text-error">Le mot de passe est obligatoire.</p>
-        }
-      </div>
+      </app-form-field>
     }
 
-    <div>
-      <label for="role" class="block text-sm font-medium text-text-primary mb-1">Rôle *</label>
+    <app-form-field label="Rôle *" [control]="form.get('role')!" errorMessage="Le rôle est obligatoire." fieldId="role">
       <select
         id="role"
         formControlName="role"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('role')"
       >
         <option [ngValue]="null" disabled>Sélectionner un rôle</option>
         @for (role of facade.roles(); track role) {
           <option [value]="role">{{ role }}</option>
         }
       </select>
-      @if (showError('role')) {
-        <p class="mt-1 text-sm text-error">Le rôle est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div class="flex items-center gap-3">
       <input

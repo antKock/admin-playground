@@ -9,18 +9,13 @@
   </h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-    <div>
-      <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
         id="name"
         formControlName="name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('name')"
       />
-      @if (showError('name')) {
-        <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div>
       <label for="description" class="block text-sm font-medium text-text-primary mb-1">Description</label>
@@ -32,13 +27,11 @@
       ></textarea>
     </div>
 
-    <div>
-      <label for="funding_program_id" class="block text-sm font-medium text-text-primary mb-1">Programme de financement *</label>
+    <app-form-field label="Programme de financement *" [control]="form.get('funding_program_id')!" errorMessage="Le programme de financement est obligatoire." fieldId="funding_program_id">
       <select
         id="funding_program_id"
         formControlName="funding_program_id"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('funding_program_id')"
         [disabled]="facade.fpLoading()"
       >
         @if (facade.fpLoading()) {
@@ -52,18 +45,13 @@
           }
         }
       </select>
-      @if (showError('funding_program_id')) {
-        <p class="mt-1 text-sm text-error">Le programme de financement est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="action_theme_id" class="block text-sm font-medium text-text-primary mb-1">Thème d'action *</label>
+    <app-form-field label="Thème d'action *" [control]="form.get('action_theme_id')!" errorMessage="Le thème d'action est obligatoire." fieldId="action_theme_id">
       <select
         id="action_theme_id"
         formControlName="action_theme_id"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('action_theme_id')"
         [disabled]="facade.atLoading()"
       >
         @if (facade.atLoading()) {
@@ -77,10 +65,7 @@
           }
         }
       </select>
-      @if (showError('action_theme_id')) {
-        <p class="mt-1 text-sm text-error">Le thème d'action est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     <div class="flex gap-3 pt-4">
       <button

@@ -5,49 +5,34 @@
   </h1>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-    <div>
-      <label for="name" class="block text-sm font-medium text-text-primary mb-1">Nom *</label>
+    <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
       <input
         id="name"
         formControlName="name"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('name')"
       />
-      @if (showError('name')) {
-        <p class="mt-1 text-sm text-error">Le nom est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="technical_label" class="block text-sm font-medium text-text-primary mb-1">Label technique *</label>
+    <app-form-field label="Label technique *" [control]="form.get('technical_label')!" errorMessage="Le label technique est obligatoire." fieldId="technical_label">
       <input
         id="technical_label"
         formControlName="technical_label"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('technical_label')"
       />
-      @if (showError('technical_label')) {
-        <p class="mt-1 text-sm text-error">Le label technique est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
-    <div>
-      <label for="type" class="block text-sm font-medium text-text-primary mb-1">Type *</label>
+    <app-form-field label="Type *" [control]="form.get('type')!" errorMessage="Le type est obligatoire." fieldId="type">
       <select
         id="type"
         formControlName="type"
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        [class.border-error]="showError('type')"
       >
         <option value="" disabled>Sélectionner un type</option>
         <option value="text">Texte</option>
         <option value="number">Nombre</option>
         <option value="group">Groupe</option>
       </select>
-      @if (showError('type')) {
-        <p class="mt-1 text-sm text-error">Le type est obligatoire.</p>
-      }
-    </div>
+    </app-form-field>
 
     @if (form.get('type')?.value !== 'group') {
       <div>
@@ -85,7 +70,7 @@
           placeholder="Rechercher des indicateurs..."
           class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand text-sm mb-2"
           [ngModel]="searchTerm()"
-          (ngModelChange)="searchTerm.set($event)"
+          (ngModelChange)="onChildSearch($event)"
           [ngModelOptions]="{standalone: true}"
         />
 

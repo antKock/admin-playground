@@ -3,13 +3,14 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createActionModelForm } from '@domains/action-models/forms/action-model.form';
 import { ActionModelFacade } from '../action-model.facade';
 
 @Component({
   selector: 'app-action-model-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './action-model-form.component.html',
 })
 export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
@@ -66,11 +67,6 @@ export class ActionModelFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   async onSubmit(): Promise<void> {

@@ -4,13 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { BreadcrumbComponent } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { FormFieldComponent } from '@shared/components/form-field/form-field.component';
 
 import { createFundingProgramForm } from '@domains/funding-programs/forms/funding-program.form';
 import { FundingProgramFacade } from '../funding-program.facade';
 
 @Component({
   selector: 'app-funding-program-form',
-  imports: [ReactiveFormsModule, BreadcrumbComponent],
+  imports: [ReactiveFormsModule, BreadcrumbComponent, FormFieldComponent],
   templateUrl: './funding-program-form.component.html',
 })
 export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
@@ -56,11 +57,6 @@ export class FundingProgramFormComponent implements OnInit, HasUnsavedChanges {
     if (this.isEditMode && this.editId) {
       this.facade.select(this.editId);
     }
-  }
-
-  showError(field: string): boolean {
-    const control = this.form.get(field);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 
   onSubmit(): void {

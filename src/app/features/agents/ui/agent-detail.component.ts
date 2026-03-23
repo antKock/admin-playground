@@ -3,38 +3,31 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { StatusBadgeComponent } from '@app/shared/components/status-badge/status-badge.component';
-import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
+import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
-import { ApiInspectorService } from '@shared/api-inspector/api-inspector.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { AgentFacade } from '../agent.facade';
 import { AgentStatus } from '@domains/agents/agent.models';
+import { getAgentTypeLabel, getAgentDisplayName } from '@shared/utils/agent-labels';
 
 @Component({
   selector: 'app-agent-detail',
-  imports: [MetadataGridComponent, StatusBadgeComponent, ApiInspectorComponent, ActivityListComponent, BreadcrumbComponent],
+  imports: [MetadataGridComponent, StatusBadgeComponent, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent],
   templateUrl: './agent-detail.component.html',
 })
 export class AgentDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(AgentFacade);
-  readonly inspectorService = inject(ApiInspectorService);
   private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
   readonly agent = this.facade.selectedItem;
 
-  readonly skeletonFields = Array(10).fill(0);
-
-  readonly displayName = computed(() => {
-    const a = this.agent();
-    if (!a) return '';
-    return [a.first_name, a.last_name].filter(Boolean).join(' ') || '—';
-  });
+  readonly displayName = computed(() => getAgentDisplayName(this.agent()));
 
   // Only show transitions where is_allowed === true (AC #14: hidden, not disabled)
   readonly allowedTransitions = computed(() =>
@@ -80,13 +73,8 @@ export class AgentDetailComponent implements OnInit, OnDestroy {
     return formatDateFr(value);
   }
 
-  private readonly agentTypeLabels: Record<string, string> = {
-    energy_performance_advisor: 'Conseiller en performance énergétique',
-    other: 'Autre',
-  };
-
   agentTypeLabel(type: string): string {
-    return this.agentTypeLabels[type] ?? type;
+    return getAgentTypeLabel(type);
   }
 
   private readonly statusLabels: Record<string, string> = {

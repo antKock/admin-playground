@@ -1,15 +1,14 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-text-primary">Agents</h1>
-    <button
-      class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-      (click)="router.navigate(['/agents/new'])"
-    >
-      <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
-    </button>
-  </div>
-
-  <app-data-table
+<app-list-page-layout
+  title="Agents"
+  createLabel="Créer un agent"
+  createRoute="/agents/new"
+  [hasLoaded]="hasLoaded()"
+  [isEmpty]="facade.isEmpty()"
+  [hasMore]="facade.hasMore()"
+  [emptyMessage]="emptyMessage() ?? ''"
+  (loadMore)="onLoadMore()"
+>
+  <app-data-table table
     [columns]="columns()"
     [data]="rows()"
     [isLoading]="facade.isLoading()"
@@ -22,4 +21,4 @@
     (filterChange)="onFilterChange($event)"
     (clearFiltersClick)="clearFilters()"
   />
-</div>
+</app-list-page-layout>

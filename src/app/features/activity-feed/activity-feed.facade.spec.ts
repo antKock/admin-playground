@@ -5,7 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivityFeedFacade } from './activity-feed.facade';
 import { ActivityResponse } from '@domains/history/history.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { AuthService } from '@core/auth/auth.service';
+import { AuthStore } from '@domains/auth/auth.store';
 
 const mockAdminActivity: ActivityResponse = {
   id: 'act-1',
@@ -138,8 +138,8 @@ describe('ActivityFeedFacade', () => {
     });
 
     it('should filter own actions when hideOwnActions is true', () => {
-      const authService = TestBed.inject(AuthService);
-      vi.spyOn(authService, 'userId').mockReturnValue('user-1');
+      const authStore = TestBed.inject(AuthStore);
+      vi.spyOn(authStore, 'userId').mockReturnValue('user-1');
 
       facade.load();
       httpTesting.expectOne((r) => r.method === 'GET').flush(mockPaginatedResponse);

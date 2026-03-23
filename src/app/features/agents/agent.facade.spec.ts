@@ -151,6 +151,44 @@ describe('AgentFacade', () => {
     });
   });
 
+  describe('formattedAgentRows', () => {
+    it('should transform agents into display rows with labels', () => {
+      facade.load();
+      const req = httpTesting.expectOne((r) => r.url.includes('agents') && r.method === 'GET');
+      req.flush(mockPaginatedResponse);
+
+      const rows = facade.formattedAgentRows();
+      expect(rows.length).toBe(1);
+      expect(rows[0].displayName).toBe('John Doe');
+      expect(rows[0].community_name).toBe('Test Community');
+      expect(rows[0].agent_type).toBe('Conseiller en performance énergétique');
+    });
+
+    it('should fallback to raw type for unknown agent types', () => {
+      facade.load();
+      const response = {
+        ...mockPaginatedResponse,
+        data: [{ ...mockAgent, agent_type: 'unknown_type' }],
+      };
+      httpTesting.expectOne((r) => r.method === 'GET').flush(response);
+
+      expect(facade.formattedAgentRows()[0].agent_type).toBe('unknown_type');
+    });
+
+    it('should use dash for missing names and communities', () => {
+      facade.load();
+      const response = {
+        ...mockPaginatedResponse,
+        data: [{ ...mockAgent, first_name: '', last_name: '', community: null }],
+      };
+      httpTesting.expectOne((r) => r.method === 'GET').flush(response);
+
+      const rows = facade.formattedAgentRows();
+      expect(rows[0].displayName).toBe('—');
+      expect(rows[0].community_name).toBe('—');
+    });
+  });
+
   describe('error handling', () => {
     it('should show error toast on mutation error', async () => {
       const createPromise = facade.create({ agent_type: 'other' });

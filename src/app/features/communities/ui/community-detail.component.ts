@@ -3,10 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
-import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
-import { ApiInspectorService } from '@shared/api-inspector/api-inspector.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
@@ -15,7 +13,7 @@ import { CommunityUsersComponent } from './community-users.component';
 
 @Component({
   selector: 'app-community-detail',
-  imports: [MetadataGridComponent, CommunityUsersComponent, ActivityListComponent, ApiInspectorComponent, BreadcrumbComponent, RouterLink],
+  imports: [MetadataGridComponent, CommunityUsersComponent, ActivityListComponent, BreadcrumbComponent, RouterLink],
   templateUrl: './community-detail.component.html',
 })
 export class CommunityDetailComponent implements OnInit, OnDestroy {
@@ -23,7 +21,6 @@ export class CommunityDetailComponent implements OnInit, OnDestroy {
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly destroyRef = inject(DestroyRef);
   readonly facade = inject(CommunityFacade);
-  readonly inspectorService = inject(ApiInspectorService);
   private readonly userNameResolver = inject(UserNameResolverService);
   readonly router = inject(Router);
 
