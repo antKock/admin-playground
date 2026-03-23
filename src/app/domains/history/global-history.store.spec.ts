@@ -53,7 +53,7 @@ describe('GlobalHistoryStore', () => {
   });
 
   it('should load activities and update signals', () => {
-    store.load();
+    store.load(undefined);
     expect(store.isLoading()).toBe(true);
 
     const req = httpTesting.expectOne((r) => r.url.includes('/history/activities'));
@@ -66,7 +66,7 @@ describe('GlobalHistoryStore', () => {
   });
 
   it('should append activities on loadMore', () => {
-    store.load();
+    store.load(undefined);
     const req1 = httpTesting.expectOne((r) => r.url.includes('/history/activities'));
     req1.flush({ data: [mockActivity], pagination: mockPagination });
 
@@ -90,7 +90,7 @@ describe('GlobalHistoryStore', () => {
   });
 
   it('should reset state', () => {
-    store.load();
+    store.load(undefined);
     const req = httpTesting.expectOne((r) => r.url.includes('/history/activities'));
     req.flush({ data: [mockActivity], pagination: mockPagination });
 
@@ -108,7 +108,7 @@ describe('GlobalHistoryStore', () => {
   });
 
   it('should handle errors', () => {
-    store.load();
+    store.load(undefined);
     const req = httpTesting.expectOne((r) => r.url.includes('/history/activities'));
     req.error(new ProgressEvent('error'));
 

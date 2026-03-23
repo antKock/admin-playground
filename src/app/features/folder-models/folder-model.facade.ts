@@ -44,10 +44,10 @@ export class FolderModelFacade {
     })),
   );
 
-  // Per-mutation CRUD status signals (projected through feature store)
-  readonly createIsPending = this.featureStore.createIsPending;
-  readonly updateIsPending = this.featureStore.updateIsPending;
-  readonly deleteIsPending = this.featureStore.deleteIsPending;
+  // Per-mutation status signals (directly from domain store)
+  readonly createIsPending = this.domainStore.createMutationIsPending;
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
   readonly anyMutationPending = computed(() =>
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
   );

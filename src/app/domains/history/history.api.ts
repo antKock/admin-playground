@@ -53,6 +53,21 @@ export function globalActivityLoader(
   );
 }
 
+/** Adapter for withCursorPagination — maps FilterParams to ActivityFilters. */
+export function globalActivityListLoader(
+  http: HttpClient,
+  params: { cursor: string | null; limit: number; filters?: FilterParams },
+): Observable<PaginatedResponse<ActivityResponse>> {
+  const filters: ActivityFilters = {
+    entity_type: params.filters?.['entity_type'] as string | undefined,
+    action: params.filters?.['action'] as ActivityFilters['action'],
+    since: params.filters?.['since'] as string | undefined,
+    cursor: params.cursor ?? undefined,
+    limit: params.limit,
+  };
+  return globalActivityLoader(http, filters);
+}
+
 export function entityStateAtDate(
   http: HttpClient,
   entityType: string,

@@ -12,8 +12,10 @@ import {
   ActivityWithChildren,
   VersionComparison,
 } from '@domains/history/history.models';
+import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { filterByScope, rollupIndicators } from '@domains/history/history.utils';
 import { entityStateAtDate, compareEntityVersions } from '@domains/history/history.api';
+import { ActivityFeedFeatureStore } from './activity-feed.store';
 
 export interface DetailPanel {
   type: 'state' | 'compare';
@@ -26,15 +28,17 @@ export interface DetailPanel {
 
 @Injectable({ providedIn: 'root' })
 export class ActivityFeedFacade {
-  private readonly store = inject(GlobalHistoryStore);
+  private readonly domainStore = inject(GlobalHistoryStore);
+  private readonly featureStore = inject(ActivityFeedFeatureStore);
   private readonly authStore = inject(AuthStore);
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly activities = this.store.activities;
-  readonly isLoading = this.store.isLoading;
-  readonly hasMore = this.store.hasMore;
-  readonly error = this.store.error;
+  // Data signals — readonly (projected through feature store)
+  readonly activities = this.featureStore.activities;
+  readonly isLoading = this.featureStore.isLoading;
+  readonly hasMore = this.featureStore.hasMore;
+  readonly error = this.featureStore.error;
 
   readonly scope = signal<ActivityScope>('admin');
   readonly hideOwnActions = signal(false);
@@ -61,15 +65,18 @@ export class ActivityFeedFacade {
   });
 
   load(filters?: ActivityFilters): void {
-    this.store.load(filters);
+    const filterParams: FilterParams | undefined = filters
+      ? Object.fromEntries(Object.entries(filters).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)]))
+      : undefined;
+    this.domainStore.load(filterParams);
   }
 
   loadMore(): void {
-    this.store.loadMore();
+    this.domainStore.loadMore();
   }
 
   reset(): void {
-    this.store.reset();
+    this.domainStore.reset();
   }
 
   closeDetail(): void {
