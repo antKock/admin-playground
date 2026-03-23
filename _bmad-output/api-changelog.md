@@ -14,7 +14,7 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-06 — Applied (baseline reset 2026-03-16)
+## Changeset: 2026-03-06 — Applied (baseline reset: 2026-03-16)
 
 *First major API review. All actions resolved through Epics 12-15.*
 
