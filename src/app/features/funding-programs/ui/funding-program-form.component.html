@@ -4,7 +4,7 @@
   [isSaving]="submitting()"
   [isDirty]="form.dirty"
   (save)="onSubmit()"
-  (cancel)="goBack()"
+  (cancelClick)="goBack()"
 >
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
@@ -36,7 +36,7 @@
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1">&nbsp;</label>
+        <div class="block text-sm font-medium text-text-primary mb-1">&nbsp;</div>
         <label class="inline-flex items-center gap-2 mt-2">
           <input type="checkbox" formControlName="is_active" class="rounded" />
           <span class="text-sm text-text-primary">Actif</span>

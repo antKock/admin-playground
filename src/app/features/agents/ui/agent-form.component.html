@@ -4,7 +4,7 @@
   [isDirty]="form.dirty"
   [isSaving]="submitting()"
   (save)="onSubmit()"
-  (cancel)="goBack()"
+  (cancelClick)="goBack()"
 >
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <div class="grid grid-cols-2 gap-4">

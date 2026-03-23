@@ -15,7 +15,7 @@
       [attr.aria-checked]="enabled()"
       [attr.aria-label]="label()"
       [class.on]="enabled()"
-      (click)="toggle.emit(!enabled())"
+      (click)="toggled.emit(!enabled())"
     >
       <span class="toggle-knob"></span>
     </button>

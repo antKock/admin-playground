@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FormBuilder } from '@angular/forms';
 import { createSiteForm } from './site.form';
 

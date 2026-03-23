@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -6,7 +7,6 @@ import {
   VariableDictionaryService,
   mapIndicatorType,
   inferPropertyType,
-  ProseVariable,
 } from './variable-dictionary.service';
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
@@ -397,7 +397,7 @@ describe('VariableDictionaryService', () => {
   });
 
   it('should return empty array signal on API error', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const sig = service.getVariables('action', 'am-err');
 

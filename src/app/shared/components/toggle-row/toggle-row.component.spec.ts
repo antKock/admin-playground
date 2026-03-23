@@ -30,7 +30,7 @@ describe('ToggleRowComponent', () => {
     fixture.detectChanges();
 
     const toggleSpy = vi.fn();
-    component.toggle.subscribe(toggleSpy);
+    component.toggled.subscribe(toggleSpy);
 
     const button = fixture.nativeElement.querySelector('button.toggle');
     button.click();

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { buildIndicatorCards, BuildIndicatorCardsInput } from './build-indicator-cards';
 import { IndicatorModelWithAssociation } from '@domains/action-models/action-model.models';
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';

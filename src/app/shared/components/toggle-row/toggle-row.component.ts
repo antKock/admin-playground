@@ -11,5 +11,5 @@ export class ToggleRowComponent {
   readonly label = input.required<string>();
   readonly icon = input<LucideIconData | null>(null);
   readonly enabled = input(false);
-  readonly toggle = output<boolean>();
+  readonly toggled = output<boolean>();
 }

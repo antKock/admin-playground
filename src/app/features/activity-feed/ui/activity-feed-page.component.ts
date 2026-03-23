@@ -1,9 +1,9 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, effect } from '@angular/core';
 import { LucideAngularModule, X, Eye, GitCompareArrows } from 'lucide-angular';
 
 import { formatDateFr } from '@app/shared/utils/format-date';
 import { ActivityFeedFacade } from '../activity-feed.facade';
-import { ActivityResponse, ActivityWithChildren, VersionComparison } from '@domains/history/history.models';
+import { ActivityResponse, ActivityWithChildren } from '@domains/history/history.models';
 import {
   actionLabel,
   actionBadgeClass,

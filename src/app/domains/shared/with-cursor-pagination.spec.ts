@@ -10,7 +10,7 @@ interface TestItem {
   name: string;
 }
 
-type LoaderParams = { cursor: string | null; limit: number; filters?: FilterParams };
+interface LoaderParams { cursor: string | null; limit: number; filters?: FilterParams }
 
 function createMockResponse(
   data: TestItem[],

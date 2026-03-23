@@ -39,15 +39,16 @@ export class LoginComponent {
         await this.router.navigateByUrl('/');
       }
       this.isSubmitting.set(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.isSubmitting.set(false);
       this.loginForm.controls.password.reset();
 
-      if (err.status === 401 || err.status === 403) {
+      const httpErr = err as { status?: number };
+      if (httpErr.status === 401 || httpErr.status === 403) {
         this.errorMessage.set('E-mail ou mot de passe invalide. Veuillez réessayer.');
-      } else if (err.status === 422) {
+      } else if (httpErr.status === 422) {
         this.errorMessage.set('Veuillez saisir une adresse e-mail valide.');
-      } else if (err.status === 0) {
+      } else if (httpErr.status === 0) {
         this.errorMessage.set('Impossible de se connecter au serveur. Vérifiez votre connexion.');
       } else {
         this.errorMessage.set('Une erreur inattendue est survenue. Veuillez réessayer plus tard.');

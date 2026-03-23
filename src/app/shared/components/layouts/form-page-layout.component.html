@@ -5,6 +5,6 @@
   <ng-content />
 
   @if (isDirty()) {
-    <app-save-bar [count]="1" [saving]="isSaving()" (save)="save.emit()" (discard)="cancel.emit()" />
+    <app-save-bar [count]="1" [saving]="isSaving()" (save)="save.emit()" (discard)="cancelClick.emit()" />
   }
 </div>

@@ -185,12 +185,9 @@ describe('authInterceptor', () => {
   it('should drop queued requests when refresh fails', async () => {
     const { httpClient, httpTesting, router } = setup('old-token');
     const nav = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    let completedA = false;
-    let completedB = false;
-
     // Fire two requests concurrently
-    httpClient.get('/api/data-a').subscribe({ next: () => (completedA = true), error: () => (completedA = true) });
-    httpClient.get('/api/data-b').subscribe({ next: () => (completedB = true), error: () => (completedB = true) });
+    httpClient.get('/api/data-a').subscribe({ error: vi.fn() });
+    httpClient.get('/api/data-b').subscribe({ error: vi.fn() });
 
     // Both fail with 401
     httpTesting.expectOne('/api/data-a').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });

@@ -14,7 +14,7 @@ import { BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.com
       [isDirty]="isDirty"
       [title]="title"
       (save)="saveCalled = true"
-      (cancel)="cancelCalled = true"
+      (cancelClick)="cancelCalled = true"
     >
       <div>Form content</div>
     </app-form-page-layout>

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 
-import { DataTableComponent, ColumnDef, RowAction, FilterOption } from './data-table.component';
+import { DataTableComponent, ColumnDef, RowAction } from './data-table.component';
 
 interface TestRow extends Record<string, unknown> {
   id: string;
@@ -516,7 +516,8 @@ describe('DataTableComponent', () => {
       ];
       data: TestRow[] = [];
       clearClicked = false;
-      onFilterChange(_event: { key: string; values: string[] }): void {}
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      onFilterChange(_event: { key: string; values: string[] }): void { void 0; }
     }
 
     await TestBed.configureTestingModule({ imports: [ClearFilterTestHost] }).compileComponents();

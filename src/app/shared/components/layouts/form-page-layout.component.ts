@@ -18,7 +18,7 @@ export class FormPageLayoutComponent {
   readonly title = input.required<string>();
 
   readonly save = output<void>();
-  readonly cancel = output<void>();
+  readonly cancelClick = output<void>();
 
   onKeyDown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
@@ -33,7 +33,7 @@ export class FormPageLayoutComponent {
       if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') {
         return;
       }
-      this.cancel.emit();
+      this.cancelClick.emit();
     }
   }
 }

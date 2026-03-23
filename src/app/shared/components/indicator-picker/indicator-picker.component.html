@@ -1,5 +1,5 @@
 <!-- CTA Button -->
-<div class="add-indicator-cta" [class.open]="isOpen()" (click)="!isOpen() && open()">
+<div class="add-indicator-cta" [class.open]="isOpen()" tabindex="0" role="button" (click)="!isOpen() && open()" (keydown.enter)="!isOpen() && open()" (keydown.space)="!isOpen() && open(); $event.preventDefault()">
   <lucide-icon [img]="PlusIcon" [size]="16" />
   Attacher un indicateur
 </div>

@@ -26,7 +26,7 @@
   @if (editorState() === 'texte-read') {
     @let parts = proseParts();
     @if (parts) {
-      <div class="prose-read-zone" (click)="enterTexteEdit()">
+      <div class="prose-read-zone" role="button" tabindex="0" (click)="enterTexteEdit()" (keydown.enter)="enterTexteEdit()" (keydown.space)="enterTexteEdit(); $event.preventDefault()">
         <button class="prose-edit-btn" type="button">Modifier</button>
         <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
       </div>
@@ -42,8 +42,8 @@
           <span class="validation-badge warning">Avertissement — {{ unknownVarCount() }} variable(s) inconnue(s)</span>
         } @else if (result.success) {
           <span class="validation-badge valid">Valide{{ orBranchCount() > 1 ? ' — ' + orBranchCount() + ' branches OR' : '' }}</span>
-        } @else if (result.errors.some(e => !e.atEnd)) {
-          <span class="validation-badge error">{{ result.errors.find(e => !e.atEnd)?.message }}</span>
+        } @else if (hasNonEndErrors(result.errors)) {
+          <span class="validation-badge error">{{ firstNonEndErrorMessage(result.errors) }}</span>
         }
       </div>
     }
@@ -57,7 +57,7 @@
         <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
       </div>
     }
-    <pre class="json-read-zone" (click)="enterJsonEdit()">{{ formattedJson() }}</pre>
+    <pre class="json-read-zone" role="button" tabindex="0" (click)="enterJsonEdit()" (keydown.enter)="enterJsonEdit()" (keydown.space)="enterJsonEdit(); $event.preventDefault()">{{ formattedJson() }}</pre>
   }
 
   <!-- JSON EDIT MODE -->

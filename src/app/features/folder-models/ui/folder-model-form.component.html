@@ -4,7 +4,7 @@
   [isSaving]="submitting()"
   [isDirty]="form.dirty"
   (save)="onSubmit()"
-  (cancel)="goBack()"
+  (cancelClick)="goBack()"
 >
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">
@@ -26,7 +26,7 @@
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-text-primary mb-1">Programmes de financement</label>
+      <span class="block text-sm font-medium text-text-primary mb-1" id="fp-label">Programmes de financement</span>
       <app-multi-selector
         [options]="facade.fpOptions()"
         [selectedIds]="fpIds"
@@ -34,6 +34,7 @@
         [hasError]="false"
         placeholder="Sélectionner des programmes de financement..."
         (selectionChange)="onFpSelectionChange($event)"
+        [attr.aria-labelledby]="'fp-label'"
       />
     </div>
   </form>

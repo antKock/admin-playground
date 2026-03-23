@@ -4,7 +4,7 @@
   [isSaving]="submitting()"
   [isDirty]="form.dirty"
   (save)="onSubmit()"
-  (cancel)="goBack()"
+  (cancelClick)="goBack()"
 >
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
     <app-form-field label="Nom *" [control]="form.get('name')!" errorMessage="Le nom est obligatoire." fieldId="name">

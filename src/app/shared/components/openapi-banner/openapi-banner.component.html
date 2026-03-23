@@ -41,13 +41,13 @@
                   </button>
                   @if (isDetailExpanded(change)) {
                     <div class="openapi-detail">
-                      @if (change.before != null) {
+                      @if (change.before !== null && change.before !== undefined) {
                         <div class="openapi-detail-panel detail-before">
                           <span class="detail-label">Avant</span>
                           <pre>{{ formatJson(change.before) }}</pre>
                         </div>
                       }
-                      @if (change.after != null) {
+                      @if (change.after !== null && change.after !== undefined) {
                         <div class="openapi-detail-panel detail-after">
                           <span class="detail-label">Après</span>
                           <pre>{{ formatJson(change.after) }}</pre>
@@ -84,13 +84,13 @@
                   </button>
                   @if (isDetailExpanded(change)) {
                     <div class="openapi-detail">
-                      @if (change.before != null) {
+                      @if (change.before !== null && change.before !== undefined) {
                         <div class="openapi-detail-panel detail-before">
                           <span class="detail-label">Avant</span>
                           <pre>{{ formatJson(change.before) }}</pre>
                         </div>
                       }
-                      @if (change.after != null) {
+                      @if (change.after !== null && change.after !== undefined) {
                         <div class="openapi-detail-panel detail-after">
                           <span class="detail-label">Après</span>
                           <pre>{{ formatJson(change.after) }}</pre>

@@ -427,7 +427,7 @@ class Parser {
       } else if (inner[i] === '-' || /[0-9]/.test(inner[i])) {
         // Number
         let numStr = '';
-        while (i < inner.length && /[0-9.\-]/.test(inner[i])) {
+        while (i < inner.length && /[0-9.-]/.test(inner[i])) {
           numStr += inner[i];
           i++;
         }
@@ -601,14 +601,14 @@ class Parser {
       } else {
         // bullet OR branch — not an if block, parse as OR operand
         // This handles top-level OR with bullets: • expr1 \n • expr2
-        return this.parseBulletOrExpr(args);
+        return this.parseBulletOrExpr();
       }
     }
 
     return { if: args };
   }
 
-  private parseBulletOrExpr(_initialArgs: unknown[]): unknown {
+  private parseBulletOrExpr(): unknown {
     // We already consumed a bullet and the content wasn't Si/Sinon
     // So this is a top-level OR with bullet syntax
     const parts: unknown[] = [];

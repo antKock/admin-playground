@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { signal } from '@angular/core';
 import { EditorState } from '@codemirror/state';
 import { detectContext, createProseCompletionSource, TYPE_OPERATORS } from './prose-autocomplete';

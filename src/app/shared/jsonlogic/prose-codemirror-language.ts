@@ -214,7 +214,6 @@ export const proseStreamParser: StreamParser<ProseHighlightState> = {
 
     // Words: keywords, multi-word keywords, or variables
     if (WORD_RE.test(ch)) {
-      const savedPos = stream.pos;
       const word = readWord(stream);
 
       // Special case: "au" — could be start of "au moins N champ(s) manquant(s) parmi"

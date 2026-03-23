@@ -3,7 +3,6 @@ import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { globalActivityLoader, entityStateAtDate, compareEntityVersions } from './history.api';
-import { environment } from '@app/../environments/environment';
 
 describe('globalActivityLoader', () => {
   let http: HttpClient;

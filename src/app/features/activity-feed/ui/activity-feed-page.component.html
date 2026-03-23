@@ -26,11 +26,12 @@
     </div>
 
     <!-- Hide my actions toggle -->
-    <label class="flex items-center gap-2 cursor-pointer select-none">
+    <label class="flex items-center gap-2 cursor-pointer select-none" aria-label="Masquer mes actions">
+      <input type="checkbox" class="sr-only" [checked]="facade.hideOwnActions()" (change)="facade.hideOwnActions.set(!facade.hideOwnActions())" />
       <div
         class="relative w-9 h-5 rounded-full transition-colors"
         [class]="facade.hideOwnActions() ? 'bg-brand' : 'bg-surface-mid'"
-        (click)="facade.hideOwnActions.set(!facade.hideOwnActions())"
+        aria-hidden="true"
       >
         <div
           class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
@@ -173,7 +174,7 @@
 
   <!-- Detail side panel -->
   @if (detailPanel(); as panel) {
-    <div class="fixed inset-0 z-50 flex justify-end" (click)="onBackdropClick($event)" (keydown.escape)="closeDetail()">
+    <div class="fixed inset-0 z-50 flex justify-end" role="presentation" (click)="onBackdropClick($event)" (keydown.escape)="closeDetail()">
       <div class="absolute inset-0 bg-black/30"></div>
       <div class="relative w-[520px] max-w-full h-full bg-surface-base shadow-xl flex flex-col overflow-hidden">
         <div class="flex items-center justify-between px-4 py-3 border-b border-border">

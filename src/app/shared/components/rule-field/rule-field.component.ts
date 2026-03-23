@@ -371,6 +371,14 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
     };
   }
 
+  hasNonEndErrors(errors: { atEnd?: boolean; message?: string }[]): boolean {
+    return errors.some((e) => !e.atEnd);
+  }
+
+  firstNonEndErrorMessage(errors: { atEnd?: boolean; message?: string }[]): string {
+    return errors.find((e) => !e.atEnd)?.message ?? '';
+  }
+
   private validateJson(val: string): void {
     const trimmed = val.trim();
     if (!trimmed) {
