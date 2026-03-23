@@ -1,0 +1,109 @@
+@if (changes() && changes()!.length > 0) {
+  <div class="openapi-banner">
+    <button class="openapi-banner-header" (click)="isExpanded.set(!isExpanded())">
+      <div class="openapi-banner-title">
+        <lucide-icon [img]="AlertTriangleIcon" [size]="16" />
+        <span>Le schéma API a changé depuis la dernière synchronisation</span>
+      </div>
+      <div class="openapi-banner-actions">
+        <lucide-icon
+          [img]="ChevronDownIcon"
+          [size]="16"
+          class="openapi-chevron"
+          [class.rotated]="isExpanded()"
+        />
+      </div>
+    </button>
+
+    @if (isExpanded()) {
+      <div class="openapi-banner-body">
+        @if (pathChanges().length > 0) {
+          <div class="openapi-section">
+            <h4 class="openapi-section-title">Endpoints ({{ pathChanges().length }})</h4>
+            <ul class="openapi-change-list">
+              @for (change of pathChanges(); track change.name) {
+                <li class="openapi-change-item-wrapper">
+                  <button
+                    class="openapi-change-item"
+                    [class.expandable]="hasDetail(change)"
+                    (click)="hasDetail(change) && toggleDetail(change)"
+                  >
+                    <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
+                    <code>{{ change.name }}</code>
+                    @if (hasDetail(change)) {
+                      <lucide-icon
+                        [img]="ChevronRightIcon"
+                        [size]="12"
+                        class="detail-chevron"
+                        [class.rotated]="isDetailExpanded(change)"
+                      />
+                    }
+                  </button>
+                  @if (isDetailExpanded(change)) {
+                    <div class="openapi-detail">
+                      @if (change.before != null) {
+                        <div class="openapi-detail-panel detail-before">
+                          <span class="detail-label">Avant</span>
+                          <pre>{{ formatJson(change.before) }}</pre>
+                        </div>
+                      }
+                      @if (change.after != null) {
+                        <div class="openapi-detail-panel detail-after">
+                          <span class="detail-label">Après</span>
+                          <pre>{{ formatJson(change.after) }}</pre>
+                        </div>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+        @if (schemaChanges().length > 0) {
+          <div class="openapi-section">
+            <h4 class="openapi-section-title">Schémas ({{ schemaChanges().length }})</h4>
+            <ul class="openapi-change-list">
+              @for (change of schemaChanges(); track change.name) {
+                <li class="openapi-change-item-wrapper">
+                  <button
+                    class="openapi-change-item"
+                    [class.expandable]="hasDetail(change)"
+                    (click)="hasDetail(change) && toggleDetail(change)"
+                  >
+                    <span class="openapi-change-badge" [class]="'badge-' + change.type">{{ changeLabel(change.type) }}</span>
+                    <code>{{ change.name }}</code>
+                    @if (hasDetail(change)) {
+                      <lucide-icon
+                        [img]="ChevronRightIcon"
+                        [size]="12"
+                        class="detail-chevron"
+                        [class.rotated]="isDetailExpanded(change)"
+                      />
+                    }
+                  </button>
+                  @if (isDetailExpanded(change)) {
+                    <div class="openapi-detail">
+                      @if (change.before != null) {
+                        <div class="openapi-detail-panel detail-before">
+                          <span class="detail-label">Avant</span>
+                          <pre>{{ formatJson(change.before) }}</pre>
+                        </div>
+                      }
+                      @if (change.after != null) {
+                        <div class="openapi-detail-panel detail-after">
+                          <span class="detail-label">Après</span>
+                          <pre>{{ formatJson(change.after) }}</pre>
+                        </div>
+                      }
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

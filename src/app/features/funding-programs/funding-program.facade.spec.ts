@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { FundingProgramFacade } from './funding-program.facade';
 import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockFundingProgram: FundingProgram = {
   id: 'fp-1',

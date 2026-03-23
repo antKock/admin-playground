@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { UserDomainStore } from '@domains/users/user.store';
 import { UserCreate, UserUpdate } from '@domains/users/user.models';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { UserFeatureStore } from './user.store';

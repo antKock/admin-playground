@@ -1,0 +1,91 @@
+<div class="p-6">
+  @if (facade.isLoadingDetail()) {
+    <div class="animate-pulse space-y-4">
+      <div class="h-8 bg-surface-muted rounded w-1/3"></div>
+      <div class="h-4 bg-surface-muted rounded w-1/4"></div>
+      <div class="grid grid-cols-2 gap-4 mt-6">
+        @for (i of skeletonFields; track $index) {
+          <div class="space-y-2">
+            <div class="h-3 bg-surface-muted rounded w-20"></div>
+            <div class="h-4 bg-surface-muted rounded w-32"></div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (facade.detailError()) {
+    <div class="text-center py-16">
+      <app-breadcrumb [items]="errorBreadcrumbs" />
+      <p class="text-error mb-4">{{ facade.detailError() }}</p>
+    </div>
+  } @else if (building()) {
+    <app-breadcrumb [items]="breadcrumbs()" />
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-text-primary">{{ building()!.name }}</h1>
+        <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(building()!.last_updated_at) }} · ID: {{ building()!.id }}</p>
+      </div>
+      <div class="flex gap-2">
+        <button
+          class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors"
+          (click)="router.navigate(['/buildings', building()!.id, 'edit'])"
+        >
+          Modifier
+        </button>
+        <button
+          class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity"
+          (click)="onDelete()"
+        >
+          Supprimer
+        </button>
+      </div>
+    </div>
+
+    <app-metadata-grid [fields]="fields()" />
+
+    <!-- RNB Management -->
+    <div class="mt-8">
+      <h2 class="text-lg font-semibold text-text-primary mb-4">Identifiants RNB</h2>
+
+      <!-- Chip list -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        @for (rnbId of building()!.rnb_ids ?? []; track rnbId) {
+          <span class="inline-flex items-center gap-1 px-3 py-1 bg-surface-muted rounded-full text-sm text-text-primary font-mono">
+            {{ rnbId }}
+            <button
+              class="ml-1 text-text-tertiary hover:text-error transition-colors disabled:opacity-50"
+              (click)="onRemoveRnb(rnbId)"
+              [disabled]="facade.anyMutationPending()"
+              title="Supprimer"
+            >
+              <lucide-icon [img]="XIcon" [size]="14" />
+            </button>
+          </span>
+        }
+        @if ((building()!.rnb_ids ?? []).length === 0) {
+          <p class="text-text-tertiary text-sm">Aucun identifiant RNB.</p>
+        }
+      </div>
+
+      <!-- Add RNB -->
+      <div class="flex items-center gap-2">
+        <input
+          [(ngModel)]="newRnbId"
+          placeholder="Identifiant RNB"
+          class="px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand font-mono text-sm w-64"
+          (keydown.enter)="onAddRnb()"
+        />
+        <button
+          class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50 text-sm"
+          (click)="onAddRnb()"
+          [disabled]="!newRnbId().trim() || facade.anyMutationPending()"
+        >
+          {{ facade.addRnbIsPending() ? 'Ajout...' : 'Ajouter' }}
+        </button>
+      </div>
+    </div>
+
+    <app-activity-list entityType="Building" [entityId]="building()!.id" />
+
+    <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+  }
+</div>

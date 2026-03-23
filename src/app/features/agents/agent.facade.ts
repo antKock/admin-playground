@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { AgentDomainStore } from '@domains/agents/agent.store';
 import { AgentCreate, AgentUpdate, AgentStatus } from '@domains/agents/agent.models';
 import { CommunityDomainStore } from '@domains/communities/community.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { AgentFeatureStore } from './agent.store';

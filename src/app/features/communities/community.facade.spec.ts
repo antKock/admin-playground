@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { CommunityFacade } from './community.facade';
 import { CommunityRead } from '@domains/communities/community.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockCommunity: CommunityRead = {
   id: 'comm-1',

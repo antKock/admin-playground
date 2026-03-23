@@ -1,0 +1,142 @@
+<div class="p-6" [class.pb-20]="facade.unsavedCount() > 0">
+  @if (facade.isLoadingDetail()) {
+    <div class="animate-pulse space-y-4">
+      <div class="h-8 bg-surface-muted rounded w-1/3"></div>
+      <div class="h-4 bg-surface-muted rounded w-1/4"></div>
+      <div class="grid grid-cols-2 gap-4 mt-6">
+        @for (i of skeletonFields; track $index) {
+          <div class="space-y-2">
+            <div class="h-3 bg-surface-muted rounded w-20"></div>
+            <div class="h-4 bg-surface-muted rounded w-32"></div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (facade.detailError()) {
+    <div class="text-center py-16">
+      <app-breadcrumb [items]="errorBreadcrumbs" />
+      <p class="text-error mb-4">{{ facade.detailError() }}</p>
+    </div>
+  } @else if (model()) {
+    <app-breadcrumb [items]="breadcrumbs()" />
+    <div class="flex items-center justify-between mb-2">
+      <div>
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold text-text-primary">{{ model()!.name }}</h1>
+          <app-status-badge [status]="model()!.status" />
+        </div>
+        <p class="text-xs text-text-tertiary mt-1">Mis à jour le {{ formatDate(model()!.last_updated_at) }} · ID: {{ model()!.id }}</p>
+      </div>
+      <div class="flex gap-2">
+        @if (model()!.status === 'draft') {
+          <button
+            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+            (click)="onPublish()"
+            [disabled]="facade.anyMutationPending()"
+          >
+            {{ facade.publishIsPending() ? 'Publication...' : 'Publier' }}
+          </button>
+        }
+        @if (model()!.status === 'published') {
+          <button
+            class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
+            (click)="onDisable()"
+            [disabled]="facade.anyMutationPending()"
+          >
+            {{ facade.disableIsPending() ? 'Désactivation...' : 'Désactiver' }}
+          </button>
+        }
+        @if (model()!.status === 'disabled') {
+          <button
+            class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors disabled:opacity-50"
+            (click)="onActivate()"
+            [disabled]="facade.anyMutationPending()"
+          >
+            {{ facade.activateIsPending() ? 'Activation...' : 'Activer' }}
+          </button>
+        }
+        <button
+          class="px-4 py-2 border border-border rounded-lg text-text-primary hover:bg-surface-muted transition-colors disabled:opacity-50"
+          (click)="router.navigate(['/action-models', model()!.id, 'edit'])"
+          [disabled]="facade.anyMutationPending()"
+        >
+          Modifier
+        </button>
+        @if (model()!.status !== 'deleted') {
+          <button
+            class="px-4 py-2 bg-status-invalid text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+            (click)="onDelete()"
+            [disabled]="facade.anyMutationPending()"
+          >
+            Supprimer
+          </button>
+        }
+      </div>
+    </div>
+
+    <app-section-anchors [sections]="sectionDefs()" class="mb-6 block" />
+
+    <div id="section-metadata">
+      <app-metadata-grid [fields]="fields()" />
+    </div>
+
+    <!-- Indicators Section -->
+    <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
+    <div id="section-indicators" class="mt-6">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicateurs</h2>
+        <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attaché(s)</span>
+      </div>
+
+      @if (indicatorCards().length === 0) {
+        <p class="text-sm text-text-secondary mb-3">Aucun indicateur attaché</p>
+      } @else {
+        <div
+          cdkDropList
+          class="space-y-2 mb-3"
+          (cdkDropListDropped)="onDrop($event)"
+        >
+          @for (card of indicatorCards(); track card.id) {
+            <div cdkDrag cdkDragLockAxis="y">
+              <app-indicator-card
+                [indicator]="card"
+                [params]="getParams(card.id)"
+                [childParams]="getChildParamsMap(card.id)"
+                [modified]="isModified(card.id)"
+                modelType="action"
+                [modelId]="model()!.id"
+                (remove)="onDetach($event)"
+                (paramsChange)="onParamsChange(card.id, $event)"
+                (childParamsChange)="onChildParamsChange(card.id, $event)"
+              />
+            </div>
+          }
+        </div>
+      }
+
+      <app-indicator-picker
+        [options]="pickerOptions()"
+        [attachedIds]="attachedIds()"
+        [loading]="facade.indicatorsLoading()"
+        (attach)="onAttach($event)"
+      />
+    </div>
+
+    @if (model()) {
+      <div id="section-activity">
+        <app-activity-list entityType="ActionModel" [entityId]="model()!.id" />
+      </div>
+    }
+
+    <div id="section-api-inspector">
+      <app-api-inspector [requestUrl]="inspectorService.lastRequestUrl()" [responseBody]="inspectorService.lastResponseBody()" />
+    </div>
+  }
+</div>
+
+<app-save-bar
+  [count]="facade.unsavedCount()"
+  [saving]="facade.updateIsPending()"
+  (save)="onSave()"
+  (discard)="onDiscard()"
+/>

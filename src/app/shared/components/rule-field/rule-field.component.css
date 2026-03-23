@@ -1,0 +1,175 @@
+.rule-field {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  background: var(--color-surface-base);
+  border: 1px solid var(--color-stroke-brand, #1400cc33);
+  border-radius: 8px;
+}
+.rule-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.rule-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-brand, #1400cc);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.mode-toggle {
+  display: flex;
+  border: 1px solid var(--color-brand, #1400cc);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.toggle-seg {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-brand, #1400cc);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.toggle-seg.active {
+  background: var(--color-brand, #1400cc);
+  color: white;
+}
+.prose-read-zone {
+  position: relative;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  background: var(--color-surface-subtle);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-brand, #1400cc);
+  line-height: 1.6;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.prose-read-zone:hover {
+  background: var(--color-surface-muted);
+}
+.prose-edit-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--color-brand, #1400cc);
+  background: var(--color-surface-base);
+  color: var(--color-brand, #1400cc);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.prose-read-zone:hover .prose-edit-btn {
+  opacity: 1;
+}
+.prose-mirror {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  background: var(--color-surface-subtle);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-brand, #1400cc);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.prose-mirror.read-only {
+  cursor: default;
+}
+.json-read-zone {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  background: var(--color-surface-base);
+  border: 1px solid var(--color-stroke-standard);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  margin: 0;
+  transition: background 0.15s ease;
+}
+.json-read-zone:hover {
+  background: var(--color-surface-muted);
+}
+.tk-var { color: var(--color-tk-var, #7c3aed); }
+.tk-kw  { color: var(--color-tk-kw, #555555); }
+.tk-val { color: var(--color-tk-val, #059669); }
+.tk-pfx { color: var(--color-tk-pfx, #888888); font-style: italic; margin-right: 4px; }
+.tk-err { color: var(--color-tk-err, #b32020); }
+.rule-prose {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--color-surface-subtle);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-brand, #1400cc);
+  line-height: 1.6;
+}
+.rule-prose em {
+  font-style: italic;
+}
+.rule-or-list {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+.rule-or-list li {
+  color: var(--color-text-primary);
+  padding: 3px 0;
+}
+.rule-or-list li + li {
+  border-top: 1px solid var(--color-stroke-standard);
+  margin-top: 3px;
+  padding-top: 6px;
+}
+.cm-host, .prose-cm-host {
+  width: 100%;
+}
+.rule-error {
+  border-left-color: var(--color-text-error, #dc2626);
+  color: var(--color-text-error, #dc2626);
+}
+.rule-warning {
+  border-left-color: var(--color-status-warning, #d97706);
+  color: var(--color-status-warning, #d97706);
+}
+.validation-row {
+  margin-top: 6px;
+}
+.validation-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.validation-badge.valid {
+  background: #059669;
+  color: white;
+}
+.validation-badge.error {
+  background: #b32020;
+  color: white;
+}
+.validation-badge.warning {
+  background: var(--color-status-warning, #d97706);
+  color: white;
+}
+.rule-field.has-error {
+  border-color: var(--color-text-error, #dc2626);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.08);
+}

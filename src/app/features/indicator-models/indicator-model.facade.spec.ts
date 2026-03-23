@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { IndicatorModelFacade } from './indicator-model.facade';
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockIndicatorModel: IndicatorModel = {
   id: 'im-1',

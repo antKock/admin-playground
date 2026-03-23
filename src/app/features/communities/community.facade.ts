@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { CommunityDomainStore } from '@domains/communities/community.store';
 import { CommunityCreate, CommunityUpdate, UserRead } from '@domains/communities/community.models';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { CommunityFeatureStore } from './community.store';

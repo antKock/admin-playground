@@ -1,0 +1,248 @@
+<div class="indicator-card"
+  [class.expanded]="expanded()"
+  [class.unsaved]="modified()"
+>
+  <!-- Header -->
+  <div class="indicator-card-header" (click)="expanded.set(!expanded())">
+    <div class="indicator-card-left">
+      <span cdkDragHandle class="drag-handle" title="Drag to reorder" (click)="$event.stopPropagation()">
+        <lucide-icon [img]="GripVertical" [size]="16" />
+      </span>
+      <div>
+        <a class="indicator-card-title" [href]="'/indicator-models/' + indicator().id" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">{{ indicator().name }}</a>
+        <div class="indicator-card-technical">
+          {{ indicator().technical_label }}
+          &nbsp;
+          <app-status-badge [status]="indicator().type" />
+        </div>
+      </div>
+    </div>
+    <div class="indicator-card-right">
+      <app-param-hint-icons [hints]="indicator().paramHints" />
+      <button class="remove-indicator-btn" title="Remove from model"
+        (click)="$event.stopPropagation(); remove.emit(indicator().id)">
+        <lucide-icon [img]="XIcon" [size]="14" />
+      </button>
+      <span class="expand-icon">
+        <lucide-icon [img]="ChevronDown" [size]="18" />
+      </span>
+    </div>
+  </div>
+
+  <!-- Expanded parameter editing -->
+  @if (expanded()) {
+    <div class="indicator-card-body">
+      <!-- Required -->
+      <div class="param-section">
+        <app-toggle-row
+          label="Obligatoire"
+          [icon]="AsteriskIcon"
+          [enabled]="isOverridden('required_rule')"
+          (toggle)="onRequiredToggle($event)"
+        />
+        @if (isOverridden('required_rule')) {
+          <app-rule-field
+            [value]="isCustomRule(params().required_rule) ? params().required_rule! : ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onRuleChange('required_rule', $event)"
+          />
+        }
+      </div>
+
+      <!-- Not Editable -->
+      <div class="param-section">
+        <app-toggle-row
+          label="Non éditable"
+          [icon]="PenOffIcon"
+          [enabled]="isOverridden('disabled_rule')"
+          (toggle)="onDisabledToggle($event)"
+        />
+        @if (isOverridden('disabled_rule')) {
+          <app-rule-field
+            [value]="isCustomRule(params().disabled_rule) ? params().disabled_rule! : ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onRuleChange('disabled_rule', $event)"
+          />
+        }
+      </div>
+
+      <!-- Masqué (Hidden) -->
+      <div class="param-section">
+        <app-toggle-row
+          label="Masqué"
+          [icon]="EyeOffIcon"
+          [enabled]="isOverridden('hidden_rule')"
+          (toggle)="onHiddenToggle($event)"
+        />
+        @if (isOverridden('hidden_rule')) {
+          <app-rule-field
+            [value]="isCustomRule(params().hidden_rule) ? params().hidden_rule! : ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onRuleChange('hidden_rule', $event)"
+          />
+        }
+      </div>
+
+      <!-- Default Value -->
+      <div class="param-section">
+        <app-toggle-row
+          label="Valeur par défaut"
+          [icon]="ClipboardIcon"
+          [enabled]="params().default_value_rule != null && params().default_value_rule !== 'false'"
+          (toggle)="onDefaultValueToggle($event)"
+        />
+        @if (params().default_value_rule != null && params().default_value_rule !== 'false') {
+          <app-rule-field
+            mode="value"
+            [value]="params().default_value_rule ?? ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onDefaultValueInput($event)"
+          />
+        }
+      </div>
+
+      <!-- Duplicable -->
+      <div class="param-section">
+        <app-toggle-row
+          label="Duplicable"
+          [icon]="CopyIcon"
+          [enabled]="isOverridden('duplicable_rule')"
+          (toggle)="onDuplicableToggle($event)"
+        />
+        @if (isOverridden('duplicable_rule')) {
+          <app-rule-field
+            [value]="isCustomRule(params().duplicable_rule) ? params().duplicable_rule! : ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onRuleChange('duplicable_rule', $event)"
+          />
+        }
+      </div>
+
+      <!-- Constrained Values -->
+      <div class="param-section" [class.last]="!indicator().children?.length">
+        <app-toggle-row
+          label="Valeurs contraintes"
+          [icon]="BracesIcon"
+          [enabled]="isOverridden('constrained_rule')"
+          (toggle)="onConstrainedToggle($event)"
+        />
+        @if (isOverridden('constrained_rule')) {
+          <app-rule-field
+            [value]="isCustomRule(params().constrained_rule) ? params().constrained_rule! : ''"
+            [modelType]="modelType()"
+            [modelId]="modelId()"
+            [excludeIndicator]="indicator().technical_label"
+            (valueChange)="onRuleChange('constrained_rule', $event)"
+          />
+        }
+      </div>
+
+      <!-- Children -->
+      @if (indicator().children?.length) {
+        <div class="children-section">
+          <div class="children-label">Indicateurs enfants</div>
+          @for (child of indicator().children!; track child.id) {
+            <div class="child-indicator" [class.child-expanded]="isChildExpanded(child.id)">
+              <div class="child-header" (click)="toggleChildExpanded(child.id)">
+                <div>
+                  <span class="child-name">{{ child.name }}</span>
+                  <span class="child-technical">
+                    {{ child.technical_label }}
+                    &nbsp;
+                    <app-status-badge [status]="child.type" />
+                  </span>
+                </div>
+                <div class="child-right">
+                  <app-param-hint-icons [hints]="child.paramHints" />
+                  <span class="child-expand-icon">
+                    <lucide-icon [img]="ChevronDown" [size]="14" />
+                  </span>
+                </div>
+              </div>
+              @if (isChildExpanded(child.id)) {
+                <div class="child-body">
+                  <div class="param-section">
+                    <app-toggle-row label="Obligatoire" [icon]="AsteriskIcon"
+                      [enabled]="isChildRuleOverridden(child.id, 'required_rule')"
+                      (toggle)="onChildToggle(child.id, 'required_rule', $event)" />
+                    @if (isChildRuleOverridden(child.id, 'required_rule')) {
+                      <app-rule-field
+                        [value]="isCustomRule(getChildParams(child.id).required_rule) ? getChildParams(child.id).required_rule! : ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildRuleChange(child.id, 'required_rule', $event)" />
+                    }
+                  </div>
+                  <div class="param-section">
+                    <app-toggle-row label="Non éditable" [icon]="PenOffIcon"
+                      [enabled]="isChildRuleOverridden(child.id, 'disabled_rule')"
+                      (toggle)="onChildToggle(child.id, 'disabled_rule', $event)" />
+                    @if (isChildRuleOverridden(child.id, 'disabled_rule')) {
+                      <app-rule-field
+                        [value]="isCustomRule(getChildParams(child.id).disabled_rule) ? getChildParams(child.id).disabled_rule! : ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildRuleChange(child.id, 'disabled_rule', $event)" />
+                    }
+                  </div>
+                  <div class="param-section">
+                    <app-toggle-row label="Masqué" [icon]="EyeOffIcon"
+                      [enabled]="isChildRuleOverridden(child.id, 'hidden_rule')"
+                      (toggle)="onChildToggle(child.id, 'hidden_rule', $event)" />
+                    @if (isChildRuleOverridden(child.id, 'hidden_rule')) {
+                      <app-rule-field
+                        [value]="isCustomRule(getChildParams(child.id).hidden_rule) ? getChildParams(child.id).hidden_rule! : ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildRuleChange(child.id, 'hidden_rule', $event)" />
+                    }
+                  </div>
+                  <div class="param-section">
+                    <app-toggle-row label="Valeur par défaut" [icon]="ClipboardIcon"
+                      [enabled]="getChildParams(child.id).default_value_rule != null && getChildParams(child.id).default_value_rule !== 'false'"
+                      (toggle)="onChildDefaultValueToggle(child.id, $event)" />
+                    @if (getChildParams(child.id).default_value_rule != null && getChildParams(child.id).default_value_rule !== 'false') {
+                      <app-rule-field mode="value"
+                        [value]="getChildParams(child.id).default_value_rule ?? ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildDefaultValueInput(child.id, $event)" />
+                    }
+                  </div>
+                  <div class="param-section">
+                    <app-toggle-row label="Duplicable" [icon]="CopyIcon"
+                      [enabled]="isChildRuleOverridden(child.id, 'duplicable_rule')"
+                      (toggle)="onChildToggle(child.id, 'duplicable_rule', $event)" />
+                    @if (isChildRuleOverridden(child.id, 'duplicable_rule')) {
+                      <app-rule-field
+                        [value]="isCustomRule(getChildParams(child.id).duplicable_rule) ? getChildParams(child.id).duplicable_rule! : ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildRuleChange(child.id, 'duplicable_rule', $event)" />
+                    }
+                  </div>
+                  <div class="param-section last">
+                    <app-toggle-row label="Valeurs contraintes" [icon]="BracesIcon"
+                      [enabled]="isChildRuleOverridden(child.id, 'constrained_rule')"
+                      (toggle)="onChildToggle(child.id, 'constrained_rule', $event)" />
+                    @if (isChildRuleOverridden(child.id, 'constrained_rule')) {
+                      <app-rule-field
+                        [value]="isCustomRule(getChildParams(child.id).constrained_rule) ? getChildParams(child.id).constrained_rule! : ''"
+                        [modelType]="modelType()" [modelId]="modelId()"
+                        (valueChange)="onChildRuleChange(child.id, 'constrained_rule', $event)" />
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

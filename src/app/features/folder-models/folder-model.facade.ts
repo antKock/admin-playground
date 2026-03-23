@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
 import { FolderModelCreate, FolderModelUpdate } from '@domains/folder-models/folder-model.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { FolderModelFeatureStore } from './folder-model.store';

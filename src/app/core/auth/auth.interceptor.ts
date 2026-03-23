@@ -7,7 +7,7 @@ import { BehaviorSubject, catchError, filter, switchMap, take, throwError, from,
 
 import { environment } from '@app/../environments/environment';
 import { AuthService } from './auth.service';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 // Only inject the token for requests targeting our own API (not external URLs like CDN assets).
 function isSameOrigin(url: string): boolean {

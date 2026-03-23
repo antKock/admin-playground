@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { AgentFacade } from './agent.facade';
 import { AgentRead } from '@domains/agents/agent.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockAgent: AgentRead = {
   id: 'agent-1',

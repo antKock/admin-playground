@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 
 import { ToastContainerComponent } from '@app/shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '@app/shared/components/confirm-dialog/confirm-dialog.component';
-import { OpenApiWatcherService } from '@app/core/services/openapi-watcher.service';
+import { OpenApiWatcherService } from '@core/api/openapi-watcher.service';
 
 @Component({
   selector: 'app-root',

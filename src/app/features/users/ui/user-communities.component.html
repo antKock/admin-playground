@@ -1,0 +1,75 @@
+<div class="mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-text-primary">Communautés</h2>
+    <button
+      class="px-3 py-1.5 text-sm bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
+      (click)="togglePicker()"
+    >
+      {{ showPicker() ? 'Fermer' : '+ Assigner une communauté' }}
+    </button>
+  </div>
+
+  @if (showPicker()) {
+    <div class="mb-4 p-4 border border-border rounded-lg bg-surface-base">
+      <input
+        type="text"
+        class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand mb-3"
+        placeholder="Rechercher des communautés par nom..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearch($event)"
+      />
+      @if (facade.isLoadingCommunities()) {
+        <p class="text-sm text-text-secondary">Chargement des communautés...</p>
+      } @else if (facade.communitiesError()) {
+        <p class="text-sm text-error">{{ facade.communitiesError() }}</p>
+      } @else if (filteredCommunities().length === 0) {
+        <p class="text-sm text-text-secondary">Aucune communauté trouvée.</p>
+      } @else {
+        <div class="max-h-48 overflow-y-auto space-y-1">
+          @for (community of filteredCommunities(); track community.id) {
+            <div
+              class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface-muted"
+              [class.opacity-50]="isAssigned(community)"
+            >
+              <div>
+                <span class="text-sm text-text-primary">{{ community.name }}</span>
+                @if (isAssigned(community)) {
+                  <span class="ml-2 text-xs px-1.5 py-0.5 bg-surface-muted rounded text-text-secondary">Déjà assignée</span>
+                }
+              </div>
+              @if (!isAssigned(community)) {
+                <button
+                  class="text-xs px-2 py-1 bg-brand text-white rounded hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  [disabled]="facade.assignCommunityIsPending()"
+                  (click)="onAssign(community)"
+                >
+                  Assigner
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (assignedCommunities().length === 0) {
+    <p class="text-sm text-text-secondary">Aucune communauté assignée à cet utilisateur.</p>
+  } @else {
+    <div class="space-y-1">
+      @for (community of assignedCommunities(); track community.id) {
+        <div class="flex items-center justify-between px-3 py-2 border border-border rounded-lg">
+          <a [routerLink]="['/communities', community.id]" target="_blank" rel="noopener noreferrer" class="text-sm text-brand hover:underline">{{ community.name }}</a>
+          <button
+            class="text-text-secondary hover:text-status-invalid transition-colors disabled:opacity-50"
+            [disabled]="facade.removeCommunityIsPending()"
+            (click)="onRemove(community)"
+            title="Retirer la communauté"
+          >
+            &times;
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

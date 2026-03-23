@@ -1,0 +1,23 @@
+<div class="toggle-row">
+  <div class="toggle-row-left">
+    @if (icon()) {
+      <span class="toggle-icon">
+        <lucide-icon [img]="icon()!" [size]="16" />
+      </span>
+    }
+    <span class="toggle-label">{{ label() }}</span>
+  </div>
+  <div class="toggle-row-right">
+    <button
+      type="button"
+      class="toggle"
+      role="switch"
+      [attr.aria-checked]="enabled()"
+      [attr.aria-label]="label()"
+      [class.on]="enabled()"
+      (click)="toggle.emit(!enabled())"
+    >
+      <span class="toggle-knob"></span>
+    </button>
+  </div>
+</div>

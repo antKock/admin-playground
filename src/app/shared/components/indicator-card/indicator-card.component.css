@@ -1,0 +1,189 @@
+.indicator-card {
+  background: var(--color-surface-subtle, #fafafa);
+  border: 1px solid var(--color-stroke-standard);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.15s;
+}
+.indicator-card.unsaved {
+  border-left: 3px solid var(--color-status-unsaved, #e8911a);
+  background: var(--color-status-unsaved-bg, #fef6e9);
+}
+
+.indicator-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px;
+}
+.indicator-card-header:hover {
+  background: var(--color-surface-muted);
+}
+.indicator-card.unsaved .indicator-card-header:hover {
+  background: #fdecd0;
+}
+
+.indicator-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--color-text-disabled, #c4c4cc);
+  cursor: grab;
+}
+.drag-handle:hover {
+  color: var(--color-text-tertiary);
+}
+
+.indicator-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-link, #1400cc);
+  text-decoration: none;
+}
+.indicator-card-title:hover {
+  text-decoration: underline;
+}
+.indicator-card-technical {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.indicator-card-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.remove-indicator-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--color-text-disabled, #c4c4cc);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+.indicator-card:hover .remove-indicator-btn {
+  opacity: 1;
+}
+.remove-indicator-btn:hover {
+  color: var(--color-text-error, #dc2626);
+  border-color: var(--color-text-error, #dc2626);
+  background: #fef2f2;
+}
+
+.expand-icon {
+  color: var(--color-text-tertiary);
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+}
+.indicator-card.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.indicator-card-body {
+  padding: 0 16px 16px;
+  background: var(--color-surface-muted);
+  border-top: 1px solid var(--color-stroke-standard);
+  border-radius: 0 0 8px 8px;
+}
+
+.param-section {
+  border-bottom: 1px solid var(--color-stroke-standard);
+  padding: 12px 0 8px;
+}
+.param-section:first-child {
+  padding-top: 4px;
+}
+.param-section.last,
+.param-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.children-section {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-stroke-standard);
+}
+.children-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 8px;
+}
+.child-indicator {
+  background: var(--color-surface-subtle, #fafafa);
+  border: 1px solid var(--color-stroke-standard);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+.child-indicator:last-child {
+  margin-bottom: 0;
+}
+.child-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.child-header:hover {
+  opacity: 0.8;
+}
+.child-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.child-expand-icon {
+  color: var(--color-text-tertiary);
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+}
+.child-expanded .child-expand-icon {
+  transform: rotate(180deg);
+}
+.child-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.child-technical {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+.child-body {
+  border-top: 1px solid var(--color-stroke-standard);
+  margin-top: 8px;
+  padding-top: 4px;
+}
+.child-body .param-section {
+  padding: 8px 0 6px;
+}

@@ -9,33 +9,7 @@ import { AgentFacade } from '../agent.facade';
 @Component({
   selector: 'app-agent-list',
   imports: [DataTableComponent, LucideAngularModule],
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Agents</h1>
-        <button
-          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-          (click)="router.navigate(['/agents/new'])"
-        >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un agent
-        </button>
-      </div>
-
-      <app-data-table
-        [columns]="columns()"
-        [data]="rows()"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [totalCount]="facade.totalCount()"
-        [emptyMessage]="emptyMessage()"
-        (rowClick)="onRowClick($event)"
-        (linkClick)="onLinkClick($event)"
-        (loadMore)="onLoadMore()"
-        (filterChange)="onFilterChange($event)"
-        (clearFiltersClick)="clearFilters()"
-      />
-    </div>
-  `,
+  templateUrl: './agent-list.component.html',
 })
 export class AgentListComponent implements OnInit {
   protected readonly PlusIcon = Plus;

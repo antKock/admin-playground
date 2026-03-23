@@ -7,7 +7,7 @@ import { ActionModelFacade } from './action-model.facade';
 import { ActionModel } from '@domains/action-models/action-model.models';
 import { FundingProgram } from '@domains/funding-programs/funding-program.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockActionModel: ActionModel = {
   id: 'am-1',

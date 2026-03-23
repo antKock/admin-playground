@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 
 import { unsavedChangesGuard, HasUnsavedChanges } from './unsaved-changes.guard';
-import { ConfirmDialogService } from '../services/confirm-dialog.service';
+import { ConfirmDialogService } from '../components/confirm-dialog/confirm-dialog.service';
 
 describe('unsavedChangesGuard', () => {
   let confirmDialogService: ConfirmDialogService;

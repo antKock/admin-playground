@@ -8,32 +8,7 @@ import { ActionThemeFacade } from '../action-theme.facade';
 @Component({
   selector: 'app-action-theme-list',
   imports: [DataTableComponent, LucideAngularModule],
-  template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-text-primary">Thèmes d'action</h1>
-        <button
-          class="inline-flex items-center gap-1 whitespace-nowrap px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover transition-colors"
-          (click)="router.navigate(['/action-themes/new'])"
-        >
-          <lucide-icon [img]="PlusIcon" [size]="16" /> Créer un thème d'action
-        </button>
-      </div>
-
-      <app-data-table
-        [columns]="columns"
-        [data]="facade.items()"
-        [isLoading]="facade.isLoading()"
-        [hasMore]="facade.hasMore()"
-        [totalCount]="facade.totalCount()"
-        [emptyMessage]="emptyMessage()"
-        (rowClick)="onRowClick($event)"
-        (loadMore)="onLoadMore()"
-        (filterChange)="onFilterChange($event)"
-        (clearFiltersClick)="clearFilters()"
-      />
-    </div>
-  `,
+  templateUrl: './action-theme-list.component.html',
 })
 export class ActionThemeListComponent implements OnInit {
   protected readonly PlusIcon = Plus;

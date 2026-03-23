@@ -1,0 +1,12 @@
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--color-surface-subtle);
+  border-radius: 8px;
+}
+
+.metadata-field {
+  min-width: 0;
+}

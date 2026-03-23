@@ -31,12 +31,12 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { EditorView } from '@codemirror/view';
-import { translateJsonLogicToProse, isAllSimpleOr, type ProseMode } from '../../utils/jsonlogic-prose';
-import { validateJsonLogic } from '../../utils/jsonlogic-validate';
-import { type ParseResult, stripHtml, decodeHtmlEntities } from '../../utils/prose-parser';
-import { VariableDictionaryService } from '../../services/variable-dictionary.service';
-import { createProseEditorState, runInitialParse } from '../../utils/prose-editor-setup';
-import { createJsonEditorState } from '../../utils/json-editor-setup';
+import { translateJsonLogicToProse, isAllSimpleOr, type ProseMode } from '../../jsonlogic/jsonlogic-prose';
+import { validateJsonLogic } from '../../jsonlogic/jsonlogic-validate';
+import { type ParseResult, stripHtml, decodeHtmlEntities } from '../../jsonlogic/prose-parser';
+import { VariableDictionaryService } from '../../jsonlogic/variable-dictionary.service';
+import { createProseEditorState, runInitialParse } from '../../jsonlogic/prose-editor-setup';
+import { createJsonEditorState } from '../../jsonlogic/json-editor-setup';
 
 export type RuleEditorState = 'texte-read' | 'texte-edit' | 'json-read' | 'json-edit';
 
@@ -56,263 +56,8 @@ function bulletsToBlankLines(prose: string): string {
 @Component({
   selector: 'app-rule-field',
   imports: [NgTemplateOutlet],
-  template: `
-    <!-- Reusable prose display block -->
-    <ng-template #proseDisplay let-parts>
-      <em class="tk-pfx">{{ parts.prefix }}</em>
-      @if (parts.content) {
-        <span [innerHTML]="parts.content"></span>
-      }
-      @if (parts.branches) {
-        <ul class="rule-or-list">
-          @for (branch of parts.branches; track branch) {
-            <li [innerHTML]="branch"></li>
-          }
-        </ul>
-      }
-    </ng-template>
-
-    <div class="rule-field" [class.has-error]="hasBlockingErrors()">
-      <div class="rule-field-header">
-        <span class="rule-field-label">{{ label() }}</span>
-        <div class="mode-toggle">
-          <button type="button" class="toggle-seg" [class.active]="activeMode() === 'texte'" (click)="switchMode('texte')">Texte</button>
-          <button type="button" class="toggle-seg" [class.active]="activeMode() === 'json'" (click)="switchMode('json')">JSON</button>
-        </div>
-      </div>
-
-      <!-- TEXTE READ MODE -->
-      @if (editorState() === 'texte-read') {
-        @let parts = proseParts();
-        @if (parts) {
-          <div class="prose-read-zone" (click)="enterTexteEdit()">
-            <button class="prose-edit-btn" type="button">Modifier</button>
-            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
-          </div>
-        }
-      }
-
-      <!-- TEXTE EDIT MODE -->
-      @if (editorState() === 'texte-edit') {
-        <div class="prose-cm-host" #proseCmHost></div>
-        @if (parseResult(); as result) {
-          <div class="validation-row">
-            @if (result.success && unknownVarCount() > 0) {
-              <span class="validation-badge warning">Avertissement — {{ unknownVarCount() }} variable(s) inconnue(s)</span>
-            } @else if (result.success) {
-              <span class="validation-badge valid">Valide{{ orBranchCount() > 1 ? ' — ' + orBranchCount() + ' branches OR' : '' }}</span>
-            } @else if (result.errors.some(e => !e.atEnd)) {
-              <span class="validation-badge error">{{ result.errors.find(e => !e.atEnd)?.message }}</span>
-            }
-          </div>
-        }
-      }
-
-      <!-- JSON READ MODE -->
-      @if (editorState() === 'json-read') {
-        @let parts = proseParts();
-        @if (parts) {
-          <div class="prose-mirror read-only">
-            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
-          </div>
-        }
-        <pre class="json-read-zone" (click)="enterJsonEdit()">{{ formattedJson() }}</pre>
-      }
-
-      <!-- JSON EDIT MODE -->
-      @if (editorState() === 'json-edit') {
-        @let parts = jsonEditProseParts();
-        @if (parts) {
-          <div class="prose-mirror read-only">
-            <ng-container *ngTemplateOutlet="proseDisplay; context: { $implicit: parts }" />
-          </div>
-        }
-        @if (errorMessage()) {
-          <div class="rule-prose" [class.rule-error]="hasError()" [class.rule-warning]="!hasError()">
-            <em>{{ errorMessage() }}</em>
-          </div>
-        }
-        <div class="cm-host" #editorHost></div>
-      }
-    </div>
-  `,
-  styles: [`
-    .rule-field {
-      width: 100%;
-      margin-top: 6px;
-      padding: 12px;
-      background: var(--color-surface-base);
-      border: 1px solid var(--color-stroke-brand, #1400cc33);
-      border-radius: 8px;
-    }
-    .rule-field-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .rule-field-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-brand, #1400cc);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .mode-toggle {
-      display: flex;
-      border: 1px solid var(--color-brand, #1400cc);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .toggle-seg {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border: none;
-      cursor: pointer;
-      background: transparent;
-      color: var(--color-brand, #1400cc);
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-    .toggle-seg.active {
-      background: var(--color-brand, #1400cc);
-      color: white;
-    }
-    .prose-read-zone {
-      position: relative;
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      padding: 8px 12px;
-      background: var(--color-surface-subtle);
-      border-radius: 6px;
-      border-left: 3px solid var(--color-brand, #1400cc);
-      line-height: 1.6;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-    .prose-read-zone:hover {
-      background: var(--color-surface-muted);
-    }
-    .prose-edit-btn {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--color-brand, #1400cc);
-      background: var(--color-surface-base);
-      color: var(--color-brand, #1400cc);
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .prose-read-zone:hover .prose-edit-btn {
-      opacity: 1;
-    }
-    .prose-mirror {
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      padding: 8px 12px;
-      background: var(--color-surface-subtle);
-      border-radius: 6px;
-      border-left: 3px solid var(--color-brand, #1400cc);
-      line-height: 1.6;
-      margin-bottom: 8px;
-    }
-    .prose-mirror.read-only {
-      cursor: default;
-    }
-    .json-read-zone {
-      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-      font-size: 13px;
-      padding: 8px 12px;
-      background: var(--color-surface-base);
-      border: 1px solid var(--color-stroke-standard);
-      border-radius: 6px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      cursor: pointer;
-      color: var(--color-text-primary);
-      line-height: 1.5;
-      margin: 0;
-      transition: background 0.15s ease;
-    }
-    .json-read-zone:hover {
-      background: var(--color-surface-muted);
-    }
-    .tk-var { color: var(--color-tk-var, #7c3aed); }
-    .tk-kw  { color: var(--color-tk-kw, #555555); }
-    .tk-val { color: var(--color-tk-val, #059669); }
-    .tk-pfx { color: var(--color-tk-pfx, #888888); font-style: italic; margin-right: 4px; }
-    .tk-err { color: var(--color-tk-err, #b32020); }
-    .rule-prose {
-      font-size: 13px;
-      color: var(--color-text-secondary);
-      margin-bottom: 8px;
-      padding: 8px 12px;
-      background: var(--color-surface-subtle);
-      border-radius: 6px;
-      border-left: 3px solid var(--color-brand, #1400cc);
-      line-height: 1.6;
-    }
-    .rule-prose em {
-      font-style: italic;
-    }
-    .rule-or-list {
-      margin: 6px 0 0;
-      padding-left: 20px;
-      list-style: disc;
-    }
-    .rule-or-list li {
-      color: var(--color-text-primary);
-      padding: 3px 0;
-    }
-    .rule-or-list li + li {
-      border-top: 1px solid var(--color-stroke-standard);
-      margin-top: 3px;
-      padding-top: 6px;
-    }
-    .cm-host, .prose-cm-host {
-      width: 100%;
-    }
-    .rule-error {
-      border-left-color: var(--color-text-error, #dc2626);
-      color: var(--color-text-error, #dc2626);
-    }
-    .rule-warning {
-      border-left-color: var(--color-status-warning, #d97706);
-      color: var(--color-status-warning, #d97706);
-    }
-    .validation-row {
-      margin-top: 6px;
-    }
-    .validation-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .validation-badge.valid {
-      background: #059669;
-      color: white;
-    }
-    .validation-badge.error {
-      background: #b32020;
-      color: white;
-    }
-    .validation-badge.warning {
-      background: var(--color-status-warning, #d97706);
-      color: white;
-    }
-    .rule-field.has-error {
-      border-color: var(--color-text-error, #dc2626);
-      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.08);
-    }
-  `],
+  templateUrl: './rule-field.component.html',
+  styleUrl: './rule-field.component.css',
 })
 export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly value = input('');
@@ -367,7 +112,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly unknownVarCount = signal(0);
 
   /** Known variable paths for linting (populated by variable dictionary when modelType/modelId are provided) */
-  readonly variables = signal<import('../../services/variable-dictionary.service').ProseVariable[]>([]);
+  readonly variables = signal<import('../../jsonlogic/variable-dictionary.service').ProseVariable[]>([]);
 
   /** Whether the variable dictionary has indicator entries (used to suppress false unknown-variable warnings) */
   readonly hasIndicators = computed(() => this.variables().some((v) => v.source === 'indicator'));

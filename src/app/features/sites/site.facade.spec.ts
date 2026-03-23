@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { SiteFacade } from './site.facade';
 import { Site } from '@domains/site/site.models';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 const mockSite: Site = {
   id: 'site-1',

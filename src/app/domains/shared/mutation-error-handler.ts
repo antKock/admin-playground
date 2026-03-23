@@ -1,4 +1,4 @@
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 
 interface HttpErrorShape {
   status?: number;

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { OpenApiBannerComponent } from './openapi-banner.component';
-import { OpenApiWatcherService } from '@app/core/services/openapi-watcher.service';
+import { OpenApiWatcherService } from '@core/api/openapi-watcher.service';
 
 describe('OpenApiBannerComponent', () => {
   let component: OpenApiBannerComponent;

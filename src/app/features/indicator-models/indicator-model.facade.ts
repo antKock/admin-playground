@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { IndicatorModelCreate, IndicatorModelUpdate } from '@domains/indicator-models/indicator-model.models';
-import { ToastService } from '@app/shared/services/toast.service';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { IndicatorModelFeatureStore } from './indicator-model.store';

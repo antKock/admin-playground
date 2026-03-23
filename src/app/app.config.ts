@@ -3,7 +3,7 @@ import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@ang
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { authInterceptor } from './core/auth/auth.interceptor';
-import { apiInspectorInterceptor } from './core/api/api-inspector.interceptor';
+import { apiInspectorInterceptor } from '@shared/api-inspector/api-inspector.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
