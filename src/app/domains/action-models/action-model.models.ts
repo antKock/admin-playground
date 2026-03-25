@@ -12,3 +12,8 @@ export type IndicatorModelAssociationInput = components['schemas']['IndicatorMod
 // Child indicator within a group association (read + input).
 export type ChildIndicatorModelWithAssociation = components['schemas']['ChildIndicatorModelWithAssociation'];
 export type ChildIndicatorModelAssociationInput = components['schemas']['ChildIndicatorModelAssociationInput'];
+export type SectionModelCreate = components['schemas']['SectionModelCreate'];
+export type SectionModelUpdate = components['schemas']['SectionModelUpdate'];
+export type SectionModelWithIndicators = components['schemas']['SectionModelWithIndicators'];
+export type SectionIndicatorAssociationInput = components['schemas']['SectionIndicatorAssociationInput'];
+export type SectionIndicatorModelRead = components['schemas']['SectionIndicatorModelRead'];

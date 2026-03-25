@@ -29,7 +29,7 @@ You are performing an API changelog review for the admin-playground frontend. Th
 
 ### Step 2 — Create changeset in api-changelog.md
 
-Read `_bmad-output/api-changelog.md` and append a new changeset section.
+Read `_bmad-output/api-changelog.md` and insert the new changeset section **at the top** (after the header/rules block and the `---` separator). Changesets are ordered most recent first.
 
 For each detected change, determine if it's an **Action** (mechanical frontend adaptation needed) or an **Opportunity** (new capability that could be leveraged).
 
@@ -93,3 +93,4 @@ Present a concise summary to the user:
 - When recommending opportunities, base UX/UI suggestions on existing patterns in the codebase — don't invent new patterns
 - Always verify impact by scanning the actual code, don't guess which files are affected
 - If `npm run api:generate` fails (e.g., API unreachable), inform the user and work with the existing `openapi-spec.json` if available
+- **Timestamps**: always run `date '+%Y-%m-%d %H:%M'` to get the real local time for changeset headers — never guess or use internal clock

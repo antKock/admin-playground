@@ -10,7 +10,7 @@ import { httpMutation, concatOp, exhaustOp } from '@angular-architects/ngrx-tool
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { patch } from '@domains/shared/store.utils';
-import { ActionModel, ActionModelCreate, ActionModelUpdate } from './action-model.models';
+import { ActionModel, ActionModelCreate, ActionModelUpdate, SectionModelCreate, SectionModelUpdate, SectionIndicatorAssociationInput } from './action-model.models';
 import {
   actionModelListLoader,
   loadActionModel,
@@ -20,6 +20,10 @@ import {
   publishActionModelRequest,
   disableActionModelRequest,
   activateActionModelRequest,
+  createSectionRequest,
+  deleteSectionRequest,
+  updateSectionRequest,
+  updateSectionIndicatorsRequest,
 } from './action-model.api';
 
 export const ActionModelDomainStore = signalStore(
@@ -64,6 +68,27 @@ export const ActionModelDomainStore = signalStore(
     activateMutation: httpMutation({
       request: (id: string) => activateActionModelRequest(id),
       operator: exhaustOp,
+    }),
+    // Section mutations — concatOp (sequential, user might toggle multiple sections)
+    createSectionMutation: httpMutation({
+      request: (params: { actionModelId: string; data: SectionModelCreate }) =>
+        createSectionRequest(params),
+      operator: concatOp,
+    }),
+    deleteSectionMutation: httpMutation({
+      request: (params: { actionModelId: string; sectionId: string }) =>
+        deleteSectionRequest(params),
+      operator: concatOp,
+    }),
+    updateSectionMutation: httpMutation({
+      request: (params: { actionModelId: string; sectionId: string; data: SectionModelUpdate }) =>
+        updateSectionRequest(params),
+      operator: concatOp,
+    }),
+    updateSectionIndicatorsMutation: httpMutation({
+      request: (params: { actionModelId: string; sectionId: string; data: SectionIndicatorAssociationInput[] }) =>
+        updateSectionIndicatorsRequest(params),
+      operator: concatOp,
     }),
   })),
   withMethods((store) => ({

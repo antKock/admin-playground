@@ -7,7 +7,7 @@ import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
 import { applyFilters } from '@domains/shared/api.utils';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { ActionModel, ActionModelCreate, ActionModelUpdate } from './action-model.models';
+import { ActionModel, ActionModelCreate, ActionModelUpdate, SectionModelCreate, SectionModelUpdate, SectionIndicatorAssociationInput } from './action-model.models';
 
 const BASE_URL = `${environment.apiBaseUrl}/action-models/`;
 
@@ -51,4 +51,21 @@ export function disableActionModelRequest(id: string) {
 
 export function activateActionModelRequest(id: string) {
   return { url: `${BASE_URL}${id}/activate`, method: 'PUT', body: {} };
+}
+
+// Section mutations
+export function createSectionRequest(params: { actionModelId: string; data: SectionModelCreate }) {
+  return { url: `${BASE_URL}${params.actionModelId}/sections`, method: 'POST', body: params.data };
+}
+
+export function deleteSectionRequest(params: { actionModelId: string; sectionId: string }) {
+  return { url: `${BASE_URL}${params.actionModelId}/sections/${params.sectionId}`, method: 'DELETE' };
+}
+
+export function updateSectionRequest(params: { actionModelId: string; sectionId: string; data: SectionModelUpdate }) {
+  return { url: `${BASE_URL}${params.actionModelId}/sections/${params.sectionId}`, method: 'PUT', body: params.data };
+}
+
+export function updateSectionIndicatorsRequest(params: { actionModelId: string; sectionId: string; data: SectionIndicatorAssociationInput[] }) {
+  return { url: `${BASE_URL}${params.actionModelId}/sections/${params.sectionId}/indicators`, method: 'PUT', body: params.data };
 }

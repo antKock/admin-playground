@@ -1,0 +1,61 @@
+# generated: 2026-03-25
+# project: admin-playground
+# version: v2.1
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts/v2.1
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - v2.1 introduces section management on action/folder models and entity models feature module
+# - Execution order: E18 → E19 → E20 (shared section-card built in E18, reused by E19/E20)
+# - Epic 18 must complete before Epics 19 and 20 (shared components needed)
+# - Epics 19 and 20 are independent of each other and could run in parallel
+
+generated: 2026-03-25
+project: admin-playground
+version: v2.1
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/v2.1
+
+development_status:
+  # Epic 18: Section Management on Action Models
+  epic-18: in-progress
+  18-1-section-card-component-readonly-display: review
+  18-2-association-section-toggles: review
+  18-3-fixed-sections-display: review
+  18-4-section-parameters-editing: review
+  18-5-indicator-management-within-sections: review
+  epic-18-retrospective: optional
+
+  # Epic 19: Section Management on Folder Models
+  epic-19: in-progress
+  19-1-fixed-sections-display-folder-models: ready-for-dev
+  19-2-indicator-management-folder-model-sections: ready-for-dev
+  epic-19-retrospective: optional
+
+  # Epic 20: Entity Models Management
+  epic-20: in-progress
+  20-1-entity-models-domain-routing-navbar: ready-for-dev
+  20-2-entity-models-list-page: ready-for-dev
+  20-3-entity-model-detail-page: ready-for-dev
+  epic-20-retrospective: optional

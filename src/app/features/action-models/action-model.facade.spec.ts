@@ -252,6 +252,326 @@ describe('ActionModelFacade', () => {
     });
   });
 
+  describe('section toggles', () => {
+    const mockWithSections = {
+      ...mockActionModel,
+      sections: [{
+        id: 'sec-1',
+        name: 'Sites',
+        section_type: 'association_sites' as const,
+        owner_type: 'action_model' as const,
+        owner_id: 'am-1',
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should return true for enabled association section', () => {
+      // First select an action model with sections
+      facade.select('am-1');
+      const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1'));
+      req.flush(mockWithSections);
+
+      expect(facade.isAssociationSectionEnabled('association_sites')).toBe(true);
+      expect(facade.isAssociationSectionEnabled('association_agents')).toBe(false);
+    });
+
+    it('should toggle OFF (delete) an existing section', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
+
+      const togglePromise = facade.toggleAssociationSection('association_sites');
+
+      const deleteReq = httpTesting.expectOne((r) =>
+        r.method === 'DELETE' && r.url.includes('action-models/am-1/sections/sec-1'),
+      );
+      deleteReq.flush(null);
+
+      await togglePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Section supprimée');
+
+      // Re-select detail
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush({ ...mockActionModel, sections: [] });
+    });
+
+    it('should toggle ON (create) a missing section', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
+
+      const togglePromise = facade.toggleAssociationSection('association_agents');
+
+      const createReq = httpTesting.expectOne((r) =>
+        r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
+      );
+      expect(createReq.request.body.section_type).toBe('association_agents');
+      expect(createReq.request.body.name).toBe('Agents');
+      createReq.flush({ id: 'sec-new', section_type: 'association_agents' });
+
+      await togglePromise;
+
+      expect(successSpy).toHaveBeenCalledWith('Section créée');
+
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush(mockWithSections);
+    });
+
+    it('should show error toast on toggle failure', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
+
+      const togglePromise = facade.toggleAssociationSection('association_sites');
+
+      const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE');
+      deleteReq.flush({ detail: 'Cannot delete' }, { status: 500, statusText: 'Internal Server Error' });
+
+      await togglePromise;
+
+      expect(errorSpy).toHaveBeenCalled();
+
+      // Re-select to revert (server-confirmed approach)
+      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
+      detailReq.flush(mockWithSections);
+    });
+  });
+
+  describe('updateSectionParams', () => {
+    const mockWithSection = {
+      ...mockActionModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        section_type: 'application' as const,
+        owner_type: 'action_model' as const,
+        owner_id: 'am-1',
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should update existing section via PUT', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSection);
+
+      const promise = facade.updateSectionParams('sec-app', 'application', { hidden_rule: 'true' });
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app'),
+      );
+      expect(putReq.request.body.hidden_rule).toBe('true');
+      putReq.flush({ ...mockWithSection.sections[0], hidden_rule: 'true' });
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Paramètres de section enregistrés');
+
+      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1')).flush(mockWithSection);
+    });
+
+    // Auto-create flow (id === null → ensureSectionExists → update) is tested
+    // via the separate ensureSectionExists tests + this updateSection test.
+    // The combined async flow is complex to test with HttpTestingController
+    // due to overlapping rxMethod subscriptions.
+  });
+
+  describe('section indicator management', () => {
+    const mockWithSectionAndIndicator = {
+      ...mockActionModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        section_type: 'application' as const,
+        owner_type: 'action_model' as const,
+        owner_id: 'am-1',
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [{
+          id: 'ind-1',
+          name: 'Existing Indicator',
+          technical_label: 'existing',
+          type: 'number',
+          created_at: '2026-01-01T00:00:00Z',
+          last_updated_at: '2026-01-01T00:00:00Z',
+          hidden_rule: 'false',
+          required_rule: 'false',
+          disabled_rule: 'false',
+          default_value_rule: 'false',
+          duplicable_rule: 'false',
+          constrained_rule: 'false',
+          position: 0,
+        }],
+      }],
+    };
+
+    it('should add indicator to section via PUT replace-all', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSectionAndIndicator);
+
+      const promise = facade.addIndicatorToSection('sec-app', 'application', 'ind-new');
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app/indicators'),
+      );
+      expect(putReq.request.body).toHaveLength(2);
+      expect(putReq.request.body[0].indicator_model_id).toBe('ind-1');
+      expect(putReq.request.body[1].indicator_model_id).toBe('ind-new');
+      putReq.flush(mockWithSectionAndIndicator.sections[0]);
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Indicateur ajouté à la section');
+
+      httpTesting.match((r) => r.method === 'GET' && r.url.includes('action-models/am-1'))
+        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+    });
+
+    it('should remove indicator from section', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSectionAndIndicator);
+
+      const promise = facade.removeIndicatorFromSection('sec-app', 'ind-1');
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app/indicators'),
+      );
+      expect(putReq.request.body).toHaveLength(0);
+      putReq.flush({ ...mockWithSectionAndIndicator.sections[0], indicators: [] });
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Indicateur retiré de la section');
+
+      httpTesting.match((r) => r.method === 'GET' && r.url.includes('action-models/am-1'))
+        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+    });
+  });
+
+  describe('merged fixed sections', () => {
+    const mockWithFixedSections = {
+      ...mockActionModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        section_type: 'application' as const,
+        owner_type: 'action_model' as const,
+        owner_id: 'am-1',
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should return both fixed sections with existing one from API', () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithFixedSections);
+
+      const merged = facade.mergedFixedSections();
+      expect(merged).toHaveLength(2);
+      expect(merged[0].section_type).toBe('application');
+      expect(merged[0].id).toBe('sec-app');
+      expect(merged[1].section_type).toBe('progress');
+      expect(merged[1].id).toBeNull();
+    });
+
+    it('should create stubs for both missing fixed sections', () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush({ ...mockActionModel, sections: [] });
+
+      const merged = facade.mergedFixedSections();
+      expect(merged).toHaveLength(2);
+      expect(merged[0].id).toBeNull();
+      expect(merged[0].name).toBe('Candidature');
+      expect(merged[1].id).toBeNull();
+      expect(merged[1].name).toBe('Suivi');
+    });
+  });
+
+  describe('ensureSectionExists', () => {
+    const mockWithSection = {
+      ...mockActionModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        section_type: 'application' as const,
+        owner_type: 'action_model' as const,
+        owner_id: 'am-1',
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should return existing section ID without API call', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSection);
+
+      const id = await facade.ensureSectionExists('application');
+      expect(id).toBe('sec-app');
+    });
+
+    it('should create section and return new ID when not found', async () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush({ ...mockActionModel, sections: [] });
+
+      const promise = facade.ensureSectionExists('progress');
+
+      const createReq = httpTesting.expectOne((r) =>
+        r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
+      );
+      expect(createReq.request.body.section_type).toBe('progress');
+      createReq.flush({ id: 'sec-new-progress' });
+
+      const id = await promise;
+      expect(id).toBe('sec-new-progress');
+
+      // Re-select triggers detail fetch
+      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1')).flush(mockWithSection);
+    });
+  });
+
   describe('cross-domain: loadAssociationData', () => {
     const mockFpResponse: PaginatedResponse<FundingProgram> = {
       data: [{

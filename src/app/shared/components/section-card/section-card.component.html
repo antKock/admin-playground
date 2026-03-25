@@ -1,0 +1,29 @@
+<div class="bg-gray-50 border-l-4 border-blue-400 rounded-lg overflow-hidden">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 py-3 cursor-pointer select-none" tabindex="0" role="button" (click)="onToggleCollapse()" (keydown.enter)="onToggleCollapse()" (keydown.space)="onToggleCollapse(); $event.preventDefault()">
+    <div class="flex items-center gap-2">
+      <span>{{ typeConfig().icon }}</span>
+      <h3 class="text-sm font-semibold text-text-primary">{{ sectionName() }}</h3>
+    </div>
+    <div class="flex items-center gap-2">
+      @if (isCollapsed()) {
+        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+          {{ indicatorCount() }} indicateur{{ indicatorCount() > 1 ? 's' : '' }}
+        </span>
+      }
+      <lucide-icon
+        [img]="ChevronDown"
+        [size]="16"
+        class="text-text-tertiary transition-transform"
+        [class.rotate-180]="!isCollapsed()"
+      />
+    </div>
+  </div>
+
+  <!-- Body (expanded) -->
+  @if (!isCollapsed()) {
+    <div class="px-4 py-3">
+      <ng-content />
+    </div>
+  }
+</div>

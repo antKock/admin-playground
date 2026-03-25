@@ -12,6 +12,7 @@ import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.stor
 import { ActionTheme } from '@domains/action-themes/action-theme.models';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
+import { isAssociationSection } from '@shared/components/section-card/section-card.models';
 
 export const ActionModelFeatureStore = signalStore(
   { providedIn: 'root' },
@@ -44,6 +45,20 @@ export const ActionModelFeatureStore = signalStore(
 
       // Attached indicators (from selected action model)
       attachedIndicators: computed(() => domainStore.selectedItem()?.indicator_models ?? []),
+
+      // Sections grouped by type
+      associationSections: computed(() => {
+        const sections = domainStore.selectedItem()?.sections ?? [];
+        return sections
+          .filter((s) => isAssociationSection(s.section_type))
+          .sort((a, b) => a.position - b.position);
+      }),
+      fixedSections: computed(() => {
+        const sections = domainStore.selectedItem()?.sections ?? [];
+        return sections
+          .filter((s) => !isAssociationSection(s.section_type))
+          .sort((a, b) => a.position - b.position);
+      }),
     };
   }),
 );

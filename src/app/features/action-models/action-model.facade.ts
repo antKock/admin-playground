@@ -9,6 +9,10 @@ import {
   ActionModelCreate, ActionModelUpdate,
   IndicatorModelWithAssociation,
 } from '@domains/action-models/action-model.models';
+import { SectionType, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
+import { SectionModelWithIndicators } from '@domains/action-models/action-model.models';
+
+export type DisplaySection = Omit<SectionModelWithIndicators, 'id'> & { id: string | null };
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -18,6 +22,7 @@ import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { buildIndicatorCards } from './use-cases/build-indicator-cards';
 import { buildAssociationInput, buildAllAssociationInputs } from './use-cases/build-association-inputs';
+import { buildSectionAssociationInputs } from './use-cases/build-section-association-inputs';
 import { createIndicatorParamEditor } from './use-cases/indicator-param-editor';
 import { ActionModelFeatureStore } from './action-model.store';
 
@@ -52,6 +57,48 @@ export class ActionModelFacade {
   readonly availableIndicators = this.featureStore.availableIndicators;
   readonly indicatorsLoading = this.featureStore.indicatorsLoading;
   readonly attachedIndicators = this.featureStore.attachedIndicators;
+
+  // Sections (read-only display)
+  readonly associationSections = this.featureStore.associationSections;
+  readonly fixedSections = this.featureStore.fixedSections;
+
+  // Section mutation status
+  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
+  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
+  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
+  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  readonly sectionMutationPending = computed(() =>
+    this.createSectionIsPending() || this.deleteSectionIsPending() ||
+    this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+  );
+
+  // Merged fixed sections — always includes both application + progress, with stubs for missing
+  readonly mergedFixedSections = computed<DisplaySection[]>(() => {
+    const sections = this.selectedItem()?.sections ?? [];
+    return FIXED_SECTION_TYPES.map((sType, idx) => {
+      const existing = sections.find((s) => s.section_type === sType);
+      if (existing) return existing as DisplaySection;
+      const config = SECTION_TYPE_MAP[sType];
+      return {
+        id: null,
+        name: config.label,
+        section_type: sType,
+        owner_type: 'action_model',
+        owner_id: this.selectedItem()?.id ?? '',
+        is_enabled: true,
+        position: idx,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '',
+        last_updated_at: '',
+        indicators: [],
+      } as DisplaySection;
+    });
+  });
 
   // Per-mutation status signals (directly from domain store)
   readonly createIsPending = this.domainStore.createMutationIsPending;
@@ -254,6 +301,182 @@ export class ActionModelFacade {
       this.domainStore.selectById(actionModelId);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error);
+    }
+  }
+
+  async updateSectionParams(sectionId: string | null, sectionType: SectionType, params: import('@domains/action-models/action-model.models').SectionModelUpdate): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    let resolvedId = sectionId;
+    if (!resolvedId) {
+      resolvedId = await this.ensureSectionExists(sectionType);
+      if (!resolvedId) return;
+    }
+
+    const result = await this.domainStore.updateSectionMutation({
+      actionModelId: m.id,
+      sectionId: resolvedId,
+      data: params,
+    });
+    if (result.status === 'success') {
+      this.toast.success('Paramètres de section enregistrés');
+      this.domainStore.selectById(m.id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible de mettre à jour la section');
+    }
+  }
+
+  async addIndicatorToSection(sectionId: string | null, sectionType: SectionType, indicatorModelId: string): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    let resolvedId = sectionId;
+    if (!resolvedId) {
+      resolvedId = await this.ensureSectionExists(sectionType);
+      if (!resolvedId) return;
+    }
+
+    const section = (m.sections ?? []).find((s) => s.id === resolvedId);
+    const existing = section?.indicators ?? [];
+    const inputs = [
+      ...buildSectionAssociationInputs(existing),
+      {
+        indicator_model_id: indicatorModelId,
+        hidden_rule: 'false',
+        required_rule: 'false',
+        disabled_rule: 'false',
+        default_value_rule: 'false',
+        duplicable_rule: 'false',
+        constrained_rule: 'false',
+        position: existing.length,
+      },
+    ];
+
+    const result = await this.domainStore.updateSectionIndicatorsMutation({
+      actionModelId: m.id,
+      sectionId: resolvedId,
+      data: inputs,
+    });
+    if (result.status === 'success') {
+      this.toast.success('Indicateur ajouté à la section');
+      this.domainStore.selectById(m.id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible d\'ajouter l\'indicateur');
+    }
+  }
+
+  async removeIndicatorFromSection(sectionId: string, indicatorModelId: string): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const section = (m.sections ?? []).find((s) => s.id === sectionId);
+    if (!section) return;
+
+    const remaining = (section.indicators ?? []).filter((ind) => ind.id !== indicatorModelId);
+    const inputs = buildSectionAssociationInputs(remaining);
+
+    const result = await this.domainStore.updateSectionIndicatorsMutation({
+      actionModelId: m.id,
+      sectionId,
+      data: inputs,
+    });
+    if (result.status === 'success') {
+      this.toast.success('Indicateur retiré de la section');
+      this.domainStore.selectById(m.id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible de retirer l\'indicateur');
+    }
+  }
+
+  async ensureSectionExists(sectionType: SectionType): Promise<string | null> {
+    const m = this.selectedItem();
+    if (!m) return null;
+
+    const existing = (m.sections ?? []).find((s) => s.section_type === sectionType);
+    if (existing) return existing.id;
+
+    const config = SECTION_TYPE_MAP[sectionType];
+    const result = await this.domainStore.createSectionMutation({
+      actionModelId: m.id,
+      data: {
+        section_type: sectionType,
+        name: config.label,
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+      },
+    });
+
+    if (result.status === 'success') {
+      this.domainStore.selectById(m.id);
+      return (result.value as { id: string }).id;
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error, 'Impossible de créer la section');
+      return null;
+    }
+    return null;
+  }
+
+  isAssociationSectionEnabled(sectionType: SectionType): boolean {
+    const sections = this.selectedItem()?.sections ?? [];
+    return sections.some((s) => s.section_type === sectionType);
+  }
+
+  getAssociationSectionId(sectionType: SectionType): string | undefined {
+    const sections = this.selectedItem()?.sections ?? [];
+    return sections.find((s) => s.section_type === sectionType)?.id;
+  }
+
+  async toggleAssociationSection(sectionType: SectionType): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const existingSection = (m.sections ?? []).find((s) => s.section_type === sectionType);
+
+    if (existingSection) {
+      // Toggle OFF — delete section
+      const result = await this.domainStore.deleteSectionMutation({
+        actionModelId: m.id,
+        sectionId: existingSection.id,
+      });
+      if (result.status === 'success') {
+        this.toast.success('Section supprimée');
+        this.domainStore.selectById(m.id);
+      } else if (result.status === 'error') {
+        handleMutationError(this.toast, result.error, 'Impossible de supprimer la section');
+        this.domainStore.selectById(m.id);
+      }
+    } else {
+      // Toggle ON — create section
+      const config = SECTION_TYPE_MAP[sectionType];
+      const result = await this.domainStore.createSectionMutation({
+        actionModelId: m.id,
+        data: {
+          section_type: sectionType,
+          name: config.label,
+          is_enabled: true,
+          position: 0,
+          hidden_rule: 'false',
+          disabled_rule: 'false',
+          required_rule: 'false',
+          occurrence_min_rule: 'false',
+          occurrence_max_rule: 'false',
+          constrained_rule: 'false',
+        },
+      });
+      if (result.status === 'success') {
+        this.toast.success('Section créée');
+        this.domainStore.selectById(m.id);
+      } else if (result.status === 'error') {
+        handleMutationError(this.toast, result.error, 'Impossible de créer la section');
+        this.domainStore.selectById(m.id);
+      }
     }
   }
 

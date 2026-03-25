@@ -22,7 +22,13 @@ import {
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
-import { ActionModelFacade } from '../action-model.facade';
+import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
+import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
+import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
+import { ParamHintIconsComponent } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
+import { SectionType, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
+import { ActionModelFacade, DisplaySection } from '../action-model.facade';
+import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator-cards';
 
 @Component({
   selector: 'app-action-model-detail',
@@ -38,6 +44,10 @@ import { ActionModelFacade } from '../action-model.facade';
     CdkDropList,
     CdkDrag,
     ActivityListComponent,
+    SectionCardComponent,
+    AssociationSectionToggleComponent,
+    SectionParamsEditorComponent,
+    ParamHintIconsComponent,
   ],
   templateUrl: './action-model-detail.component.html',
 })
@@ -66,6 +76,8 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   readonly sectionDefs = computed<SectionDef[]>(() => [
     { label: 'Métadonnées', targetId: 'section-metadata' },
     { label: 'Indicateurs', targetId: 'section-indicators', count: this.indicatorCards().length },
+    { label: 'Sections d\'association', targetId: 'section-association-sections' },
+    { label: 'Sections', targetId: 'section-fixed-sections' },
     { label: 'Activité', targetId: 'section-activity' },
   ]);
 
@@ -87,6 +99,34 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   private readonly _localCardOrder = signal<IndicatorCardData[] | null>(null);
 
   readonly indicatorCards = computed(() => this._localCardOrder() ?? this.facade.indicatorCards());
+
+  readonly mergedFixedSections = this.facade.mergedFixedSections;
+  readonly sectionTypeMap = SECTION_TYPE_MAP;
+
+  // Pre-computed association section view data (avoids method calls per-CD-cycle)
+  readonly associationSectionViews = computed(() =>
+    ASSOCIATION_SECTION_TYPES.map((sType) => {
+      const sections = this.facade.selectedItem()?.sections ?? [];
+      const section = sections.find((s) => s.section_type === sType) as DisplaySection | undefined;
+      return {
+        sType,
+        enabled: !!section,
+        section,
+        config: SECTION_TYPE_MAP[sType],
+        indicatorCards: section ? buildSectionIndicatorCards(section.indicators ?? []) : [],
+        attachedIds: (section?.indicators ?? []).map((ind) => ind.id),
+      };
+    }),
+  );
+
+  // Pre-computed fixed section indicator cards (avoids rebuilding arrays per-CD-cycle)
+  readonly fixedSectionViews = computed(() =>
+    this.mergedFixedSections().map((section) => ({
+      section,
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
+      attachedIds: (section.indicators ?? []).map((ind) => ind.id),
+    })),
+  );
 
   readonly attachedIds = computed(() => this.facade.attachedIndicators().map((im) => im.id));
 
@@ -232,6 +272,34 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
     const ids = cards.map((c) => c.id);
     this.facade.reorderIndicators(m.id, ids);
+  }
+
+  onToggleAssociation(sectionType: SectionType): void {
+    this.facade.toggleAssociationSection(sectionType);
+  }
+
+  getSectionParams(section: DisplaySection): SectionParams {
+    return {
+      hidden_rule: section.hidden_rule,
+      required_rule: section.required_rule,
+      disabled_rule: section.disabled_rule,
+      occurrence_min_rule: section.occurrence_min_rule,
+      occurrence_max_rule: section.occurrence_max_rule,
+      constrained_rule: section.constrained_rule,
+    };
+  }
+
+  onSectionParamsChange(section: DisplaySection, params: SectionParams): void {
+    this.facade.updateSectionParams(section.id, section.section_type, params);
+  }
+
+  async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
+    await this.facade.addIndicatorToSection(section.id, section.section_type, indicator.id);
+  }
+
+  async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {
+    if (!section.id) return;
+    await this.facade.removeIndicatorFromSection(section.id, indicatorId);
   }
 
   formatDate(value: string | null | undefined): string {
