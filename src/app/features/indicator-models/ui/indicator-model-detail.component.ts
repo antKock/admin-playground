@@ -54,8 +54,11 @@ export class IndicatorModelDetailComponent implements OnInit, OnDestroy {
       { label: 'Description', value: m.description ?? '—', type: 'text' as const },
       { label: 'Type', value: m.type, type: 'text' as const },
     ];
-    if (m.type !== 'group') {
+    if (m.type === 'number') {
       fields.push({ label: 'Unité', value: m.unit ?? '—', type: 'text' as const });
+    }
+    if ((m.type === 'list_single' || m.type === 'list_multiple') && m.choices?.length) {
+      fields.push({ label: 'Choix', value: m.choices.map(c => c.label).join(', '), type: 'text' as const });
     }
     fields.push(
       { label: 'Créé le', value: m.created_at, type: 'date' as const },

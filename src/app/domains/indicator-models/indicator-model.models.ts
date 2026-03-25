@@ -6,3 +6,6 @@ export type IndicatorModel = components['schemas']['IndicatorModelRead'];
 export type IndicatorModelCreate = components['schemas']['IndicatorModelCreate'];
 export type IndicatorModelUpdate = components['schemas']['IndicatorModelUpdate'];
 export type IndicatorModelType = components['schemas']['IndicatorModelType'];
+export type IndicatorModelUnit = components['schemas']['IndicatorModelUnit'];
+export type IndicatorModelChoiceInput = components['schemas']['IndicatorModelChoiceInput'];
+export type IndicatorModelChoiceRead = components['schemas']['IndicatorModelChoiceRead'];

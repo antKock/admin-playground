@@ -64,6 +64,40 @@
       </div>
     }
 
+    @if (isListType()) {
+      <div class="border border-border rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-text-primary mb-3">Choix</h3>
+
+        @if (choices().length > 0) {
+          <div class="space-y-2 mb-3">
+            @for (choice of choices(); track $index) {
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Valeur"
+                  [value]="choice.value"
+                  (input)="updateChoice($index, 'value', $any($event.target).value)"
+                  class="flex-1 px-3 py-1.5 border border-border rounded-lg text-sm text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+                <input
+                  type="text"
+                  placeholder="Libellé"
+                  [value]="choice.label"
+                  (input)="updateChoice($index, 'label', $any($event.target).value)"
+                  class="flex-1 px-3 py-1.5 border border-border rounded-lg text-sm text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
+                />
+                <button type="button" class="text-xs text-error hover:underline" (click)="removeChoice($index)">Retirer</button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-text-tertiary mb-3">Aucun choix défini.</p>
+        }
+
+        <button type="button" class="text-sm text-brand hover:underline" (click)="addChoice()">+ Ajouter un choix</button>
+      </div>
+    }
+
     @if (form.get('type')?.value === 'group') {
       <div class="border border-border rounded-lg p-4">
         <h3 class="text-sm font-semibold text-text-primary mb-3">Indicateurs enfants</h3>

@@ -89,15 +89,16 @@ export class IndicatorModelFacade {
   prepareIndicatorData(formValue: {
     name: string; technical_label: string; description: string | null;
     type: string; unit: string | null;
-  }, attachedChildrenIds: string[]): IndicatorModelCreate {
+  }, attachedChildrenIds: string[], choices?: { value: string; label: string; position: number }[] | null): IndicatorModelCreate {
     return {
       name: formValue.name,
       technical_label: formValue.technical_label,
       description: formValue.description,
       type: formValue.type as IndicatorModelType,
-      unit: formValue.type === 'group' ? null : (formValue.unit as IndicatorModelCreate['unit']),
+      unit: formValue.type === 'number' ? (formValue.unit as IndicatorModelCreate['unit']) : null,
       status: 'draft' as const,
       children_ids: formValue.type === 'group' ? attachedChildrenIds : null,
+      choices: choices ?? null,
     };
   }
 

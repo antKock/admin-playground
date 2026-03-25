@@ -33,6 +33,9 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   readonly attachedChildren = signal<{ id: string; name: string; type: string }[]>([]);
   readonly searchTerm = signal('');
 
+  // Choices management for list_single / list_multiple types
+  readonly choices = signal<{ value: string; label: string; position: number }[]>([]);
+
   readonly filteredAvailable = this.facade.availableChildIndicators;
 
   readonly unitOptions = [
@@ -84,6 +87,12 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
           type: item.type,
           unit: item.unit ?? null,
         });
+        // Pre-populate choices for list types
+        if ((item.type === 'list_single' || item.type === 'list_multiple') && item.choices) {
+          this.choices.set(
+            item.choices.map(c => ({ value: c.value, label: c.label, position: c.position })),
+          );
+        }
         // Pre-populate children for group type
         if (item.type === 'group' && item.children) {
           this.attachedChildren.set(
@@ -107,13 +116,16 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
       this.facade.select(this.editId);
     }
 
-    // Clear children when type changes away from group
+    // Clear type-specific state when type changes
     this.form.get('type')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((type) => {
       if (type !== 'group') {
         this.attachedChildren.set([]);
         this.searchTerm.set('');
         this.facade.setChildSearchTerm('');
         this.facade.setExcludeChildrenIds([]);
+      }
+      if (type !== 'list_single' && type !== 'list_multiple') {
+        this.choices.set([]);
       }
     });
   }
@@ -123,6 +135,26 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
     this.facade.setEditItemId(null);
     this.facade.setChildSearchTerm('');
     this.facade.setExcludeChildrenIds([]);
+  }
+
+  addChoice(): void {
+    this.choices.update(list => [...list, { value: '', label: '', position: list.length }]);
+    this.form.markAsDirty();
+  }
+
+  removeChoice(index: number): void {
+    this.choices.update(list => list.filter((_, i) => i !== index).map((c, i) => ({ ...c, position: i })));
+    this.form.markAsDirty();
+  }
+
+  updateChoice(index: number, field: 'value' | 'label', val: string): void {
+    this.choices.update(list => list.map((c, i) => i === index ? { ...c, [field]: val } : c));
+    this.form.markAsDirty();
+  }
+
+  isListType(): boolean {
+    const type = this.form.get('type')?.value;
+    return type === 'list_single' || type === 'list_multiple';
   }
 
   onChildSearch(term: string): void {
@@ -154,6 +186,7 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
     const data = this.facade.prepareIndicatorData(
       { name: raw.name!, technical_label: raw.technical_label!, description: raw.description, type: raw.type!, unit: raw.unit },
       this.attachedChildren().map(c => c.id),
+      this.isListType() ? this.choices() : null,
     );
     this.form.markAsPristine();
 
