@@ -30,13 +30,25 @@
         class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
       >
         <option value="" disabled>Sélectionner un type</option>
-        <option value="text">Texte</option>
+        <option value="text_short">Texte court</option>
+        <option value="text_long">Texte long</option>
+        <option value="text_email">E-mail</option>
+        <option value="text_phone">Téléphone</option>
+        <option value="text_iban">IBAN</option>
         <option value="number">Nombre</option>
+        <option value="list_single">Liste simple</option>
+        <option value="list_multiple">Liste multiple</option>
+        <option value="boolean">Booléen</option>
+        <option value="file_upload">Fichier (upload)</option>
+        <option value="file_downloadable">Fichier (téléchargeable)</option>
+        <option value="date_full">Date complète</option>
+        <option value="date_month">Date (mois)</option>
+        <option value="date_year">Date (année)</option>
         <option value="group">Groupe</option>
       </select>
     </app-form-field>
 
-    @if (form.get('type')?.value !== 'group') {
+    @if (form.get('type')?.value === 'number') {
       <div>
         <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
         <input

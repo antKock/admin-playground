@@ -29,23 +29,27 @@ export interface IndicatorCardData {
   children?: ChildCardData[];
 }
 
+export interface OccurrenceRule {
+  min: string;
+  max: string;
+}
+
 export interface IndicatorParams {
   hidden_rule: string | null;
   required_rule: string | null;
   disabled_rule: string | null;
   default_value_rule: string | null;
-  duplicable_rule: string | null;
+  occurrence_rule: OccurrenceRule | null;
   constrained_rule: string | null;
 }
 
-export type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'duplicable_rule' | 'constrained_rule';
+export type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constrained_rule';
 
 /** Default values per rule field — used to determine if a toggle is "active" (overridden). */
 const RULE_DEFAULTS: Record<RuleField, string> = {
   required_rule: 'false',
   disabled_rule: 'false',
   hidden_rule: 'false',
-  duplicable_rule: 'false',
   constrained_rule: 'false',
 };
 
@@ -143,8 +147,27 @@ export class IndicatorCardComponent {
     this.emitParams({ default_value_rule: value || '' });
   }
 
-  onDuplicableToggle(enabled: boolean): void {
-    this.toggleRule('duplicable_rule', enabled);
+  isOccurrenceOverridden(): boolean {
+    const occ = this.params().occurrence_rule;
+    return occ != null && (occ.min !== 'false' || occ.max !== 'false');
+  }
+
+  onOccurrenceToggle(enabled: boolean): void {
+    if (enabled) {
+      this.emitParams({ occurrence_rule: { min: 'true', max: 'false' } });
+    } else {
+      this.emitParams({ occurrence_rule: null });
+    }
+  }
+
+  onOccurrenceMinChange(value: string): void {
+    const occ = this.params().occurrence_rule ?? { min: 'false', max: 'false' };
+    this.emitParams({ occurrence_rule: { ...occ, min: value || 'true' } });
+  }
+
+  onOccurrenceMaxChange(value: string): void {
+    const occ = this.params().occurrence_rule ?? { min: 'false', max: 'false' };
+    this.emitParams({ occurrence_rule: { ...occ, max: value || 'true' } });
   }
 
   onConstrainedToggle(enabled: boolean): void {
@@ -168,7 +191,7 @@ export class IndicatorCardComponent {
   }
 
   getChildParams(childId: string): IndicatorParams {
-    return this.childParams()[childId] ?? { hidden_rule: null, required_rule: null, disabled_rule: null, default_value_rule: null, duplicable_rule: null, constrained_rule: null };
+    return this.childParams()[childId] ?? { hidden_rule: null, required_rule: null, disabled_rule: null, default_value_rule: null, occurrence_rule: null, constrained_rule: null };
   }
 
   isChildRuleOverridden(childId: string, field: RuleField): boolean {
@@ -197,6 +220,29 @@ export class IndicatorCardComponent {
 
   onChildToggle(childId: string, field: RuleField, enabled: boolean): void {
     this.toggleChildRule(childId, field, enabled);
+  }
+
+  isChildOccurrenceOverridden(childId: string): boolean {
+    const occ = this.getChildParams(childId).occurrence_rule;
+    return occ != null && (occ.min !== 'false' || occ.max !== 'false');
+  }
+
+  onChildOccurrenceToggle(childId: string, enabled: boolean): void {
+    if (enabled) {
+      this.emitChildParams(childId, { occurrence_rule: { min: 'true', max: 'false' } });
+    } else {
+      this.emitChildParams(childId, { occurrence_rule: null });
+    }
+  }
+
+  onChildOccurrenceMinChange(childId: string, value: string): void {
+    const occ = this.getChildParams(childId).occurrence_rule ?? { min: 'false', max: 'false' };
+    this.emitChildParams(childId, { occurrence_rule: { ...occ, min: value || 'true' } });
+  }
+
+  onChildOccurrenceMaxChange(childId: string, value: string): void {
+    const occ = this.getChildParams(childId).occurrence_rule ?? { min: 'false', max: 'false' };
+    this.emitChildParams(childId, { occurrence_rule: { ...occ, max: value || 'true' } });
   }
 
   onChildDefaultValueToggle(childId: string, enabled: boolean): void {

@@ -111,7 +111,7 @@ describe('IndicatorModelFacade', () => {
       const createPromise = facade.create({
         name: 'New Indicator',
         technical_label: 'new_indicator',
-        type: 'text',
+        type: 'text_short',
         status: 'draft',
       });
 
@@ -205,7 +205,7 @@ describe('IndicatorModelFacade', () => {
     it('should filter by type, editId, excluded children, and search term', () => {
       facade.load();
       const groupItem = { ...mockIndicatorModel, id: 'im-group', type: 'group', name: 'Group' };
-      const textItem = { ...mockIndicatorModel, id: 'im-text', type: 'text', name: 'Text' };
+      const textItem = { ...mockIndicatorModel, id: 'im-text', type: 'text_short', name: 'Text' };
       const numItem = { ...mockIndicatorModel, id: 'im-num', type: 'number', name: 'Number' };
       httpTesting.expectOne((r) => r.method === 'GET').flush({
         ...mockPaginatedResponse,
@@ -256,7 +256,7 @@ describe('IndicatorModelFacade', () => {
       const createPromise = facade.create({
         name: 'Bad',
         technical_label: 'bad',
-        type: 'text',
+        type: 'text_short',
         status: 'draft',
       });
 

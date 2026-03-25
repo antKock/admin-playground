@@ -39,8 +39,20 @@ describe('IndicatorModelListComponent', () => {
     expect(typeCol?.filterable).toBe(true);
     expect(typeCol?.filterKey).toBe('type');
     expect(typeCol?.filterOptions).toEqual([
-      { id: 'text', label: 'Texte' },
+      { id: 'text_short', label: 'Texte court' },
+      { id: 'text_long', label: 'Texte long' },
+      { id: 'text_email', label: 'E-mail' },
+      { id: 'text_phone', label: 'Téléphone' },
+      { id: 'text_iban', label: 'IBAN' },
       { id: 'number', label: 'Nombre' },
+      { id: 'list_single', label: 'Liste simple' },
+      { id: 'list_multiple', label: 'Liste multiple' },
+      { id: 'boolean', label: 'Booléen' },
+      { id: 'file_upload', label: 'Fichier (upload)' },
+      { id: 'file_downloadable', label: 'Fichier (téléchargeable)' },
+      { id: 'date_full', label: 'Date complète' },
+      { id: 'date_month', label: 'Date (mois)' },
+      { id: 'date_year', label: 'Date (année)' },
       { id: 'group', label: 'Groupe' },
     ]);
   });
@@ -64,7 +76,7 @@ describe('IndicatorModelListComponent', () => {
   });
 
   it('should clear filters and reload with empty filters', () => {
-    component.activeFilters.set({ type: ['text'] });
+    component.activeFilters.set({ type: ['text_short'] });
     const loadSpy = vi.spyOn(component.facade, 'load');
     component.clearFilters();
     expect(component.activeFilters()).toEqual({});

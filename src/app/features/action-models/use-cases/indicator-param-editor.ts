@@ -1,29 +1,33 @@
 import { computed, signal } from '@angular/core';
 
 import { IndicatorModelWithAssociation } from '@domains/action-models/action-model.models';
-import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
+import { IndicatorParams, OccurrenceRule } from '@app/shared/components/indicator-card/indicator-card.component';
 
 function childKey(parentId: string, childId: string): string {
   return `${parentId}:${childId}`;
 }
 
+function toOccurrenceRule(im: { occurrence_rule?: { min: string; max: string } }): OccurrenceRule | null {
+  return im.occurrence_rule ? { min: im.occurrence_rule.min, max: im.occurrence_rule.max } : null;
+}
+
 function toIndicatorParams(im: {
   hidden_rule: string; required_rule: string; disabled_rule: string;
-  default_value_rule: string; duplicable_rule: string; constrained_rule: string;
+  default_value_rule: string; occurrence_rule?: { min: string; max: string }; constrained_rule: string;
 }): IndicatorParams {
   return {
     hidden_rule: im.hidden_rule,
     required_rule: im.required_rule,
     disabled_rule: im.disabled_rule,
     default_value_rule: im.default_value_rule,
-    duplicable_rule: im.duplicable_rule,
+    occurrence_rule: toOccurrenceRule(im),
     constrained_rule: im.constrained_rule,
   };
 }
 
 const EMPTY_PARAMS: IndicatorParams = {
   hidden_rule: null, required_rule: null, disabled_rule: null,
-  default_value_rule: null, duplicable_rule: null, constrained_rule: null,
+  default_value_rule: null, occurrence_rule: null, constrained_rule: null,
 };
 
 /**
@@ -36,8 +40,14 @@ export function createIndicatorParamEditor(attachedFn: () => IndicatorModelWithA
 
   const edits = _edits.asReadonly();
 
+  function occurrenceRuleEquals(a: OccurrenceRule | null, b: OccurrenceRule | null | undefined): boolean {
+    if (a == null && (b == null || b === undefined)) return true;
+    if (a == null || b == null) return false;
+    return a.min === b.min && a.max === b.max;
+  }
+
   function isParamModified(
-    original: { hidden_rule: string; required_rule: string; disabled_rule: string; default_value_rule: string; duplicable_rule: string; constrained_rule: string },
+    original: { hidden_rule: string; required_rule: string; disabled_rule: string; default_value_rule: string; occurrence_rule?: { min: string; max: string }; constrained_rule: string },
     edited: IndicatorParams,
   ): boolean {
     return (
@@ -45,7 +55,7 @@ export function createIndicatorParamEditor(attachedFn: () => IndicatorModelWithA
       original.required_rule !== (edited.required_rule ?? 'false') ||
       original.disabled_rule !== (edited.disabled_rule ?? 'false') ||
       original.default_value_rule !== (edited.default_value_rule ?? 'false') ||
-      original.duplicable_rule !== (edited.duplicable_rule ?? 'false') ||
+      !occurrenceRuleEquals(edited.occurrence_rule, original.occurrence_rule) ||
       original.constrained_rule !== (edited.constrained_rule ?? 'false')
     );
   }
@@ -124,7 +134,11 @@ export function createIndicatorParamEditor(attachedFn: () => IndicatorModelWithA
   function validateRules(): string | null {
     const currentEdits = _edits();
     for (const [, params] of currentEdits) {
-      for (const rule of [params.hidden_rule, params.required_rule, params.disabled_rule, params.default_value_rule, params.duplicable_rule, params.constrained_rule]) {
+      const rules = [params.hidden_rule, params.required_rule, params.disabled_rule, params.default_value_rule, params.constrained_rule];
+      if (params.occurrence_rule) {
+        rules.push(params.occurrence_rule.min, params.occurrence_rule.max);
+      }
+      for (const rule of rules) {
         if (rule != null && rule !== 'true' && rule !== 'false') {
           const trimmed = rule.trim();
           if (trimmed) {

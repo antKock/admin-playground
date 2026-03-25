@@ -16,7 +16,7 @@ describe('IndicatorCardComponent', () => {
       required: 'off',
       editable: 'off',
       defaultValue: 'off',
-      duplicable: 'off',
+      occurrence: 'off',
       constrained: 'off',
     },
   };
@@ -26,7 +26,7 @@ describe('IndicatorCardComponent', () => {
     required_rule: null,
     disabled_rule: null,
     default_value_rule: null,
-    duplicable_rule: null,
+    occurrence_rule: null,
     constrained_rule: null,
   };
 
@@ -132,14 +132,25 @@ describe('IndicatorCardComponent', () => {
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ disabled_rule: null }));
   });
 
-  it('should emit paramsChange with duplicable_rule "true" on toggle', () => {
+  it('should emit paramsChange with occurrence_rule on toggle', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
-    component.onDuplicableToggle(true);
+    component.onOccurrenceToggle(true);
 
     expect(changeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ duplicable_rule: 'true' }),
+      expect.objectContaining({ occurrence_rule: { min: 'true', max: 'false' } }),
+    );
+  });
+
+  it('should emit paramsChange with null occurrence_rule on toggle off', () => {
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onOccurrenceToggle(false);
+
+    expect(changeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ occurrence_rule: null }),
     );
   });
 
@@ -209,7 +220,6 @@ describe('isRuleOverridden', () => {
     expect(isRuleOverridden('required_rule', null)).toBe(false);
     expect(isRuleOverridden('disabled_rule', null)).toBe(false);
     expect(isRuleOverridden('hidden_rule', null)).toBe(false);
-    expect(isRuleOverridden('duplicable_rule', null)).toBe(false);
     expect(isRuleOverridden('constrained_rule', null)).toBe(false);
   });
 
@@ -217,7 +227,6 @@ describe('isRuleOverridden', () => {
     expect(isRuleOverridden('required_rule', 'false')).toBe(false);
     expect(isRuleOverridden('disabled_rule', 'false')).toBe(false);
     expect(isRuleOverridden('hidden_rule', 'false')).toBe(false);
-    expect(isRuleOverridden('duplicable_rule', 'false')).toBe(false);
     expect(isRuleOverridden('constrained_rule', 'false')).toBe(false);
   });
 
@@ -225,13 +234,11 @@ describe('isRuleOverridden', () => {
     expect(isRuleOverridden('required_rule', 'true')).toBe(true);
     expect(isRuleOverridden('disabled_rule', 'true')).toBe(true);
     expect(isRuleOverridden('hidden_rule', 'true')).toBe(true);
-    expect(isRuleOverridden('duplicable_rule', 'true')).toBe(true);
     expect(isRuleOverridden('constrained_rule', 'true')).toBe(true);
   });
 
   it('should return true for JSONLogic rules', () => {
     expect(isRuleOverridden('required_rule', '{"if": [true]}')).toBe(true);
-    expect(isRuleOverridden('duplicable_rule', '{"if": [true]}')).toBe(true);
     expect(isRuleOverridden('constrained_rule', '{"if": [true]}')).toBe(true);
   });
 });

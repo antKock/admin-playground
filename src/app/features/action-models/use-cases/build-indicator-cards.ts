@@ -16,16 +16,25 @@ function ruleState(value: string | null, defaultVal: string): ParamState {
   return 'rule';
 }
 
+function occurrenceState(occ: { min: string; max: string } | null | undefined): ParamState {
+  if (!occ) return 'off';
+  const minState = ruleState(occ.min, 'false');
+  const maxState = ruleState(occ.max, 'false');
+  if (minState === 'off' && maxState === 'off') return 'off';
+  if (minState === 'rule' || maxState === 'rule') return 'rule';
+  return 'on';
+}
+
 function buildParamHints(source: {
   hidden_rule: string; required_rule: string; disabled_rule: string;
-  default_value_rule: string; duplicable_rule: string; constrained_rule: string;
+  default_value_rule: string; occurrence_rule?: { min: string; max: string }; constrained_rule: string;
 }): ParamHints {
   return {
     visibility: ruleState(source.hidden_rule, 'false'),
     required: ruleState(source.required_rule, 'false'),
     editable: ruleState(source.disabled_rule, 'false'),
     defaultValue: ruleState(source.default_value_rule, 'false'),
-    duplicable: ruleState(source.duplicable_rule, 'false'),
+    occurrence: occurrenceState(source.occurrence_rule),
     constrained: ruleState(source.constrained_rule, 'false'),
   };
 }
@@ -57,7 +66,7 @@ export function buildIndicatorCards(input: BuildIndicatorCardsInput): IndicatorC
         required_rule: p.required_rule ?? 'false',
         disabled_rule: p.disabled_rule ?? 'false',
         default_value_rule: p.default_value_rule ?? 'false',
-        duplicable_rule: p.duplicable_rule ?? 'false',
+        occurrence_rule: p.occurrence_rule ?? undefined,
         constrained_rule: p.constrained_rule ?? 'false',
       }),
       children: children?.length ? children : undefined,

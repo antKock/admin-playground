@@ -223,8 +223,9 @@ export class ActionModelFacade {
         required_rule: 'false',
         disabled_rule: 'false',
         default_value_rule: 'false',
-        duplicable_rule: 'false',
+        occurrence_rule: { min: 'false', max: 'false' },
         constrained_rule: 'false',
+        position: current.length,
       },
     ];
     const result = await this.domainStore.updateMutation({

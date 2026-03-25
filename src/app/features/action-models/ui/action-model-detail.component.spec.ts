@@ -50,7 +50,7 @@ describe('ActionModelDetailComponent', () => {
       required_rule: 'true',
       disabled_rule: 'true',
       default_value_rule: null,
-      duplicable_rule: null,
+      occurrence_rule: null,
       constrained_rule: null,
     };
     component.onParamsChange('ind-1', params);

@@ -14,7 +14,7 @@ const makeAttached = (overrides: Partial<IndicatorModelWithAssociation> = {}): I
   required_rule: 'false',
   disabled_rule: 'false',
   default_value_rule: 'false',
-  duplicable_rule: 'false',
+  occurrence_rule: { min: 'false', max: 'false' },
   constrained_rule: 'false',
   ...overrides,
 } as IndicatorModelWithAssociation);
@@ -58,7 +58,7 @@ describe('buildIndicatorCards', () => {
     expect(hints.required).toBe('off');
     expect(hints.editable).toBe('off');
     expect(hints.defaultValue).toBe('off');
-    expect(hints.duplicable).toBe('off');
+    expect(hints.occurrence).toBe('off');
     expect(hints.constrained).toBe('off');
   });
 
@@ -91,7 +91,7 @@ describe('buildIndicatorCards', () => {
         required_rule: 'true',
         disabled_rule: 'false',
         default_value_rule: 'false',
-        duplicable_rule: 'false',
+        occurrence_rule: null,
         constrained_rule: 'false',
       }],
     ]);
@@ -112,14 +112,14 @@ describe('buildIndicatorCards', () => {
         id: 'child-1',
         name: 'Child Indicator',
         technical_label: 'child_1',
-        type: 'text',
+        type: 'text_short',
         created_at: '2026-01-01T00:00:00Z',
         last_updated_at: '2026-01-01T00:00:00Z',
         hidden_rule: 'true',
         required_rule: 'false',
         disabled_rule: 'false',
         default_value_rule: 'false',
-        duplicable_rule: 'false',
+        occurrence_rule: { min: 'false', max: 'false' },
         constrained_rule: 'false',
       } as any],
     });

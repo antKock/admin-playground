@@ -716,6 +716,7 @@ export interface paths {
          * Get Actions
          * @description Get actions accessible to the user with cursor-based pagination.
          *     Actions are filtered by user's accessible communities.
+         *     Supports multi-field sorting via the sort parameter.
          */
         get: operations["get_actions_actions__get"];
         put?: never;
@@ -1616,29 +1617,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Indicator
-         * @description Get a specific indicator by ID.
-         *     Returns indicator details including the associated indicator model information.
-         */
+        /** Get Indicator */
         get: operations["get_indicator_indicators__indicator_id__get"];
-        /**
-         * Update Indicator
-         * @description Update an indicator's value.
-         *
-         *     For TEXT type indicators, use `value_text`.
-         *     For NUMBER type indicators, use `value_number`.
-         *
-         *     Validation ensures that only the appropriate value type is set based on the indicator model type.
-         */
+        /** Update Indicator */
         put: operations["update_indicator_indicators__indicator_id__put"];
         post?: never;
-        /**
-         * Delete Indicator
-         * @description Delete an indicator.
-         *     Cannot delete a child indicator individually or the last indicator of a type.
-         *     If the indicator is a GROUP, its children are deleted via cascade.
-         */
+        /** Delete Indicator */
         delete: operations["delete_indicator_indicators__indicator_id__delete"];
         options?: never;
         head?: never;
@@ -1654,11 +1638,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Duplicate Indicator
-         * @description Duplicate an indicator. If the indicator is a GROUP, its children are also duplicated.
-         *     Requires the indicator to have duplicable_enabled in its action model link.
-         */
+        /** Duplicate Indicator */
         post: operations["duplicate_indicator_indicators__indicator_id__duplicate_post"];
         delete?: never;
         options?: never;
@@ -2115,16 +2095,17 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
              */
             constrained_rule: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
         };
         /**
          * ActionModelBrief
@@ -2873,11 +2854,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -2933,11 +2910,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -3406,16 +3379,17 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
              */
             constrained_rule: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             /** Children Associations */
             children_associations?: components["schemas"]["ChildIndicatorModelAssociationInput"][] | null;
         };
@@ -3434,8 +3408,38 @@ export interface components {
             /** Technical Label */
             technical_label: string;
             type: components["schemas"]["IndicatorModelType"];
-            /** Unit */
-            unit?: string | null;
+            unit?: components["schemas"]["IndicatorModelUnit"] | null;
+        };
+        /** IndicatorModelChoiceInput */
+        IndicatorModelChoiceInput: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+        };
+        /** IndicatorModelChoiceRead */
+        IndicatorModelChoiceRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Position */
+            position: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * IndicatorModelCreate
@@ -3449,8 +3453,7 @@ export interface components {
             /** Description */
             description?: string | null;
             type: components["schemas"]["IndicatorModelType"];
-            /** Unit */
-            unit?: string | null;
+            unit?: components["schemas"]["IndicatorModelUnit"] | null;
             /** @default draft */
             status: components["schemas"]["IndicatorModelStatus"];
             /** Action Model Ids */
@@ -3459,6 +3462,8 @@ export interface components {
             action_model_associations?: components["schemas"]["ActionModelAssociationInput"][] | null;
             /** Children Ids */
             children_ids?: string[] | null;
+            /** Choices */
+            choices?: components["schemas"]["IndicatorModelChoiceInput"][] | null;
         };
         /**
          * IndicatorModelRead
@@ -3472,8 +3477,7 @@ export interface components {
             /** Description */
             description?: string | null;
             type: components["schemas"]["IndicatorModelType"];
-            /** Unit */
-            unit?: string | null;
+            unit?: components["schemas"]["IndicatorModelUnit"] | null;
             /** @default draft */
             status: components["schemas"]["IndicatorModelStatus"];
             /**
@@ -3495,6 +3499,8 @@ export interface components {
             last_updated_by_id?: string | null;
             /** Children */
             children?: components["schemas"]["IndicatorModelRead"][] | null;
+            /** Choices */
+            choices?: components["schemas"]["IndicatorModelChoiceRead"][] | null;
         };
         /**
          * IndicatorModelStatus
@@ -3504,10 +3510,14 @@ export interface components {
         IndicatorModelStatus: "draft" | "published" | "disabled" | "deleted";
         /**
          * IndicatorModelType
-         * @description Type of indicator: text, numeric, or group.
          * @enum {string}
          */
-        IndicatorModelType: "text" | "number" | "group";
+        IndicatorModelType: "text_short" | "text_long" | "text_email" | "text_phone" | "text_iban" | "number" | "list_single" | "list_multiple" | "boolean" | "file_upload" | "file_downloadable" | "date_full" | "date_month" | "date_year" | "group";
+        /**
+         * IndicatorModelUnit
+         * @enum {string}
+         */
+        IndicatorModelUnit: "kWh" | "MWh" | "GWh" | "kW" | "MW" | "GW" | "tep" | "ktep" | "tCO2" | "tCO2e" | "kgCO2e" | "m²" | "ha" | "km²" | "m" | "km" | "ml" | "m³" | "L" | "kg" | "t" | "kt" | "€" | "k€" | "M€" | "€/m²" | "€/MWh" | "€/tCO2" | "h" | "jour" | "mois" | "an" | "%" | "kWh/m²/an" | "kWh/m²" | "W/m²" | "kWc" | "kWh/an" | "unité" | "logement" | "ETP";
         /**
          * IndicatorModelUpdate
          * @description Model for updating indicator models.
@@ -3520,8 +3530,7 @@ export interface components {
             /** Description */
             description?: string | null;
             type?: components["schemas"]["IndicatorModelType"] | null;
-            /** Unit */
-            unit?: string | null;
+            unit?: components["schemas"]["IndicatorModelUnit"] | null;
             status?: components["schemas"]["IndicatorModelStatus"] | null;
             /** Action Model Ids */
             action_model_ids?: string[] | null;
@@ -3529,6 +3538,8 @@ export interface components {
             action_model_associations?: components["schemas"]["ActionModelAssociationInput"][] | null;
             /** Children Ids */
             children_ids?: string[] | null;
+            /** Choices */
+            choices?: components["schemas"]["IndicatorModelChoiceInput"][] | null;
         };
         /**
          * IndicatorModelWithAssociation
@@ -3579,16 +3590,17 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
              */
             constrained_rule: string;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             /** Children */
             children?: components["schemas"]["ChildIndicatorModelWithAssociation"][] | null;
         };
@@ -3606,8 +3618,17 @@ export interface components {
             value_text?: string | null;
             /** Value Number */
             value_number?: number | null;
+            /** Value Boolean */
+            value_boolean?: boolean | null;
+            /** Value Date */
+            value_date?: string | null;
             /** Change Origin */
             change_origin?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
             /**
              * Indicator Model Id
              * Format: uuid
@@ -3633,6 +3654,8 @@ export interface components {
             indicator_model?: components["schemas"]["IndicatorModelBrief"] | null;
             /** Children */
             children?: components["schemas"]["IndicatorRead"][] | null;
+            /** Selected Choices */
+            selected_choices?: components["schemas"]["SelectedChoiceRead"][] | null;
             /**
              * Hidden Rule
              * @default false
@@ -3653,11 +3676,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Duplicable Rule
-             * @default false
-             */
-            duplicable_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -3673,8 +3692,14 @@ export interface components {
             value_text?: string | null;
             /** Value Number */
             value_number?: number | null;
+            /** Value Boolean */
+            value_boolean?: boolean | null;
+            /** Value Date */
+            value_date?: string | null;
             /** Change Origin */
             change_origin?: string | null;
+            /** Selected Choice Ids */
+            selected_choice_ids?: string[] | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3785,6 +3810,19 @@ export interface components {
             expires_in: number;
             /** Scope */
             scope?: string | null;
+        };
+        /** OccurrenceRule */
+        OccurrenceRule: {
+            /**
+             * Min
+             * @default false
+             */
+            min: string;
+            /**
+             * Max
+             * @default false
+             */
+            max: string;
         };
         /** PaginatedResponse[ActionModelRead] */
         PaginatedResponse_ActionModelRead_: {
@@ -4025,6 +4063,18 @@ export interface components {
             fixed_accounts?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** SelectedChoiceRead */
+        SelectedChoiceRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
         };
         /**
          * SiteCreate
@@ -5797,6 +5847,8 @@ export interface operations {
                 action_model_id?: string[] | null;
                 /** @description Filter by status */
                 status?: string[] | null;
+                /** @description Sort fields (repeatable). Format: field:direction. Allowed fields: name, status, unique_id, start_date, end_date, created_at, last_updated_at, community_name, folder_name, beneficiary_names, action_model_name, action_theme_name. Example: sort=name:asc&sort=status:desc */
+                sort?: string[] | null;
             };
             header?: never;
             path?: never;

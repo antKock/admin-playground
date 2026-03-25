@@ -5,7 +5,7 @@ import { Injectable, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
-import { IndicatorModelCreate, IndicatorModelUpdate } from '@domains/indicator-models/indicator-model.models';
+import { IndicatorModelCreate, IndicatorModelUpdate, IndicatorModelType } from '@domains/indicator-models/indicator-model.models';
 import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
@@ -94,8 +94,8 @@ export class IndicatorModelFacade {
       name: formValue.name,
       technical_label: formValue.technical_label,
       description: formValue.description,
-      type: formValue.type as 'text' | 'number' | 'group',
-      unit: formValue.type === 'group' ? null : formValue.unit,
+      type: formValue.type as IndicatorModelType,
+      unit: formValue.type === 'group' ? null : (formValue.unit as IndicatorModelCreate['unit']),
       status: 'draft' as const,
       children_ids: formValue.type === 'group' ? attachedChildrenIds : null,
     };

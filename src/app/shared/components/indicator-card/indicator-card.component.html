@@ -109,22 +109,33 @@
         }
       </div>
 
-      <!-- Duplicable -->
+      <!-- Occurrences -->
       <div class="param-section">
         <app-toggle-row
-          label="Duplicable"
+          label="Occurrences"
           [icon]="CopyIcon"
-          [enabled]="isOverridden('duplicable_rule')"
-          (toggled)="onDuplicableToggle($event)"
+          [enabled]="isOccurrenceOverridden()"
+          (toggled)="onOccurrenceToggle($event)"
         />
-        @if (isOverridden('duplicable_rule')) {
-          <app-rule-field
-            [value]="isCustomRule(params().duplicable_rule) ? params().duplicable_rule! : ''"
-            [modelType]="modelType()"
-            [modelId]="modelId()"
-            [excludeIndicator]="indicator().technical_label"
-            (valueChange)="onRuleChange('duplicable_rule', $event)"
-          />
+        @if (isOccurrenceOverridden()) {
+          <div class="flex gap-2">
+            <app-rule-field
+              placeholder="Min"
+              [value]="isCustomRule(params().occurrence_rule?.min ?? null) ? params().occurrence_rule!.min : ''"
+              [modelType]="modelType()"
+              [modelId]="modelId()"
+              [excludeIndicator]="indicator().technical_label"
+              (valueChange)="onOccurrenceMinChange($event)"
+            />
+            <app-rule-field
+              placeholder="Max"
+              [value]="isCustomRule(params().occurrence_rule?.max ?? null) ? params().occurrence_rule!.max : ''"
+              [modelType]="modelType()"
+              [modelId]="modelId()"
+              [excludeIndicator]="indicator().technical_label"
+              (valueChange)="onOccurrenceMaxChange($event)"
+            />
+          </div>
         }
       </div>
 
@@ -216,14 +227,20 @@
                     }
                   </div>
                   <div class="param-section">
-                    <app-toggle-row label="Duplicable" [icon]="CopyIcon"
-                      [enabled]="isChildRuleOverridden(child.id, 'duplicable_rule')"
-                      (toggled)="onChildToggle(child.id, 'duplicable_rule', $event)" />
-                    @if (isChildRuleOverridden(child.id, 'duplicable_rule')) {
-                      <app-rule-field
-                        [value]="isCustomRule(getChildParams(child.id).duplicable_rule) ? getChildParams(child.id).duplicable_rule! : ''"
-                        [modelType]="modelType()" [modelId]="modelId()"
-                        (valueChange)="onChildRuleChange(child.id, 'duplicable_rule', $event)" />
+                    <app-toggle-row label="Occurrences" [icon]="CopyIcon"
+                      [enabled]="isChildOccurrenceOverridden(child.id)"
+                      (toggled)="onChildOccurrenceToggle(child.id, $event)" />
+                    @if (isChildOccurrenceOverridden(child.id)) {
+                      <div class="flex gap-2">
+                        <app-rule-field placeholder="Min"
+                          [value]="isCustomRule(getChildParams(child.id).occurrence_rule?.min ?? null) ? getChildParams(child.id).occurrence_rule!.min : ''"
+                          [modelType]="modelType()" [modelId]="modelId()"
+                          (valueChange)="onChildOccurrenceMinChange(child.id, $event)" />
+                        <app-rule-field placeholder="Max"
+                          [value]="isCustomRule(getChildParams(child.id).occurrence_rule?.max ?? null) ? getChildParams(child.id).occurrence_rule!.max : ''"
+                          [modelType]="modelType()" [modelId]="modelId()"
+                          (valueChange)="onChildOccurrenceMaxChange(child.id, $event)" />
+                      </div>
                     }
                   </div>
                   <div class="param-section last">

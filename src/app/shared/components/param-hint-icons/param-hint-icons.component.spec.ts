@@ -36,7 +36,7 @@ describe('ParamHintIconsComponent', () => {
       required: 'on',
       editable: 'off',
       defaultValue: 'off',
-      duplicable: 'off',
+      occurrence: 'off',
       constrained: 'off',
     };
     fixture.componentRef.setInput('hints', hints);
@@ -55,7 +55,7 @@ describe('ParamHintIconsComponent', () => {
       required: 'off',
       editable: 'off',
       defaultValue: 'rule',
-      duplicable: 'off',
+      occurrence: 'off',
       constrained: 'off',
     };
     fixture.componentRef.setInput('hints', hints);
@@ -73,7 +73,7 @@ describe('ParamHintIconsComponent', () => {
       required: 'off',
       editable: 'off',
       defaultValue: 'off',
-      duplicable: 'off',
+      occurrence: 'off',
       constrained: 'off',
     };
     fixture.componentRef.setInput('hints', hints);

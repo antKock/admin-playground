@@ -53,16 +53,37 @@ function flushIndicators(httpTesting: HttpTestingController, indicators: Indicat
 }
 
 describe('mapIndicatorType', () => {
-  it('should map "text" to "texte"', () => {
-    expect(mapIndicatorType('text')).toBe('texte');
+  it('should map text types to "texte"', () => {
+    expect(mapIndicatorType('text_short')).toBe('texte');
+    expect(mapIndicatorType('text_long')).toBe('texte');
+    expect(mapIndicatorType('text_email')).toBe('texte');
+    expect(mapIndicatorType('text_phone')).toBe('texte');
+    expect(mapIndicatorType('text_iban')).toBe('texte');
   });
 
   it('should map "number" to "nombre"', () => {
     expect(mapIndicatorType('number')).toBe('nombre');
   });
 
-  it('should default to "texte" for unknown values', () => {
-    expect(mapIndicatorType('unknown' as any)).toBe('texte');
+  it('should map "boolean" to "booleen"', () => {
+    expect(mapIndicatorType('boolean')).toBe('booleen');
+  });
+
+  it('should map list types to "liste"', () => {
+    expect(mapIndicatorType('list_single')).toBe('liste');
+    expect(mapIndicatorType('list_multiple')).toBe('liste');
+  });
+
+  it('should map date types to "date"', () => {
+    expect(mapIndicatorType('date_full')).toBe('date');
+    expect(mapIndicatorType('date_month')).toBe('date');
+    expect(mapIndicatorType('date_year')).toBe('date');
+  });
+
+  it('should default to "texte" for file/unknown types', () => {
+    expect(mapIndicatorType('file_upload')).toBe('texte');
+    expect(mapIndicatorType('file_downloadable')).toBe('texte');
+    expect(mapIndicatorType('group')).toBe('texte');
   });
 });
 
@@ -168,7 +189,7 @@ describe('VariableDictionaryService', () => {
       makeIndicator({ id: 'im-1', technical_label: 'score', type: 'number' }),
     ];
     const page2Indicators = [
-      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text' }),
+      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text_short' }),
     ];
 
     const sig = service.getVariables('action', 'am-pag');
@@ -273,7 +294,7 @@ describe('VariableDictionaryService', () => {
   it('should add folder-scoped indicator variables for folder models', () => {
     const indicators: IndicatorModel[] = [
       makeIndicator({ id: 'im-1', technical_label: 'score', type: 'number' }),
-      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text' }),
+      makeIndicator({ id: 'im-2', technical_label: 'label', type: 'text_short' }),
     ];
 
     const sig = service.getVariables('folder', 'fm-ind');

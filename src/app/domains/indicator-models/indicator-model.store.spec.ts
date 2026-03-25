@@ -122,7 +122,7 @@ describe('IndicatorModelDomainStore', () => {
 
   describe('mutations', () => {
     it('should send POST for createMutation', async () => {
-      const createData = { name: 'New IM', technical_label: 'new_im', type: 'text' as const, status: 'draft' as const };
+      const createData = { name: 'New IM', technical_label: 'new_im', type: 'text_short' as const, status: 'draft' as const };
       const resultPromise = store.createMutation(createData);
 
       const req = httpTesting.expectOne((r) => r.url.includes('indicator-models') && r.method === 'POST');
@@ -156,7 +156,7 @@ describe('IndicatorModelDomainStore', () => {
     });
 
     it('should return error status on mutation failure', async () => {
-      const resultPromise = store.createMutation({ name: 'Bad', technical_label: 'bad', type: 'text' as const, status: 'draft' });
+      const resultPromise = store.createMutation({ name: 'Bad', technical_label: 'bad', type: 'text_short' as const, status: 'draft' });
 
       const req = httpTesting.expectOne((r) => r.method === 'POST');
       req.flush({ detail: 'Validation error' }, { status: 422, statusText: 'Unprocessable Entity' });

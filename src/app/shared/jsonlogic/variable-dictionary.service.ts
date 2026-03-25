@@ -29,10 +29,17 @@ export interface ProseVariable {
  */
 export function mapIndicatorType(type: IndicatorModelType): ProseVariable['type'] {
   switch (type) {
-    case 'text':
-      return 'texte';
     case 'number':
       return 'nombre';
+    case 'boolean':
+      return 'booleen';
+    case 'list_single':
+    case 'list_multiple':
+      return 'liste';
+    case 'date_full':
+    case 'date_month':
+    case 'date_year':
+      return 'date';
     default:
       return 'texte';
   }

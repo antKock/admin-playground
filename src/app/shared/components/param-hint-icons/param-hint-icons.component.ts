@@ -9,7 +9,7 @@ export interface ParamHints {
   required: ParamState;
   editable: ParamState;
   defaultValue: ParamState;
-  duplicable: ParamState;
+  occurrence: ParamState;
   constrained: ParamState;
 }
 
@@ -18,7 +18,7 @@ const DEFAULT_HINTS: ParamHints = {
   required: 'off',
   editable: 'off',
   defaultValue: 'off',
-  duplicable: 'off',
+  occurrence: 'off',
   constrained: 'off',
 };
 
@@ -36,7 +36,7 @@ export class ParamHintIconsComponent {
     editable: PenOff,
     visibility: Eye,
     defaultValue: Clipboard,
-    duplicable: Copy,
+    occurrence: Copy,
     constrained: Braces,
   };
 
@@ -47,7 +47,7 @@ export class ParamHintIconsComponent {
       { state: h.editable, label: 'editable', icon: this.icons.editable, tooltip: 'Non éditable' },
       { state: h.visibility, label: 'visibility', icon: this.icons.visibility, tooltip: 'Masqué' },
       { state: h.defaultValue, label: 'defaultValue', icon: this.icons.defaultValue, tooltip: 'Valeur par défaut' },
-      { state: h.duplicable, label: 'duplicable', icon: this.icons.duplicable, tooltip: 'Duplicable' },
+      { state: h.occurrence, label: 'occurrence', icon: this.icons.occurrence, tooltip: 'Occurrences' },
       { state: h.constrained, label: 'constrained', icon: this.icons.constrained, tooltip: 'Contrainte' },
     ].map(item => ({
       ...item,

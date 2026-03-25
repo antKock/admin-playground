@@ -8,7 +8,7 @@ describe('IndicatorPickerComponent', () => {
 
   const mockOptions: IndicatorOption[] = [
     { id: '1', name: 'Energy Use', technical_label: 'energy_use', type: 'number' },
-    { id: '2', name: 'Description', technical_label: 'desc', type: 'text' },
+    { id: '2', name: 'Description', technical_label: 'desc', type: 'text_short' },
     { id: '3', name: 'CO2 Emissions', technical_label: 'co2', type: 'number' },
   ];
 
