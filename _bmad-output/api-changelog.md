@@ -64,31 +64,31 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-25 14:00 — Pending
+## Changeset: 2026-03-25 14:00 — Applied (baseline reset: 2026-03-25 10:49)
 
 ### Actions
 | Change | Action | Status |
 |--------|--------|--------|
-| `IndicatorModelType` enum: `text` removed, replaced by `text_short`, `text_long`, `text_email`, `text_phone`, `text_iban`; 9 new types added (`list_single`, `list_multiple`, `boolean`, `file_upload`, `file_downloadable`, `date_full`, `date_month`, `date_year`) | **indicator-model-list**: update `filterOptions` in `indicator-model-list.component.ts:46` — replace `{ id: 'text', label: 'Texte' }` with new type options | `to do` |
-| (same) | **indicator-model-facade**: update type cast in `indicator-model.facade.ts:97` — `as 'text' \| 'number' \| 'group'` is now invalid | `to do` |
-| (same) | **variable-dictionary**: update `mapIndicatorType()` in `variable-dictionary.service.ts:32` — `case 'text'` no longer valid, map new types | `to do` |
-| (same) | **tests**: update all test fixtures using `type: 'text'` to use `'text_short'` or appropriate new type (`indicator-model.facade.spec.ts`, `indicator-model.store.spec.ts`, `build-indicator-cards.spec.ts`, `variable-dictionary.service.spec.ts`, `indicator-picker.component.spec.ts`) | `to do` |
-| `duplicable_rule` → `occurrence_rule` (flat string → `OccurrenceRule { min, max }`) on 6 association/indicator schemas | **indicator-card component**: rename all `duplicable_rule` references to `occurrence_rule` and update type from `string` to `OccurrenceRule` in `indicator-card.component.ts` and `.html` (~30 occurrences) | `to do` |
-| (same) | **indicator-param-editor**: update `IndicatorParams` type and all `duplicable_rule` refs in `indicator-param-editor.ts` | `to do` |
-| (same) | **build-association-inputs**: update `AssociationParams` type and mapping in `build-association-inputs.ts` | `to do` |
-| (same) | **build-indicator-cards**: update card building logic and type in `build-indicator-cards.ts` | `to do` |
-| (same) | **action-model facade**: update default params in `action-model.facade.ts:226` | `to do` |
-| (same) | **tests**: update `duplicable_rule` in specs (`build-indicator-cards.spec.ts`, `action-model-detail.component.spec.ts`, `indicator-card.component.spec.ts`) | `to do` |
-| `unit` field changed from freeform `string` to `IndicatorModelUnit` enum on `IndicatorModelBrief`, `Create`, `Read`, `Update` | **indicator-model facade/form**: if form allows free-text unit input, switch to dropdown with enum values | `to do` |
-| `ActionModelAssociationInput` / `IndicatorModelAssociationInput`: added `position` field (integer, default 0) | **build-association-inputs**: include `position` in association payloads | `to do` |
+| `IndicatorModelType` enum: `text` removed, replaced by `text_short`, `text_long`, `text_email`, `text_phone`, `text_iban`; 9 new types added (`list_single`, `list_multiple`, `boolean`, `file_upload`, `file_downloadable`, `date_full`, `date_month`, `date_year`) | **indicator-model-list**: update `filterOptions` — 15 type options with FR labels | `done` |
+| (same) | **indicator-model-facade**: type cast updated to `as IndicatorModelType` | `done` |
+| (same) | **variable-dictionary**: `mapIndicatorType()` rewritten for all 15 types | `done` |
+| (same) | **tests**: all fixtures updated across 5+ spec files | `done` |
+| `duplicable_rule` → `occurrence_rule` (flat string → `OccurrenceRule { min, max }`) on 6 association/indicator schemas | **indicator-card component**: migrated to `occurrence_rule` with min/max UI | `done` |
+| (same) | **indicator-param-editor**: `IndicatorParams` updated, comparison logic rewritten | `done` |
+| (same) | **build-association-inputs**: mapping updated with `occurrenceRuleForApi()` | `done` |
+| (same) | **build-indicator-cards**: `occurrenceState()` helper added | `done` |
+| (same) | **action-model facade**: default params use `occurrence_rule: { min, max }` | `done` |
+| (same) | **tests**: all specs updated | `done` |
+| `unit` field changed from freeform `string` to `IndicatorModelUnit` enum | **indicator-model form**: freetext input → `<select>` dropdown with 43 unit options | `done` |
+| `ActionModelAssociationInput` / `IndicatorModelAssociationInput`: added `position` field | **build-association-inputs**: `position` included using array index | `done` |
 
 ### Opportunities
 | Capability | Description | Recommendation | Status |
 |------------|-------------|----------------|--------|
-| `GET /actions/` — new `sort` query param | Multi-field sorting on actions list (name, status, unique_id, dates, community, folder, beneficiary, action_model, action_theme) | Add sort controls to actions data-table, like existing filter pattern. Actions domain store would need `sort` param in loader. | `to evaluate` |
-| `IndicatorRead` — new `value_boolean`, `value_date`, `selected_choices` fields; `IndicatorUpdate` — new `value_boolean`, `value_date`, `selected_choice_ids` | Indicators can now carry boolean values, date values, and choice selections — matches the expanded `IndicatorModelType` enum | If/when indicator instance editing is in scope, these fields enable rich form inputs per type | `to evaluate` |
-| `IndicatorModelCreate/Read/Update` — new `choices` field (`IndicatorModelChoiceInput[]` / `IndicatorModelChoiceRead[]`) | Indicator models of type `list_single` / `list_multiple` can define selectable choices | Add choices management UI to indicator-model form when type is `list_single` or `list_multiple` — could use a dynamic sub-form pattern | `to evaluate` |
-| New schemas: `OccurrenceRule`, `IndicatorModelUnit`, `IndicatorModelChoiceInput/Read`, `SelectedChoiceRead` | Richer type system for indicator configuration | Already partially required by actions above; remaining schemas support future indicator instance features | `to evaluate` |
+| `GET /actions/` — new `sort` query param | Multi-field sorting on actions list | `declined` — no actions feature module exists yet; will implement when actions feature is scaffolded |
+| `IndicatorRead` — new `value_boolean`, `value_date`, `selected_choices` fields | Indicators can carry boolean, date, and choice values | `declined` — collectivité-facing indicator instances are not admin scope |
+| `IndicatorModelCreate/Read/Update` — new `choices` field | Choices management for `list_single` / `list_multiple` types | Implemented: sub-form with value/label inputs, pre-populated in edit mode, shown in detail view | `done` |
+| New schemas: `OccurrenceRule`, `IndicatorModelUnit`, `IndicatorModelChoiceInput/Read`, `SelectedChoiceRead` | Richer type system for indicator configuration | Covered by actions and choices implementation above | `done` |
 
 ---
 
