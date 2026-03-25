@@ -64,7 +64,7 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-25 14:00 — Applied (baseline reset: 2026-03-25 10:49)
+## Changeset: 2026-03-25 10:00 — Applied (baseline reset: 2026-03-25 10:49)
 
 ### Actions
 | Change | Action | Status |
