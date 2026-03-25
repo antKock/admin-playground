@@ -51,11 +51,16 @@
     @if (form.get('type')?.value === 'number') {
       <div>
         <label for="unit" class="block text-sm font-medium text-text-primary mb-1">Unité</label>
-        <input
+        <select
           id="unit"
           formControlName="unit"
           class="w-full px-3 py-2 border border-border rounded-lg text-text-primary bg-surface-base focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        >
+          <option [ngValue]="null">Aucune unité</option>
+          @for (u of unitOptions; track u) {
+            <option [value]="u">{{ u }}</option>
+          }
+        </select>
       </div>
     }
 

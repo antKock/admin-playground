@@ -35,6 +35,17 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
 
   readonly filteredAvailable = this.facade.availableChildIndicators;
 
+  readonly unitOptions = [
+    'kWh', 'MWh', 'GWh', 'kW', 'MW', 'GW', 'tep', 'ktep',
+    'tCO2', 'tCO2e', 'kgCO2e',
+    'm²', 'ha', 'km²', 'm', 'km', 'ml', 'm³', 'L',
+    'kg', 't', 'kt',
+    '€', 'k€', 'M€', '€/m²', '€/MWh', '€/tCO2',
+    'h', 'jour', 'mois', 'an',
+    '%', 'kWh/m²/an', 'kWh/m²', 'W/m²', 'kWc', 'kWh/an',
+    'unité', 'logement', 'ETP',
+  ];
+
   private static readonly ENTITY_LABEL = 'Modèles d\'indicateur';
   private static readonly EDIT_TITLE = 'Modifier le modèle d\'indicateur';
   private static readonly CREATE_TITLE = 'Créer un modèle d\'indicateur';
