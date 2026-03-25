@@ -249,6 +249,29 @@ describe('IndicatorModelFacade', () => {
       expect(result.children_ids).toBeNull();
       expect(result.unit).toBe('kg');
     });
+
+    it('should include choices for list types', () => {
+      const choices = [
+        { value: 'a', label: 'Option A', position: 0 },
+        { value: 'b', label: 'Option B', position: 1 },
+      ];
+      const result = facade.prepareIndicatorData(
+        { name: 'Test', technical_label: 'test', description: null, type: 'list_single', unit: null },
+        [],
+        choices,
+      );
+      expect(result.choices).toEqual(choices);
+      expect(result.unit).toBeNull();
+      expect(result.children_ids).toBeNull();
+    });
+
+    it('should set choices to null when not provided', () => {
+      const result = facade.prepareIndicatorData(
+        { name: 'Test', technical_label: 'test', description: null, type: 'text_short', unit: null },
+        [],
+      );
+      expect(result.choices).toBeNull();
+    });
   });
 
   describe('error handling', () => {

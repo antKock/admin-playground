@@ -42,7 +42,7 @@ describe('ParamHintIconsComponent', () => {
     fixture.componentRef.setInput('hints', hints);
     fixture.detectChanges();
 
-    // Order: required, editable, visibility, defaultValue, duplicable, constrained
+    // Order: required, editable, visibility, defaultValue, occurrence, constrained
     const list = component.hintList();
     expect(list.find(h => h.label === 'required')!.state).toBe('on');
     expect(list.find(h => h.label === 'visibility')!.state).toBe('on');

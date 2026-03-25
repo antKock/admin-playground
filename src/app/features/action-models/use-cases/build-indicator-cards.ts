@@ -48,13 +48,24 @@ export function buildIndicatorCards(input: BuildIndicatorCardsInput): IndicatorC
     const p = edited ?? im;
     const full = availableMap.get(im.id);
 
-    const children: ChildCardData[] | undefined = im.children?.map((child: ChildIndicatorModelWithAssociation) => ({
-      id: child.id,
-      name: child.name,
-      technical_label: child.technical_label,
-      type: child.type,
-      paramHints: buildParamHints(child),
-    }));
+    const children: ChildCardData[] | undefined = im.children?.map((child: ChildIndicatorModelWithAssociation) => {
+      const childEdited = paramEdits.get(`${im.id}:${child.id}`);
+      const cp = childEdited ?? child;
+      return {
+        id: child.id,
+        name: child.name,
+        technical_label: child.technical_label,
+        type: child.type,
+        paramHints: buildParamHints({
+          hidden_rule: cp.hidden_rule ?? 'false',
+          required_rule: cp.required_rule ?? 'false',
+          disabled_rule: cp.disabled_rule ?? 'false',
+          default_value_rule: cp.default_value_rule ?? 'false',
+          occurrence_rule: cp.occurrence_rule ?? undefined,
+          constrained_rule: cp.constrained_rule ?? 'false',
+        }),
+      };
+    });
 
     return {
       id: im.id,

@@ -242,9 +242,9 @@ export class ActionModelFacade {
 
   async detachIndicator(actionModelId: string, indicatorModelId: string): Promise<void> {
     const current = this.attachedIndicators();
-    const associations = current
-      .filter((im) => im.id !== indicatorModelId)
-      .map((im) => buildAssociationInput(im, this.paramEditor.edits()));
+    const remaining = current.filter((im) => im.id !== indicatorModelId);
+    const associations = remaining
+      .map((im, index) => buildAssociationInput(im, this.paramEditor.edits(), undefined, index));
     const result = await this.domainStore.updateMutation({
       id: actionModelId,
       data: { indicator_model_associations: associations },

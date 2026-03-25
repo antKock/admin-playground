@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, OnDestroy, computed, effect, signal, ElementRef, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, effect, signal, ElementRef, DestroyRef, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
@@ -35,6 +36,16 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
 
   // Choices management for list_single / list_multiple types
   readonly choices = signal<{ value: string; label: string; position: number }[]>([]);
+
+  // Reactive type value for template conditionals
+  private readonly typeValue: Signal<string | null> = toSignal(
+    this.form.get('type')!.valueChanges,
+    { initialValue: this.form.get('type')!.value },
+  );
+  readonly isListType = computed(() => {
+    const t = this.typeValue();
+    return t === 'list_single' || t === 'list_multiple';
+  });
 
   readonly filteredAvailable = this.facade.availableChildIndicators;
 
@@ -150,11 +161,6 @@ export class IndicatorModelFormComponent implements OnInit, OnDestroy, HasUnsave
   updateChoice(index: number, field: 'value' | 'label', val: string): void {
     this.choices.update(list => list.map((c, i) => i === index ? { ...c, [field]: val } : c));
     this.form.markAsDirty();
-  }
-
-  isListType(): boolean {
-    const type = this.form.get('type')?.value;
-    return type === 'list_single' || type === 'list_multiple';
   }
 
   onChildSearch(term: string): void {

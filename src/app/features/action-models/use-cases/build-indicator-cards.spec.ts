@@ -7,7 +7,7 @@ const makeAttached = (overrides: Partial<IndicatorModelWithAssociation> = {}): I
   id: 'ind-1',
   name: 'Indicator 1',
   technical_label: 'ind_1',
-  type: 'numeric',
+  type: 'number',
   created_at: '2026-01-01T00:00:00Z',
   last_updated_at: '2026-01-01T00:00:00Z',
   hidden_rule: 'false',
@@ -23,7 +23,7 @@ const makeAvailable = (overrides: Partial<IndicatorModel> = {}): IndicatorModel 
   id: 'ind-1',
   name: 'Indicator 1',
   technical_label: 'ind_1_full',
-  type: 'numeric',
+  type: 'number',
   status: 'draft',
   created_at: '2026-01-01T00:00:00Z',
   last_updated_at: '2026-01-01T00:00:00Z',
@@ -43,7 +43,7 @@ describe('buildIndicatorCards', () => {
     expect(cards[0].id).toBe('ind-1');
     expect(cards[0].name).toBe('Indicator 1');
     expect(cards[0].technical_label).toBe('ind_1_full');
-    expect(cards[0].type).toBe('numeric');
+    expect(cards[0].type).toBe('number');
   });
 
   it('should set all paramHints to off when rules are default', () => {
