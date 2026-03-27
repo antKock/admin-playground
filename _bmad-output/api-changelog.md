@@ -14,7 +14,7 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-27 14:37 — Pending
+## Changeset: 2026-03-27 14:37 — Applied (baseline reset: 2026-03-27 19:05)
 
 ### Schema changes
 
@@ -57,8 +57,8 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 | Capability | Description | Recommendation | Status |
 |------------|-------------|----------------|--------|
 | Section model CRUD on action-models | Admin can create/edit/delete sections on action models, assign indicator models to sections with rule strings | Already implemented (Epic 18) — action-model API, store, facade, and section-card components are in place | `done` |
-| Section model CRUD on folder-models (`POST/PUT/DELETE /folder-models/{id}/sections`, `PUT .../indicators`) | Same section management for folder models; `FolderModelRead.sections` now embedded (backend request #13 resolved) | Mirror the action-model section UI for folder-model detail — same shared section-card components. Now unblocked. | `planned` — Epic 19 (Stories 19.1, 19.2) |
-| Entity models CRUD + section management (`GET/PUT /entity-models/{entity_type}`, section sub-endpoints) | Full entity model configuration with sections and indicator assignment (backend request #14 resolved) | New admin capability: manage community/agent/site model definitions with same section management pattern. Reuse section-card components. | `planned` — Epic 20 (Stories 20.1, 20.2, 20.3) |
+| Section model CRUD on folder-models (`POST/PUT/DELETE /folder-models/{id}/sections`, `PUT .../indicators`) | Same section management for folder models; `FolderModelRead.sections` now embedded (backend request #13 resolved) | Mirror the action-model section UI for folder-model detail — same shared section-card components. Now unblocked. | `done` — Epic 19 (Stories 19.1, 19.2) |
+| Entity models CRUD + section management (`GET/PUT /entity-models/{entity_type}`, section sub-endpoints) | Full entity model configuration with sections and indicator assignment (backend request #14 resolved) | New admin capability: manage community/agent/site model definitions with same section management pattern. Reuse section-card components. | `done` — Epic 20 (Stories 20.1, 20.2, 20.3) |
 | `ActionRead.sections` / `FolderRead.sections` — structured section data on instances | Action and folder instances carry section-grouped indicators with values | Collectivité-facing instance data | `declined` — not admin scope for v1 |
 | Action section associations (`GET/POST/DELETE /actions/{id}/sections/{key}/associations`) | Associate objects (sites, agents, buildings) to action sections | Collectivité-facing instance feature | `declined` — not admin scope |
 | `IndicatorRead` — new `folder_id`, `context_object_id`, `context_object_type`, `section_model_id` fields | Indicators carry context about which folder/section/object they belong to | Enriches instance-level indicator reads only | `declined` — collectivité-facing context fields |
