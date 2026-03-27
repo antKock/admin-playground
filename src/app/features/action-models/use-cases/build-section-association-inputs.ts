@@ -16,7 +16,8 @@ export function buildSectionAssociationInputs(
     required_rule: ruleForApi(ind.required_rule),
     disabled_rule: ruleForApi(ind.disabled_rule),
     default_value_rule: ruleForApi(ind.default_value_rule),
-    duplicable_rule: ruleForApi(ind.duplicable_rule),
+    occurrence_min_rule: ruleForApi(ind.occurrence_min_rule),
+    occurrence_max_rule: ruleForApi(ind.occurrence_max_rule),
     constrained_rule: ruleForApi(ind.constrained_rule),
     position: index,
   }));

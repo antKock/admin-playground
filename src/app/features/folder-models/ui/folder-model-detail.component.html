@@ -30,7 +30,11 @@
         </div>
       </div>
 
-      <app-metadata-grid [fields]="fields()" />
+      <app-section-anchors [sections]="sectionDefs()" class="mb-6 block" />
+
+      <div id="section-metadata">
+        <app-metadata-grid [fields]="fields()" />
+      </div>
     </div>
 
     <div sections>
@@ -56,7 +60,74 @@
         }
       </div>
 
-      <app-activity-list entityType="FolderModel" [entityId]="model()!.id" />
+      <!-- Fixed Sections (application + progress) -->
+      <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
+      <div id="section-fixed-sections" class="mt-6">
+        <h2 class="text-lg font-semibold text-text-primary mb-4">Sections</h2>
+        <div class="space-y-3">
+          @for (view of fixedSectionViews(); track view.section.key) {
+            <app-section-card
+              [sectionName]="view.section.name"
+              [sectionType]="view.section.key"
+              [indicatorCount]="(view.section.indicators ?? []).length"
+              [collapsed]="true"
+            >
+              <app-section-params-editor
+                [params]="getSectionParams(view.section)"
+                [isPending]="facade.sectionMutationPending()"
+                (paramsChange)="onSectionParamsChange(view.section, $event)"
+              />
+              <div class="border-t border-dotted border-gray-300 my-3"></div>
+              @if (view.indicatorCards.length === 0) {
+                <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
+              } @else {
+                <div class="space-y-2 mb-3">
+                  @for (card of view.indicatorCards; track card.id) {
+                    <div class="flex items-center justify-between py-1.5 px-2 bg-white rounded border border-gray-200">
+                      <div>
+                        <span class="text-sm font-medium text-text-primary">{{ card.name }}</span>
+                        <span class="text-xs text-text-tertiary ml-2">{{ card.type }}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <app-param-hint-icons [hints]="card.paramHints" />
+                        @if (view.section.id) {
+                          <button
+                            class="text-text-tertiary hover:text-status-invalid text-xs px-1"
+                            title="Retirer"
+                            (click)="onSectionDetach(view.section, card.id)"
+                            [disabled]="facade.sectionMutationPending()"
+                          >✕</button>
+                        }
+                      </div>
+                    </div>
+                    @if (card.children?.length) {
+                      @for (child of card.children; track child.id) {
+                        <div class="flex items-center justify-between py-1 px-2 ml-6 bg-white rounded border border-gray-100">
+                          <div>
+                            <span class="text-xs font-medium text-text-secondary">{{ child.name }}</span>
+                            <span class="text-xs text-text-tertiary ml-2">{{ child.type }}</span>
+                          </div>
+                          <app-param-hint-icons [hints]="child.paramHints" />
+                        </div>
+                      }
+                    }
+                  }
+                </div>
+              }
+              <app-indicator-picker
+                [options]="pickerOptions()"
+                [attachedIds]="view.attachedIds"
+                [loading]="facade.indicatorsLoading()"
+                (attach)="onSectionAttach(view.section, $event)"
+              />
+            </app-section-card>
+          }
+        </div>
+      </div>
+
+      <div id="section-activity">
+        <app-activity-list entityType="FolderModel" [entityId]="model()!.id" />
+      </div>
     </div>
   </app-detail-page-layout>
 }

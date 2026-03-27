@@ -26,7 +26,7 @@ import { SectionCardComponent } from '@app/shared/components/section-card/sectio
 import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
 import { ParamHintIconsComponent } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
-import { SectionType, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
+import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
 import { ActionModelFacade, DisplaySection } from '../action-model.facade';
 import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator-cards';
 
@@ -107,7 +107,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   readonly associationSectionViews = computed(() =>
     ASSOCIATION_SECTION_TYPES.map((sType) => {
       const sections = this.facade.selectedItem()?.sections ?? [];
-      const section = sections.find((s) => s.section_type === sType) as DisplaySection | undefined;
+      const section = sections.find((s) => s.key === sType) as DisplaySection | undefined;
       return {
         sType,
         enabled: !!section,
@@ -274,8 +274,8 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     this.facade.reorderIndicators(m.id, ids);
   }
 
-  onToggleAssociation(sectionType: SectionType): void {
-    this.facade.toggleAssociationSection(sectionType);
+  onToggleAssociation(sectionKey: SectionKey): void {
+    this.facade.toggleAssociationSection(sectionKey);
   }
 
   getSectionParams(section: DisplaySection): SectionParams {
@@ -290,11 +290,11 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   }
 
   onSectionParamsChange(section: DisplaySection, params: SectionParams): void {
-    this.facade.updateSectionParams(section.id, section.section_type, params);
+    this.facade.updateSectionParams(section.id, section.key, params);
   }
 
   async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
-    await this.facade.addIndicatorToSection(section.id, section.section_type, indicator.id);
+    await this.facade.addIndicatorToSection(section.id, section.key, indicator.id);
   }
 
   async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {

@@ -9,7 +9,7 @@ import {
   ActionModelCreate, ActionModelUpdate,
   IndicatorModelWithAssociation,
 } from '@domains/action-models/action-model.models';
-import { SectionType, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
+import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
 import { SectionModelWithIndicators } from '@domains/action-models/action-model.models';
 
 export type DisplaySection = Omit<SectionModelWithIndicators, 'id'> & { id: string | null };
@@ -76,15 +76,13 @@ export class ActionModelFacade {
   readonly mergedFixedSections = computed<DisplaySection[]>(() => {
     const sections = this.selectedItem()?.sections ?? [];
     return FIXED_SECTION_TYPES.map((sType, idx) => {
-      const existing = sections.find((s) => s.section_type === sType);
+      const existing = sections.find((s) => s.key === sType);
       if (existing) return existing as DisplaySection;
       const config = SECTION_TYPE_MAP[sType];
       return {
         id: null,
         name: config.label,
-        section_type: sType,
-        owner_type: 'action_model',
-        owner_id: this.selectedItem()?.id ?? '',
+        key: sType,
         is_enabled: true,
         position: idx,
         hidden_rule: 'false',
@@ -304,13 +302,13 @@ export class ActionModelFacade {
     }
   }
 
-  async updateSectionParams(sectionId: string | null, sectionType: SectionType, params: import('@domains/action-models/action-model.models').SectionModelUpdate): Promise<void> {
+  async updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: import('@domains/action-models/action-model.models').SectionModelUpdate): Promise<void> {
     const m = this.selectedItem();
     if (!m) return;
 
     let resolvedId = sectionId;
     if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionType);
+      resolvedId = await this.ensureSectionExists(sectionKey);
       if (!resolvedId) return;
     }
 
@@ -327,13 +325,13 @@ export class ActionModelFacade {
     }
   }
 
-  async addIndicatorToSection(sectionId: string | null, sectionType: SectionType, indicatorModelId: string): Promise<void> {
+  async addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): Promise<void> {
     const m = this.selectedItem();
     if (!m) return;
 
     let resolvedId = sectionId;
     if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionType);
+      resolvedId = await this.ensureSectionExists(sectionKey);
       if (!resolvedId) return;
     }
 
@@ -347,7 +345,8 @@ export class ActionModelFacade {
         required_rule: 'false',
         disabled_rule: 'false',
         default_value_rule: 'false',
-        duplicable_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
         constrained_rule: 'false',
         position: existing.length,
       },
@@ -389,18 +388,18 @@ export class ActionModelFacade {
     }
   }
 
-  async ensureSectionExists(sectionType: SectionType): Promise<string | null> {
+  async ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
     const m = this.selectedItem();
     if (!m) return null;
 
-    const existing = (m.sections ?? []).find((s) => s.section_type === sectionType);
+    const existing = (m.sections ?? []).find((s) => s.key === sectionKey);
     if (existing) return existing.id;
 
-    const config = SECTION_TYPE_MAP[sectionType];
+    const config = SECTION_TYPE_MAP[sectionKey];
     const result = await this.domainStore.createSectionMutation({
       actionModelId: m.id,
       data: {
-        section_type: sectionType,
+        key: sectionKey,
         name: config.label,
         is_enabled: true,
         position: 0,
@@ -423,21 +422,21 @@ export class ActionModelFacade {
     return null;
   }
 
-  isAssociationSectionEnabled(sectionType: SectionType): boolean {
+  isAssociationSectionEnabled(sectionKey: SectionKey): boolean {
     const sections = this.selectedItem()?.sections ?? [];
-    return sections.some((s) => s.section_type === sectionType);
+    return sections.some((s) => s.key === sectionKey);
   }
 
-  getAssociationSectionId(sectionType: SectionType): string | undefined {
+  getAssociationSectionId(sectionKey: SectionKey): string | undefined {
     const sections = this.selectedItem()?.sections ?? [];
-    return sections.find((s) => s.section_type === sectionType)?.id;
+    return sections.find((s) => s.key === sectionKey)?.id;
   }
 
-  async toggleAssociationSection(sectionType: SectionType): Promise<void> {
+  async toggleAssociationSection(sectionKey: SectionKey): Promise<void> {
     const m = this.selectedItem();
     if (!m) return;
 
-    const existingSection = (m.sections ?? []).find((s) => s.section_type === sectionType);
+    const existingSection = (m.sections ?? []).find((s) => s.key === sectionKey);
 
     if (existingSection) {
       // Toggle OFF — delete section
@@ -454,11 +453,11 @@ export class ActionModelFacade {
       }
     } else {
       // Toggle ON — create section
-      const config = SECTION_TYPE_MAP[sectionType];
+      const config = SECTION_TYPE_MAP[sectionKey];
       const result = await this.domainStore.createSectionMutation({
         actionModelId: m.id,
         data: {
-          section_type: sectionType,
+          key: sectionKey,
           name: config.label,
           is_enabled: true,
           position: 0,

@@ -10,13 +10,17 @@ import { httpMutation, concatOp } from '@angular-architects/ngrx-toolkit';
 
 import { withCursorPagination } from '@domains/shared/with-cursor-pagination';
 import { patch } from '@domains/shared/store.utils';
-import { FolderModel, FolderModelCreate, FolderModelUpdate } from './folder-model.models';
+import { FolderModel, FolderModelCreate, FolderModelUpdate, SectionModelCreate, SectionModelUpdate, SectionIndicatorAssociationInput } from './folder-model.models';
 import {
   folderModelListLoader,
   loadFolderModel,
   createFolderModelRequest,
   updateFolderModelRequest,
   deleteFolderModelRequest,
+  createFolderSectionRequest,
+  updateFolderSectionRequest,
+  deleteFolderSectionRequest,
+  updateFolderSectionIndicatorsRequest,
 } from './folder-model.api';
 
 export const FolderModelDomainStore = signalStore(
@@ -33,7 +37,7 @@ export const FolderModelDomainStore = signalStore(
       loader: (params) => folderModelListLoader(store._http, params),
     }),
   ),
-  // CRUD mutations only — no status workflow for Folder Models.
+  // CRUD mutations — no status workflow for Folder Models.
   withMutations(() => ({
     createMutation: httpMutation({
       request: (data: FolderModelCreate) => createFolderModelRequest(data),
@@ -46,6 +50,27 @@ export const FolderModelDomainStore = signalStore(
     }),
     deleteMutation: httpMutation({
       request: (id: string) => deleteFolderModelRequest(id),
+      operator: concatOp,
+    }),
+    // Section mutations — concatOp (sequential)
+    createSectionMutation: httpMutation({
+      request: (params: { folderModelId: string; data: SectionModelCreate }) =>
+        createFolderSectionRequest(params),
+      operator: concatOp,
+    }),
+    updateSectionMutation: httpMutation({
+      request: (params: { folderModelId: string; sectionId: string; data: SectionModelUpdate }) =>
+        updateFolderSectionRequest(params),
+      operator: concatOp,
+    }),
+    deleteSectionMutation: httpMutation({
+      request: (params: { folderModelId: string; sectionId: string }) =>
+        deleteFolderSectionRequest(params),
+      operator: concatOp,
+    }),
+    updateSectionIndicatorsMutation: httpMutation({
+      request: (params: { folderModelId: string; sectionId: string; data: SectionIndicatorAssociationInput[] }) =>
+        updateFolderSectionIndicatorsRequest(params),
       operator: concatOp,
     }),
   })),

@@ -16,30 +16,13 @@ Open requests from frontend to backend. Verified at each API changelog review �
 - Frontend code for agent update has not changed — this appears to be a backend authorization policy issue
 **Request:** Verify that admin users have PUT permission on `/agents/{id}`. If this is intentional, document which roles can update agents.
 
-### 13. Add `sections` field to `FolderModelRead` response
-**Reported:** 2026-03-25 (v2.1 story review — Epic 19 prerequisite)
-**Impact:** Epic 19 (Section Management on Folder Models) is blocked. `FolderModelRead` does not embed `sections` like `ActionModelRead` does, so the frontend cannot display existing sections on the folder-model detail page.
-**Details:**
-- `ActionModelRead` has `sections: SectionModelWithIndicators[]` — folder models should match this pattern
-- Folder model section CRUD endpoints already exist (`POST/PUT/DELETE /folder-models/{id}/sections/...`), but the section data is not returned in the parent `GET /folder-models/{folder_model_id}` response
-- Verified against live staging API (`/openapi.json`) on 2026-03-25: confirmed missing
-**Request:** Add `sections: SectionModelWithIndicators[]` to `FolderModelRead`, matching `ActionModelRead` pattern.
+### ~~13. Add `sections` field to `FolderModelRead` response~~ → CLOSED
+**Reported:** 2026-03-25 (v2.1 story review — Epic 19 prerequisite) | **Closed:** 2026-03-27
+**Resolution:** `FolderModelRead` now includes `sections: SectionModelWithIndicators[]`, matching `ActionModelRead` pattern. Epic 19 unblocked.
 
-### 14. Add section management endpoints for entity models + type `EntityModelRead.sections`
-**Reported:** 2026-03-25 (v2.1 story review — Epic 20 prerequisite)
-**Impact:** Story 20.3 (Entity Model Detail Page) section & indicator management is blocked. No section sub-endpoints exist for entity models, and `EntityModelRead.sections` is untyped (`items: {}` in OpenAPI spec).
-**Details:**
-- Entity model paths are only: `GET /entity-models/`, `GET /entity-models/{entity_type}`, `PUT /entity-models/{entity_type}`
-- No section sub-endpoints exist (no `/entity-models/{entity_type}/sections/...`)
-- `EntityModelRead.sections` exists but is typed as `unknown[]` — should be `SectionModelWithIndicators[]`
-- Action models and folder models both have full section CRUD + indicator assignment endpoints — entity models should match
-- Verified against live staging API (`/openapi.json`) on 2026-03-25: confirmed missing
-**Request:**
-1. Add `POST /entity-models/{entity_type}/sections` (create section)
-2. Add `PUT /entity-models/{entity_type}/sections/{section_id}` (update section)
-3. Add `DELETE /entity-models/{entity_type}/sections/{section_id}` (delete section)
-4. Add `PUT /entity-models/{entity_type}/sections/{section_id}/indicators` (assign indicators)
-5. Type `EntityModelRead.sections` as `SectionModelWithIndicators[]` in the OpenAPI spec
+### ~~14. Add section management endpoints for entity models + type `EntityModelRead.sections`~~ → CLOSED
+**Reported:** 2026-03-25 (v2.1 story review — Epic 20 prerequisite) | **Closed:** 2026-03-27
+**Resolution:** All 4 section sub-endpoints now exist (`POST/PUT/DELETE /entity-models/{entity_type}/sections`, `PUT .../indicators`). `EntityModelRead.sections` is properly typed as `SectionModelWithIndicators[]`. Epic 20 unblocked.
 
 ---
 
@@ -109,3 +92,5 @@ Open requests from frontend to backend. Verified at each API changelog review �
 | `GET /communities/{id}/users` missing (#6) | 2026-03-25 | Endpoint now exists in spec |
 | `technical_label` on `IndicatorModelWithAssociation` (#7) | 2026-03-25 | Present on `IndicatorModelWithAssociation`, `IndicatorModelRead`, and `SectionIndicatorModelRead` |
 | `community_id` filter on `GET /users/` (part of #8) | 2026-03-25 | Filter param now available |
+| `sections` on `FolderModelRead` (#13) | 2026-03-27 | `FolderModelRead` now includes `sections: SectionModelWithIndicators[]` |
+| Entity model section endpoints + typed sections (#14) | 2026-03-27 | All 4 section sub-endpoints + properly typed `EntityModelRead.sections` |

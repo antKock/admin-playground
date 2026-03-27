@@ -1,6 +1,6 @@
 import { Component, input, output, computed, linkedSignal } from '@angular/core';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
-import { SectionType, SECTION_TYPE_MAP } from './section-card.models';
+import { SectionKey, SECTION_TYPE_MAP } from './section-card.models';
 
 @Component({
   selector: 'app-section-card',
@@ -9,7 +9,7 @@ import { SectionType, SECTION_TYPE_MAP } from './section-card.models';
 })
 export class SectionCardComponent {
   readonly sectionName = input.required<string>();
-  readonly sectionType = input.required<SectionType>();
+  readonly sectionType = input.required<SectionKey>();
   readonly indicatorCount = input(0);
   readonly collapsed = input(false);
 

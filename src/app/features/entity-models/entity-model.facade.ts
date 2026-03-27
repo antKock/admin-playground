@@ -1,27 +1,22 @@
 // Facade — single entry point for UI components.
 // Exposes readonly signals (via feature store) and intention methods (via domain store).
-// No status workflow for Folder Models.
+// Handles toast feedback, navigation, and error mapping so components stay presentation-only.
 import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
-import { FolderModelCreate, FolderModelUpdate, SectionModelUpdate, SectionModelWithIndicators } from '@domains/folder-models/folder-model.models';
-import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
-import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
+import { EntityModelDomainStore } from '@domains/entity-models/entity-model.store';
+import { EntityModelUpdate, EntityModelType, SectionModelUpdate, SectionIndicatorAssociationInput } from '@domains/entity-models/entity-model.models';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
+import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
-import { FilterParams } from '@domains/shared/with-cursor-pagination';
 import { buildSectionAssociationInputs } from '@features/action-models/use-cases/build-section-association-inputs';
-import { FolderModelFeatureStore } from './folder-model.store';
-
-export type DisplaySection = Omit<SectionModelWithIndicators, 'id'> & { id: string | null };
+import { EntityModelFeatureStore } from './entity-model.store';
 
 @Injectable({ providedIn: 'root' })
-export class FolderModelFacade {
-  private readonly domainStore = inject(FolderModelDomainStore);
-  private readonly featureStore = inject(FolderModelFeatureStore);
-  private readonly fpDomainStore = inject(FundingProgramDomainStore);
+export class EntityModelFacade {
+  private readonly domainStore = inject(EntityModelDomainStore);
+  private readonly featureStore = inject(EntityModelFeatureStore);
   private readonly imDomainStore = inject(IndicatorModelDomainStore);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -31,121 +26,55 @@ export class FolderModelFacade {
   readonly selectedItem = this.featureStore.selectedItem;
   readonly isLoading = this.featureStore.isLoading;
   readonly isLoadingDetail = this.featureStore.isLoadingDetail;
-  readonly hasMore = this.featureStore.hasMore;
   readonly error = this.featureStore.error;
   readonly detailError = this.featureStore.detailError;
-  readonly isEmpty = this.featureStore.isEmpty;
-  readonly totalCount = this.featureStore.totalCount;
-
-  // Cross-domain FP signals (projected through feature store)
-  readonly fpOptions = this.featureStore.fpOptions;
-  readonly fpLoading = this.featureStore.fpLoading;
-
-  // Display-ready rows for list components
-  readonly formattedRows = computed(() =>
-    this.items().map((item) => ({
-      ...item,
-      funding_programs_display:
-        item.funding_programs?.map((fp) => fp.name).join(', ') || '—',
-    })),
-  );
-
-  // Per-mutation status signals (directly from domain store)
-  readonly createIsPending = this.domainStore.createMutationIsPending;
-  readonly updateIsPending = this.domainStore.updateMutationIsPending;
-  readonly deleteIsPending = this.domainStore.deleteMutationIsPending;
-  readonly anyMutationPending = computed(() =>
-    this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
-  );
-
-  // Section mutation status
-  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
-  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
-  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
-  readonly sectionMutationPending = computed(() =>
-    this.createSectionIsPending() || this.updateSectionIsPending() || this.deleteSectionIsPending(),
-  );
-
-  // Indicator mutation status
-  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
 
   // Cross-domain: indicator model signals
   readonly availableIndicators = this.featureStore.availableIndicators;
   readonly indicatorsLoading = this.featureStore.indicatorsLoading;
 
-  // Merged fixed sections — always includes application + progress, with stubs for missing
-  readonly mergedFixedSections = computed<DisplaySection[]>(() => {
+  // Card display data
+  readonly entityModelCards = this.featureStore.entityModelCards;
+
+  // Additional info section computed
+  readonly additionalInfoSection = computed(() => {
     const sections = this.selectedItem()?.sections ?? [];
-    return FIXED_SECTION_TYPES.map((sType, idx) => {
-      const existing = sections.find((s) => s.key === sType);
-      if (existing) return existing as DisplaySection;
-      const config = SECTION_TYPE_MAP[sType];
-      return {
-        id: null,
-        name: config.label,
-        key: sType,
-        is_enabled: true,
-        position: idx,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
-        required_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-        created_at: '',
-        last_updated_at: '',
-        indicators: [],
-      } as DisplaySection;
-    });
+    return sections.find((s) => s.key === 'additional_info') ?? null;
   });
 
+  // Mutation status signals (directly from domain store)
+  readonly updateIsPending = this.domainStore.updateMutationIsPending;
+  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
+  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
+  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
+  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  readonly sectionMutationPending = computed(() =>
+    this.createSectionIsPending() || this.deleteSectionIsPending() ||
+    this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+  );
+
   // Intention methods
-  loadAssociationData(): void {
-    this.fpDomainStore.loadAll(undefined);
+  loadAll(): void {
+    this.domainStore.loadAll(undefined);
   }
 
-  load(filters?: FilterParams): void {
-    this.domainStore.load(filters);
-  }
-
-  loadMore(): void {
-    this.domainStore.loadMore();
-  }
-
-  select(id: string): void {
-    this.domainStore.selectById(id);
+  selectByType(entityType: EntityModelType): void {
+    this.domainStore.selectByType(entityType);
   }
 
   clearSelection(): void {
     this.domainStore.clearSelection();
   }
 
-  async create(data: FolderModelCreate): Promise<void> {
-    const result = await this.domainStore.createMutation(data);
-    if (result.status === 'success') {
-      this.toast.success('Modèle de dossier créé');
-      this.router.navigate(['/folder-models']);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
-    }
+  loadIndicators(): void {
+    this.imDomainStore.loadAll(undefined);
   }
 
-  async update(id: string, data: FolderModelUpdate): Promise<void> {
-    const result = await this.domainStore.updateMutation({ id, data });
+  async update(entityType: EntityModelType, data: EntityModelUpdate): Promise<void> {
+    const result = await this.domainStore.updateMutation({ entityType, data });
     if (result.status === 'success') {
-      this.toast.success('Modèle de dossier mis à jour');
-      this.domainStore.refresh(undefined);
-      this.router.navigate(['/folder-models', id]);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    const result = await this.domainStore.deleteMutation(id);
-    if (result.status === 'success') {
-      this.toast.success('Modèle de dossier supprimé');
-      this.router.navigate(['/folder-models']);
+      this.toast.success('Modèle d\'entité mis à jour');
+      this.domainStore.selectByType(entityType);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error);
     }
@@ -162,20 +91,16 @@ export class FolderModelFacade {
     }
 
     const result = await this.domainStore.updateSectionMutation({
-      folderModelId: m.id,
+      entityType: m.entity_type,
       sectionId: resolvedId,
       data: params,
     });
     if (result.status === 'success') {
       this.toast.success('Paramètres de section enregistrés');
-      this.domainStore.selectById(m.id);
+      this.domainStore.selectByType(m.entity_type);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de mettre à jour la section');
     }
-  }
-
-  loadIndicators(): void {
-    this.imDomainStore.loadAll(undefined);
   }
 
   async addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): Promise<void> {
@@ -190,7 +115,7 @@ export class FolderModelFacade {
 
     const section = (m.sections ?? []).find((s) => s.id === resolvedId);
     const existing = section?.indicators ?? [];
-    const inputs = [
+    const inputs: SectionIndicatorAssociationInput[] = [
       ...buildSectionAssociationInputs(existing),
       {
         indicator_model_id: indicatorModelId,
@@ -206,13 +131,13 @@ export class FolderModelFacade {
     ];
 
     const result = await this.domainStore.updateSectionIndicatorsMutation({
-      folderModelId: m.id,
+      entityType: m.entity_type,
       sectionId: resolvedId,
       data: inputs,
     });
     if (result.status === 'success') {
       this.toast.success('Indicateur ajouté à la section');
-      this.domainStore.selectById(m.id);
+      this.domainStore.selectByType(m.entity_type);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible d\'ajouter l\'indicateur');
     }
@@ -229,13 +154,13 @@ export class FolderModelFacade {
     const inputs = buildSectionAssociationInputs(remaining);
 
     const result = await this.domainStore.updateSectionIndicatorsMutation({
-      folderModelId: m.id,
+      entityType: m.entity_type,
       sectionId,
       data: inputs,
     });
     if (result.status === 'success') {
       this.toast.success('Indicateur retiré de la section');
-      this.domainStore.selectById(m.id);
+      this.domainStore.selectByType(m.entity_type);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de retirer l\'indicateur');
     }
@@ -250,7 +175,7 @@ export class FolderModelFacade {
 
     const config = SECTION_TYPE_MAP[sectionKey];
     const result = await this.domainStore.createSectionMutation({
-      folderModelId: m.id,
+      entityType: m.entity_type,
       data: {
         key: sectionKey,
         name: config.label,
@@ -266,7 +191,7 @@ export class FolderModelFacade {
     });
 
     if (result.status === 'success') {
-      this.domainStore.selectById(m.id);
+      this.domainStore.selectByType(m.entity_type);
       return (result.value as { id: string }).id;
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de créer la section');

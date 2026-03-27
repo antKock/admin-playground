@@ -173,6 +173,221 @@ describe('FolderModelFacade', () => {
     });
   });
 
+  describe('merged fixed sections', () => {
+    const mockWithFixedSections = {
+      ...mockFolderModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        key: 'application' as const,
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should return both fixed sections with existing one from API', () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithFixedSections);
+
+      const merged = facade.mergedFixedSections();
+      expect(merged).toHaveLength(2);
+      expect(merged[0].key).toBe('application');
+      expect(merged[0].id).toBe('sec-app');
+      expect(merged[1].key).toBe('progress');
+      expect(merged[1].id).toBeNull();
+    });
+
+    it('should create stubs for both missing fixed sections', () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush({ ...mockFolderModel, sections: [] });
+
+      const merged = facade.mergedFixedSections();
+      expect(merged).toHaveLength(2);
+      expect(merged[0].id).toBeNull();
+      expect(merged[0].name).toBe('Candidature');
+      expect(merged[1].id).toBeNull();
+      expect(merged[1].name).toBe('Suivi');
+    });
+  });
+
+  describe('ensureSectionExists', () => {
+    const mockWithSection = {
+      ...mockFolderModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        key: 'application' as const,
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should return existing section ID without API call', async () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSection);
+
+      const id = await facade.ensureSectionExists('application');
+      expect(id).toBe('sec-app');
+    });
+
+    it('should create section and return new ID when not found', async () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush({ ...mockFolderModel, sections: [] });
+
+      const promise = facade.ensureSectionExists('progress');
+
+      const createReq = httpTesting.expectOne((r) =>
+        r.method === 'POST' && r.url.includes('folder-models/fm-1/sections'),
+      );
+      expect(createReq.request.body.key).toBe('progress');
+      createReq.flush({ id: 'sec-new-progress' });
+
+      const id = await promise;
+      expect(id).toBe('sec-new-progress');
+
+      // Re-select triggers detail fetch
+      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1')).flush(mockWithSection);
+    });
+  });
+
+  describe('updateSectionParams', () => {
+    const mockWithSection = {
+      ...mockFolderModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        key: 'application' as const,
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [],
+      }],
+    };
+
+    it('should update existing section via PUT', async () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSection);
+
+      const promise = facade.updateSectionParams('sec-app', 'application', { hidden_rule: 'true' });
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app'),
+      );
+      expect(putReq.request.body.hidden_rule).toBe('true');
+      putReq.flush({ ...mockWithSection.sections[0], hidden_rule: 'true' });
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Paramètres de section enregistrés');
+
+      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1')).flush(mockWithSection);
+    });
+  });
+
+  describe('section indicator management', () => {
+    const mockWithSectionAndIndicator = {
+      ...mockFolderModel,
+      sections: [{
+        id: 'sec-app',
+        name: 'Candidature',
+        key: 'application' as const,
+        is_enabled: true,
+        position: 0,
+        hidden_rule: 'false',
+        disabled_rule: 'false',
+        required_rule: 'false',
+        occurrence_min_rule: 'false',
+        occurrence_max_rule: 'false',
+        constrained_rule: 'false',
+        created_at: '2026-01-01T00:00:00Z',
+        last_updated_at: '2026-01-01T00:00:00Z',
+        indicators: [{
+          id: 'ind-1',
+          name: 'Existing Indicator',
+          technical_label: 'existing',
+          type: 'number',
+          created_at: '2026-01-01T00:00:00Z',
+          last_updated_at: '2026-01-01T00:00:00Z',
+          hidden_rule: 'false',
+          required_rule: 'false',
+          disabled_rule: 'false',
+          default_value_rule: 'false',
+          occurrence_min_rule: 'false',
+          occurrence_max_rule: 'false',
+          constrained_rule: 'false',
+          position: 0,
+        }],
+      }],
+    };
+
+    it('should add indicator to section via PUT replace-all', async () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSectionAndIndicator);
+
+      const promise = facade.addIndicatorToSection('sec-app', 'application', 'ind-new');
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app/indicators'),
+      );
+      expect(putReq.request.body).toHaveLength(2);
+      expect(putReq.request.body[0].indicator_model_id).toBe('ind-1');
+      expect(putReq.request.body[1].indicator_model_id).toBe('ind-new');
+      putReq.flush(mockWithSectionAndIndicator.sections[0]);
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Indicateur ajouté à la section');
+
+      httpTesting.match((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1'))
+        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+    });
+
+    it('should remove indicator from section', async () => {
+      facade.select('fm-1');
+      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSectionAndIndicator);
+
+      const promise = facade.removeIndicatorFromSection('sec-app', 'ind-1');
+
+      const putReq = httpTesting.expectOne((r) =>
+        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app/indicators'),
+      );
+      expect(putReq.request.body).toHaveLength(0);
+      putReq.flush({ ...mockWithSectionAndIndicator.sections[0], indicators: [] });
+
+      await promise;
+
+      expect(successSpy).toHaveBeenCalledWith('Indicateur retiré de la section');
+
+      httpTesting.match((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1'))
+        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+    });
+  });
+
   describe('cross-domain: loadAssociationData', () => {
     const mockFpResponse: PaginatedResponse<FundingProgram> = {
       data: [{

@@ -202,10 +202,10 @@
       <div id="section-fixed-sections" class="mt-6">
         <h2 class="text-lg font-semibold text-text-primary mb-4">Sections</h2>
         <div class="space-y-3">
-          @for (view of fixedSectionViews(); track view.section.section_type) {
+          @for (view of fixedSectionViews(); track view.section.key) {
             <app-section-card
               [sectionName]="view.section.name"
-              [sectionType]="view.section.section_type"
+              [sectionType]="view.section.key"
               [indicatorCount]="(view.section.indicators ?? []).length"
               [collapsed]="true"
             >

@@ -210,6 +210,23 @@ So that I can define which data points are collected for each section of an acti
 
 **References:** Adapts existing `build-association-inputs` utility scoped by `section_id`. Reuses `indicator-card` and `indicator-param-editor`. Facade exposes `updateSectionIndicators(sectionId, indicators)`.
 
+### Story 18.6: API Type Reconciliation (SectionType → SectionKey)
+
+As a developer,
+I want the Epic 18 section code to align with the current API types (changeset 2026-03-27),
+So that the app builds successfully against the regenerated `api-types.ts` and Epics 19/20 can proceed.
+
+**Acceptance Criteria:**
+
+**Given** the API types have been regenerated from the 2026-03-27 spec
+**When** the reconciliation changes are applied
+**Then** `npx ng build` succeeds and all existing tests pass
+**And** `SectionType` is renamed to `SectionKey`, `section_type` field to `key`
+**And** association section keys use `buildings`/`agents`/`communities` with `association_entity_type` field
+**And** `duplicable_rule` is replaced with `occurrence_min_rule`/`occurrence_max_rule` on section indicator schemas
+
+**References:** Reconciliation of Epic 18 code with API changeset 2026-03-27 14:37. Must complete before Epics 19/20 start.
+
 ---
 
 ## Epic 19: Section Management on Folder Models

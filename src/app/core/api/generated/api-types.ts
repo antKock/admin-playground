@@ -804,7 +804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/actions/{action_id}/indicators": {
+    "/actions/{action_id}/sections": {
         parameters: {
             query?: never;
             header?: never;
@@ -812,10 +812,30 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Action Indicators
-         * @description Get all indicators for a specific action.
+         * Get Action Sections
+         * @description Get all sections for an action, with indicators and associations.
          */
-        get: operations["get_action_indicators_actions__action_id__indicators_get"];
+        get: operations["get_action_sections_actions__action_id__sections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/actions/{action_id}/sections/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Action Section
+         * @description Get a single section by key for an action, with indicators and associations.
+         */
+        get: operations["get_action_section_actions__action_id__sections__key__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -934,7 +954,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/actions/{action_id}/associations": {
+    "/actions/{action_id}/sections/{key}/associations": {
         parameters: {
             query?: never;
             header?: never;
@@ -942,37 +962,41 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Action Associations
-         * @description List all object associations for an action.
+         * Get Section Associations
+         * @description List associations for a specific section of an action.
          */
-        get: operations["get_action_associations_actions__action_id__associations_get"];
+        get: operations["get_section_associations_actions__action_id__sections__key__associations_get"];
         put?: never;
         /**
-         * Associate Object To Action
-         * @description Associate an object (site, agent, community) to an action via an association section.
+         * Create Section Association
+         * @description Associate an object to an action via a section key.
          */
-        post: operations["associate_object_to_action_actions__action_id__associations_post"];
+        post: operations["create_section_association_actions__action_id__sections__key__associations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/actions/{action_id}/associations/{association_id}": {
+    "/actions/{action_id}/sections/{key}/associations/{association_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Section Association
+         * @description Get a specific association by ID.
+         */
+        get: operations["get_section_association_actions__action_id__sections__key__associations__association_id__get"];
         put?: never;
         post?: never;
         /**
-         * Disassociate Object From Action
-         * @description Remove an object association from an action, deleting related indicators.
+         * Delete Section Association
+         * @description Remove an association from an action, deleting related indicators.
          */
-        delete: operations["disassociate_object_from_action_actions__action_id__associations__association_id__delete"];
+        delete: operations["delete_section_association_actions__action_id__sections__key__associations__association_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1829,6 +1853,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entity-models/{entity_type}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Entity Model Section */
+        post: operations["create_entity_model_section_entity_models__entity_type__sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entity-models/{entity_type}/sections/{section_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Entity Model Section */
+        put: operations["update_entity_model_section_entity_models__entity_type__sections__section_id__put"];
+        post?: never;
+        /** Delete Entity Model Section */
+        delete: operations["delete_entity_model_section_entity_models__entity_type__sections__section_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entity-models/{entity_type}/sections/{section_id}/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Entity Section Indicators */
+        put: operations["set_entity_section_indicators_entity_models__entity_type__sections__section_id__indicators_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/history/activities": {
         parameters: {
             query?: never;
@@ -2175,19 +2251,21 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * ActionAssociationObjectBrief
-         * @description Brief info about an associated object with its indicators.
+         * ActionAssociationWithIndicators
+         * @description Associated object with its full indicators.
          */
-        ActionAssociationObjectBrief: {
+        ActionAssociationWithIndicators: {
             /**
-             * Object Id
+             * Id
              * Format: uuid
              */
-            object_id: string;
-            /** Object Type */
-            object_type: string;
+            id: string;
+            /** Name */
+            name: string;
+            /** Unique Id */
+            unique_id?: string | null;
             /** Indicators */
-            indicators?: components["schemas"]["ActionSectionIndicator"][];
+            indicators?: components["schemas"]["IndicatorRead"][];
         };
         /**
          * ActionBeneficiariesUpdate
@@ -2429,12 +2507,6 @@ export interface components {
         /** ActionObjectAssociationCreate */
         ActionObjectAssociationCreate: {
             /**
-             * Section Model Id
-             * Format: uuid
-             */
-            section_model_id: string;
-            object_type: components["schemas"]["AssociatedObjectType"];
-            /**
              * Object Id
              * Format: uuid
              */
@@ -2462,7 +2534,6 @@ export interface components {
              * Format: uuid
              */
             section_model_id: string;
-            object_type: components["schemas"]["AssociatedObjectType"];
             /**
              * Object Id
              * Format: uuid
@@ -2543,61 +2614,55 @@ export interface components {
             /** Next Possible Statuses */
             next_possible_statuses?: components["schemas"]["ActionNextStatusInfo"][];
             /** Sections */
-            sections?: components["schemas"]["ActionSectionRead"][];
+            sections?: components["schemas"]["ActionSectionBrief"][];
+            /** Sections Positions */
+            sections_positions?: {
+                [key: string]: number;
+            };
         };
         /**
-         * ActionSectionIndicator
-         * @description Brief indicator info within a section.
+         * ActionSectionBrief
+         * @description Section metadata without indicators or associations.
          */
-        ActionSectionIndicator: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Indicator Model Id
-             * Format: uuid
-             */
-            indicator_model_id: string;
-            /** Indicator Model Name */
-            indicator_model_name?: string | null;
-            /** Indicator Model Type */
-            indicator_model_type?: string | null;
-            /** Value Text */
-            value_text?: string | null;
-            /** Value Number */
-            value_number?: number | null;
-            /**
-             * Position
-             * @default 0
-             */
-            position: number;
-            /** Context Object Id */
-            context_object_id?: string | null;
-            /** Context Object Type */
-            context_object_type?: string | null;
-            /** Section Model Id */
-            section_model_id?: string | null;
-            /** Parent Indicator Id */
-            parent_indicator_id?: string | null;
-            /** Children */
-            children?: components["schemas"]["ActionSectionIndicator"][] | null;
-        };
-        /**
-         * ActionSectionRead
-         * @description Section with grouped indicators in an action read response.
-         */
-        ActionSectionRead: {
+        ActionSectionBrief: {
             /**
              * Section Model Id
              * Format: uuid
              */
             section_model_id: string;
-            /** Section Type */
-            section_type: string;
+            /** Key */
+            key: string;
             /** Name */
             name: string;
+            /** Association Entity Type */
+            association_entity_type?: string | null;
+            /**
+             * Position
+             * @default 0
+             */
+            position: number;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+        };
+        /**
+         * ActionSectionWithIndicators
+         * @description Section with full IndicatorRead objects for action indicator display.
+         */
+        ActionSectionWithIndicators: {
+            /**
+             * Section Model Id
+             * Format: uuid
+             */
+            section_model_id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Association Entity Type */
+            association_entity_type?: string | null;
             /**
              * Position
              * @default 0
@@ -2609,9 +2674,9 @@ export interface components {
              */
             is_enabled: boolean;
             /** Indicators */
-            indicators?: components["schemas"]["ActionSectionIndicator"][];
+            indicators?: components["schemas"]["IndicatorRead"][];
             /** Associations */
-            associations?: components["schemas"]["ActionAssociationObjectBrief"][] | null;
+            associations?: components["schemas"]["ActionAssociationWithIndicators"][] | null;
         };
         /**
          * ActionStatus
@@ -3022,10 +3087,10 @@ export interface components {
             status?: components["schemas"]["AgentStatus"] | null;
         };
         /**
-         * AssociatedObjectType
+         * AssociationEntityType
          * @enum {string}
          */
-        AssociatedObjectType: "site" | "agent" | "community";
+        AssociationEntityType: "agents" | "buildings" | "communities";
         /** Body_create_access_token_oauth_token_post */
         Body_create_access_token_oauth_token_post: {
             /** Grant Type */
@@ -3397,7 +3462,7 @@ export interface components {
             /** Last Updated By Id */
             last_updated_by_id?: string | null;
             /** Sections */
-            sections?: unknown[];
+            sections?: components["schemas"]["SectionModelWithIndicators"][];
         };
         /**
          * EntityModelType
@@ -3513,6 +3578,8 @@ export interface components {
             last_updated_by_id?: string | null;
             /** Funding Programs */
             funding_programs?: components["schemas"]["FundingProgramRead"][];
+            /** Sections */
+            sections?: components["schemas"]["SectionModelWithIndicators"][];
         };
         /**
          * FolderModelUpdate
@@ -3643,8 +3710,8 @@ export interface components {
              * Format: uuid
              */
             section_model_id: string;
-            /** Section Type */
-            section_type: string;
+            /** Key */
+            key: string;
             /** Name */
             name: string;
             /**
@@ -4523,10 +4590,15 @@ export interface components {
              */
             default_value_rule: string;
             /**
-             * Duplicable Rule
+             * Occurrence Min Rule
              * @default false
              */
-            duplicable_rule: string;
+            occurrence_min_rule: string;
+            /**
+             * Occurrence Max Rule
+             * @default false
+             */
+            occurrence_max_rule: string;
             /**
              * Constrained Rule
              * @default false
@@ -4561,10 +4633,15 @@ export interface components {
              */
             default_value_rule: string;
             /**
-             * Duplicable Rule
+             * Occurrence Min Rule
              * @default false
              */
-            duplicable_rule: string;
+            occurrence_min_rule: string;
+            /**
+             * Occurrence Max Rule
+             * @default false
+             */
+            occurrence_max_rule: string;
             /**
              * Constrained Rule
              * @default false
@@ -4624,10 +4701,15 @@ export interface components {
              */
             default_value_rule: string;
             /**
-             * Duplicable Rule
+             * Occurrence Min Rule
              * @default false
              */
-            duplicable_rule: string;
+            occurrence_min_rule: string;
+            /**
+             * Occurrence Max Rule
+             * @default false
+             */
+            occurrence_max_rule: string;
             /**
              * Constrained Rule
              * @default false
@@ -4641,11 +4723,16 @@ export interface components {
             /** Children */
             children?: components["schemas"]["SectionChildIndicatorModelRead"][] | null;
         };
+        /**
+         * SectionKey
+         * @enum {string}
+         */
+        SectionKey: "application" | "progress" | "financial" | "additional_info" | "agents" | "communities" | "buildings";
         /** SectionModelCreate */
         SectionModelCreate: {
             /** Name */
             name: string;
-            section_type: components["schemas"]["SectionType"];
+            key: components["schemas"]["SectionKey"];
             /**
              * Is Enabled
              * @default true
@@ -4696,13 +4783,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
-            section_type: components["schemas"]["SectionType"];
-            owner_type: components["schemas"]["SectionOwnerType"];
-            /**
-             * Owner Id
-             * Format: uuid
-             */
-            owner_id: string;
+            key: components["schemas"]["SectionKey"];
+            association_entity_type?: components["schemas"]["AssociationEntityType"] | null;
             /** Is Enabled */
             is_enabled: boolean;
             /** Position */
@@ -4784,13 +4866,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
-            section_type: components["schemas"]["SectionType"];
-            owner_type: components["schemas"]["SectionOwnerType"];
-            /**
-             * Owner Id
-             * Format: uuid
-             */
-            owner_id: string;
+            key: components["schemas"]["SectionKey"];
+            association_entity_type?: components["schemas"]["AssociationEntityType"] | null;
             /** Is Enabled */
             is_enabled: boolean;
             /** Position */
@@ -4844,16 +4921,6 @@ export interface components {
             /** Indicators */
             indicators?: components["schemas"]["SectionIndicatorModelRead"][];
         };
-        /**
-         * SectionOwnerType
-         * @enum {string}
-         */
-        SectionOwnerType: "action_model" | "folder_model" | "community_model" | "agent_model" | "site_model";
-        /**
-         * SectionType
-         * @enum {string}
-         */
-        SectionType: "application" | "progress" | "association_sites" | "association_agents" | "association_communities" | "additional_info";
         /**
          * SeedResponse
          * @description Response model for the seed endpoint.
@@ -6892,7 +6959,7 @@ export interface operations {
             };
         };
     };
-    get_action_indicators_actions__action_id__indicators_get: {
+    get_action_sections_actions__action_id__sections_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6909,7 +6976,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IndicatorRead"][];
+                    "application/json": components["schemas"]["ActionSectionWithIndicators"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_action_section_actions__action_id__sections__key__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+                key: components["schemas"]["SectionKey"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionSectionWithIndicators"];
                 };
             };
             /** @description Validation Error */
@@ -7151,12 +7250,13 @@ export interface operations {
             };
         };
     };
-    get_action_associations_actions__action_id__associations_get: {
+    get_section_associations_actions__action_id__sections__key__associations_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 action_id: string;
+                key: components["schemas"]["SectionKey"];
             };
             cookie?: never;
         };
@@ -7182,12 +7282,13 @@ export interface operations {
             };
         };
     };
-    associate_object_to_action_actions__action_id__associations_post: {
+    create_section_association_actions__action_id__sections__key__associations_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 action_id: string;
+                key: components["schemas"]["SectionKey"];
             };
             cookie?: never;
         };
@@ -7217,12 +7318,46 @@ export interface operations {
             };
         };
     };
-    disassociate_object_from_action_actions__action_id__associations__association_id__delete: {
+    get_section_association_actions__action_id__sections__key__associations__association_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 action_id: string;
+                key: components["schemas"]["SectionKey"];
+                association_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionObjectAssociationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_section_association_actions__action_id__sections__key__associations__association_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+                key: components["schemas"]["SectionKey"];
                 association_id: string;
             };
             cookie?: never;
@@ -9320,6 +9455,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EntityModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_entity_model_section_entity_models__entity_type__sections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_type: components["schemas"]["EntityModelType"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionModelCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionModelWithIndicators"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_entity_model_section_entity_models__entity_type__sections__section_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_type: components["schemas"]["EntityModelType"];
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionModelUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionModelRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entity_model_section_entity_models__entity_type__sections__section_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_type: components["schemas"]["EntityModelType"];
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_entity_section_indicators_entity_models__entity_type__sections__section_id__indicators_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_type: components["schemas"]["EntityModelType"];
+                section_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionIndicatorAssociationInput"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionModelWithIndicators"];
                 };
             };
             /** @description Validation Error */

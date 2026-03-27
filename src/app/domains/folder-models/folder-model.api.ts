@@ -7,7 +7,7 @@ import { environment } from '@app/../environments/environment';
 import { PaginatedResponse } from '@app/core/api/paginated-response.model';
 import { applyFilters } from '@domains/shared/api.utils';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { FolderModel, FolderModelCreate, FolderModelUpdate } from './folder-model.models';
+import { FolderModel, FolderModelCreate, FolderModelUpdate, SectionModelCreate, SectionModelUpdate, SectionIndicatorAssociationInput } from './folder-model.models';
 
 const BASE_URL = `${environment.apiBaseUrl}/folder-models/`;
 
@@ -38,4 +38,20 @@ export function updateFolderModelRequest(params: { id: string; data: FolderModel
 
 export function deleteFolderModelRequest(id: string) {
   return { url: `${BASE_URL}${id}`, method: 'DELETE' };
+}
+
+export function createFolderSectionRequest(params: { folderModelId: string; data: SectionModelCreate }) {
+  return { url: `${BASE_URL}${params.folderModelId}/sections`, method: 'POST', body: params.data };
+}
+
+export function updateFolderSectionRequest(params: { folderModelId: string; sectionId: string; data: SectionModelUpdate }) {
+  return { url: `${BASE_URL}${params.folderModelId}/sections/${params.sectionId}`, method: 'PUT', body: params.data };
+}
+
+export function deleteFolderSectionRequest(params: { folderModelId: string; sectionId: string }) {
+  return { url: `${BASE_URL}${params.folderModelId}/sections/${params.sectionId}`, method: 'DELETE' };
+}
+
+export function updateFolderSectionIndicatorsRequest(params: { folderModelId: string; sectionId: string; data: SectionIndicatorAssociationInput[] }) {
+  return { url: `${BASE_URL}${params.folderModelId}/sections/${params.sectionId}/indicators`, method: 'PUT', body: params.data };
 }

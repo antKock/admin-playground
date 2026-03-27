@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { SectionCardComponent } from './section-card.component';
-import { SectionType } from './section-card.models';
+import { SectionKey } from './section-card.models';
 
 describe('SectionCardComponent', () => {
   let component: SectionCardComponent;
@@ -15,7 +15,7 @@ describe('SectionCardComponent', () => {
     fixture = TestBed.createComponent(SectionCardComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('sectionName', 'Candidature');
-    fixture.componentRef.setInput('sectionType', 'application' as SectionType);
+    fixture.componentRef.setInput('sectionType', 'application' as SectionKey);
     fixture.componentRef.setInput('indicatorCount', 3);
   });
 

@@ -14,6 +14,7 @@ import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-m
 import { IndicatorModel } from '@domains/indicator-models/indicator-model.models';
 import { isAssociationSection } from '@shared/components/section-card/section-card.models';
 
+
 export const ActionModelFeatureStore = signalStore(
   { providedIn: 'root' },
   withComputed(() => {
@@ -50,13 +51,13 @@ export const ActionModelFeatureStore = signalStore(
       associationSections: computed(() => {
         const sections = domainStore.selectedItem()?.sections ?? [];
         return sections
-          .filter((s) => isAssociationSection(s.section_type))
+          .filter((s) => isAssociationSection(s))
           .sort((a, b) => a.position - b.position);
       }),
       fixedSections: computed(() => {
         const sections = domainStore.selectedItem()?.sections ?? [];
         return sections
-          .filter((s) => !isAssociationSection(s.section_type))
+          .filter((s) => !isAssociationSection(s))
           .sort((a, b) => a.position - b.position);
       }),
     };

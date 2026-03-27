@@ -24,12 +24,12 @@ describe('AppLayoutComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render 11 navigation items', async () => {
+  it('should render 12 navigation items', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const navItems = compiled.querySelectorAll('.nav-item');
-    expect(navItems.length).toBe(11);
+    expect(navItems.length).toBe(12);
   });
 
   it('should render section labels for Configuration and Administration', async () => {

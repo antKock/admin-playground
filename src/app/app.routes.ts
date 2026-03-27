@@ -58,6 +58,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'entity-models',
+        loadChildren: () =>
+          import('./pages/entity-models/entity-models.routes').then(
+            (m) => m.entityModelsRoutes,
+          ),
+      },
+      {
         path: 'sites',
         loadChildren: () =>
           import('./pages/sites/sites.routes').then((m) => m.sitesRoutes),

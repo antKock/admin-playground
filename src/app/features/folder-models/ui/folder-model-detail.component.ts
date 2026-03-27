@@ -5,14 +5,20 @@ import { MetadataGridComponent, MetadataField } from '@app/shared/components/met
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
+import { SectionAnchorsComponent, SectionDef } from '@app/shared/components/section-anchors/section-anchors.component';
+import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
+import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
+import { IndicatorPickerComponent, IndicatorOption } from '@app/shared/components/indicator-picker/indicator-picker.component';
+import { ParamHintIconsComponent } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
-import { FolderModelFacade } from '../folder-model.facade';
+import { FolderModelFacade, DisplaySection } from '../folder-model.facade';
+import { buildSectionIndicatorCards } from '@features/action-models/use-cases/build-section-indicator-cards';
 
 @Component({
   selector: 'app-folder-model-detail',
-  imports: [MetadataGridComponent, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent, RouterLink],
+  imports: [MetadataGridComponent, ActivityListComponent, BreadcrumbComponent, DetailPageLayoutComponent, SectionAnchorsComponent, SectionCardComponent, SectionParamsEditorComponent, IndicatorPickerComponent, ParamHintIconsComponent, RouterLink],
   templateUrl: './folder-model-detail.component.html',
 })
 export class FolderModelDetailComponent implements OnInit, OnDestroy {
@@ -44,10 +50,61 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
     ];
   });
 
+  readonly sectionDefs = computed<SectionDef[]>(() => [
+    { label: 'Métadonnées', targetId: 'section-metadata' },
+    { label: 'Sections', targetId: 'section-fixed-sections' },
+    { label: 'Activité', targetId: 'section-activity' },
+  ]);
+
+  readonly mergedFixedSections = this.facade.mergedFixedSections;
+
+  readonly pickerOptions = computed<IndicatorOption[]>(() =>
+    this.facade.availableIndicators().map((im) => ({
+      id: im.id,
+      name: im.name,
+      technical_label: im.technical_label,
+      type: im.type,
+    })),
+  );
+
+  // Pre-computed section views with indicator cards
+  readonly fixedSectionViews = computed(() =>
+    this.mergedFixedSections().map((section) => ({
+      section,
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
+      attachedIds: (section.indicators ?? []).map((ind) => ind.id),
+    })),
+  );
+
+  getSectionParams(section: DisplaySection): SectionParams {
+    return {
+      hidden_rule: section.hidden_rule,
+      required_rule: section.required_rule,
+      disabled_rule: section.disabled_rule,
+      occurrence_min_rule: section.occurrence_min_rule,
+      occurrence_max_rule: section.occurrence_max_rule,
+      constrained_rule: section.constrained_rule,
+    };
+  }
+
+  onSectionParamsChange(section: DisplaySection, params: SectionParams): void {
+    this.facade.updateSectionParams(section.id, section.key, params);
+  }
+
+  async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
+    await this.facade.addIndicatorToSection(section.id, section.key, indicator.id);
+  }
+
+  async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {
+    if (!section.id) return;
+    await this.facade.removeIndicatorFromSection(section.id, indicatorId);
+  }
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.facade.select(id);
+      this.facade.loadIndicators();
     }
   }
 

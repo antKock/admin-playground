@@ -14,44 +14,60 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-25 11:30 — Pending
+## Changeset: 2026-03-27 14:37 — Pending
 
 ### Schema changes
 
-**New schemas (20):**
-- `SectionModelCreate`, `SectionModelRead`, `SectionModelUpdate`, `SectionModelWithIndicators` — Section model CRUD for action/folder models
-- `SectionType` enum: `application`, `progress`, `association_sites`, `association_agents`, `association_communities`, `additional_info`
-- `SectionOwnerType` enum: `action_model`, `folder_model`, `community_model`, `agent_model`, `site_model`
-- `SectionIndicatorModelRead`, `SectionChildIndicatorModelRead` — Indicator model data within sections (includes association rules)
-- `SectionIndicatorAssociationInput` — Input for setting indicators on a section
-- `ActionSectionRead`, `ActionSectionIndicator` — Section data on action instances (with indicator values)
+**New schemas (19):**
+- `SectionModelCreate`, `SectionModelRead`, `SectionModelUpdate`, `SectionModelWithIndicators` — Section model CRUD with individual rule strings (`hidden_rule`, `disabled_rule`, `required_rule`, `occurrence_min_rule`, `occurrence_max_rule`, `constrained_rule`)
+- `SectionKey` enum: `application`, `progress`, `financial`, `additional_info`, `agents`, `communities`, `buildings`
+- `AssociationEntityType` enum: `agents`, `buildings`, `communities`
+- `EntityModelType` enum: `community`, `agent`, `site`
+- `SectionIndicatorModelRead`, `SectionChildIndicatorModelRead` — Indicator model data within sections (includes rule strings and children)
+- `SectionIndicatorAssociationInput` — Input for setting indicators on a section (7 rule strings + position)
+- `ActionSectionBrief`, `ActionSectionWithIndicators` — Section data on action instances (brief for list, full with indicators and associations)
+- `ActionAssociationWithIndicators` — Associated object with nested indicators
+- `ActionObjectAssociationCreate`, `ActionObjectAssociationRead` — Object associations on actions
 - `FolderSectionRead`, `FolderSectionIndicator` — Section data on folder instances
-- `ActionObjectAssociationCreate`, `ActionObjectAssociationRead` — Object associations on actions (sites, agents, communities)
-- `ActionAssociationObjectBrief` — Brief associated object with indicators
-- `AssociatedObjectType` enum: `site`, `agent`, `community`
-- `EntityModelRead`, `EntityModelUpdate`, `EntityModelType` — Generic entity model configuration (community/agent/site models)
+- `EntityModelRead`, `EntityModelUpdate` — Entity model configuration (community/agent/site models) with embedded sections
 
 **Modified schemas:**
 - `ActionModelRead`: added optional `sections: SectionModelWithIndicators[]`
-- `ActionRead`: added optional `sections: ActionSectionRead[]`
+- `ActionRead`: added optional `sections: ActionSectionBrief[]`, `sections_positions: Record<string, integer>`
+- `FolderModelRead`: added optional `sections: SectionModelWithIndicators[]`
 - `FolderRead`: added optional `sections: FolderSectionRead[]`
-- `IndicatorRead`: `action_id` now nullable; added `context_object_id`, `context_object_type`, `folder_id`, `section_model_id` (all nullable)
+- `IndicatorRead`: `action_id` now nullable and no longer required; added `folder_id`, `section_model_id`, `context_object_id`, `context_object_type` (all nullable)
+
+**Removed endpoints (1):**
+- `GET /actions/{action_id}/indicators` — replaced by section-based `GET /actions/{action_id}/sections`
+
+**New endpoints (23):**
+- Action model sections: `POST/PUT/DELETE /action-models/{id}/sections/{section_id}`, `PUT .../indicators`
+- Folder model sections: `POST/PUT/DELETE /folder-models/{id}/sections/{section_id}`, `PUT .../indicators`
+- Entity model CRUD + sections: `GET /entity-models/`, `GET/PUT /entity-models/{entity_type}`, `POST/PUT/DELETE .../sections/{section_id}`, `PUT .../indicators`
+- Action instance sections: `GET /actions/{id}/sections`, `GET .../sections/{key}`, associations CRUD on `GET/POST/GET/DELETE .../sections/{key}/associations`
 
 ### Actions
 | Change | Action | Status |
 |--------|--------|--------|
-| (none — all schema changes add optional fields to existing types; no existing frontend code references these fields) | No immediate frontend adaptation required | n/a |
+| `GET /actions/{action_id}/indicators` removed | No frontend code calls this endpoint — no adaptation needed | n/a |
+| `IndicatorRead.action_id` now nullable / not required | No frontend code reads `IndicatorRead` — no adaptation needed | n/a |
 
 ### Opportunities
 | Capability | Description | Recommendation | Status |
 |------------|-------------|----------------|--------|
-| Section model CRUD on action-models (`POST/PUT/DELETE /action-models/{id}/sections`, `PUT .../indicators`) | Admin can create/edit/delete sections on action models, and assign indicator models to sections with association rules | Major feature: add section management UI to action-model detail page. Could use a tab or collapsible panel pattern similar to existing indicator-association management. Sections group indicators by type (application, progress, associations, etc.) | `to evaluate` |
-| Section model CRUD on folder-models (`POST/PUT/DELETE /folder-models/{id}/sections`, `PUT .../indicators`) | Same section management capability for folder models | Mirror the action-model section UI for folder-model detail. Same pattern, different owner type | `to evaluate` |
-| `ActionModelRead.sections` — sections embedded in action model reads | Action model detail now includes its sections with nested indicator models | Display sections with their indicators in action-model detail view (read-only summary or inline editing) | `to evaluate` |
-| `ActionRead.sections` / `FolderRead.sections` — structured section data on instances | Action and folder instances now carry section-grouped indicators with values | Collectivité-facing; could be useful if admin ever needs a read-only view of instance data | `declined` — collectivité-facing instance data, not admin scope for v1 |
-| Action object associations (`POST/GET/DELETE /actions/{id}/associations`) | Associate sites, agents, communities to action instances | Collectivité-facing instance feature | `declined` — not admin scope |
-| Entity models CRUD (`GET /entity-models/`, `GET/PUT /entity-models/{entity_type}`) | Configure entity models (community, agent, site) with name, description, and sections | New admin capability: manage entity model definitions. Lightweight — just name/description editing per entity type. Could be a simple settings page | `to evaluate` |
-| `IndicatorRead` — new `folder_id`, `context_object_id`, `context_object_type`, `section_model_id` fields | Indicators now carry context about which folder/section/object they belong to | No admin action needed — enriches instance-level indicator reads | `declined` — collectivité-facing context fields |
+| Section model CRUD on action-models | Admin can create/edit/delete sections on action models, assign indicator models to sections with rule strings | Already implemented (Epic 18) — action-model API, store, facade, and section-card components are in place | `done` |
+| Section model CRUD on folder-models (`POST/PUT/DELETE /folder-models/{id}/sections`, `PUT .../indicators`) | Same section management for folder models; `FolderModelRead.sections` now embedded (backend request #13 resolved) | Mirror the action-model section UI for folder-model detail — same shared section-card components. Now unblocked. | `planned` — Epic 19 (Stories 19.1, 19.2) |
+| Entity models CRUD + section management (`GET/PUT /entity-models/{entity_type}`, section sub-endpoints) | Full entity model configuration with sections and indicator assignment (backend request #14 resolved) | New admin capability: manage community/agent/site model definitions with same section management pattern. Reuse section-card components. | `planned` — Epic 20 (Stories 20.1, 20.2, 20.3) |
+| `ActionRead.sections` / `FolderRead.sections` — structured section data on instances | Action and folder instances carry section-grouped indicators with values | Collectivité-facing instance data | `declined` — not admin scope for v1 |
+| Action section associations (`GET/POST/DELETE /actions/{id}/sections/{key}/associations`) | Associate objects (sites, agents, buildings) to action sections | Collectivité-facing instance feature | `declined` — not admin scope |
+| `IndicatorRead` — new `folder_id`, `context_object_id`, `context_object_type`, `section_model_id` fields | Indicators carry context about which folder/section/object they belong to | Enriches instance-level indicator reads only | `declined` — collectivité-facing context fields |
+
+---
+
+## Changeset: 2026-03-25 11:30 — Superseded (replaced by 2026-03-27 14:37)
+
+*This changeset was superseded because the API evolved significantly between 2026-03-25 and 2026-03-27 — many schema names and shapes changed (e.g., `SectionType` → `SectionKey`, `SectionOwnerType` removed, `ActionSectionRead` → `ActionSectionBrief`/`ActionSectionWithIndicators`), new endpoints were added, and one endpoint was removed. A fresh changeset was created to accurately reflect the current state.*
 
 ---
 

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, User, UserCog, BarChart3, LogOut, HelpCircle, Activity, MapPin, Building2 } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, User, UserCog, BarChart3, LogOut, HelpCircle, Activity, MapPin, Building2, Layers } from 'lucide-angular';
 
 import { AuthStore } from '@domains/auth/auth.store';
 import { OpenApiBannerComponent } from '@app/shared/components/openapi-banner/openapi-banner.component';
@@ -32,6 +32,7 @@ export class AppLayoutComponent {
     { label: 'Modèles d\'action', route: '/action-models', icon: FileText },
     { label: 'Modèles de dossier', route: '/folder-models', icon: FolderOpen },
     { label: 'Modèles d\'indicateur', route: '/indicator-models', icon: BarChart3 },
+    { label: 'Modèles d\'entités', route: '/entity-models', icon: Layers },
   ];
 
   readonly adminItems: NavItem[] = [

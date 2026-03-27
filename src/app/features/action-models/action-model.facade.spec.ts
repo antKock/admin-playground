@@ -258,9 +258,8 @@ describe('ActionModelFacade', () => {
       sections: [{
         id: 'sec-1',
         name: 'Sites',
-        section_type: 'association_sites' as const,
-        owner_type: 'action_model' as const,
-        owner_id: 'am-1',
+        key: 'buildings' as const,
+        association_entity_type: 'buildings' as const,
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -281,15 +280,15 @@ describe('ActionModelFacade', () => {
       const req = httpTesting.expectOne((r) => r.url.includes('action-models/am-1'));
       req.flush(mockWithSections);
 
-      expect(facade.isAssociationSectionEnabled('association_sites')).toBe(true);
-      expect(facade.isAssociationSectionEnabled('association_agents')).toBe(false);
+      expect(facade.isAssociationSectionEnabled('buildings')).toBe(true);
+      expect(facade.isAssociationSectionEnabled('agents')).toBe(false);
     });
 
     it('should toggle OFF (delete) an existing section', async () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
 
-      const togglePromise = facade.toggleAssociationSection('association_sites');
+      const togglePromise = facade.toggleAssociationSection('buildings');
 
       const deleteReq = httpTesting.expectOne((r) =>
         r.method === 'DELETE' && r.url.includes('action-models/am-1/sections/sec-1'),
@@ -309,14 +308,14 @@ describe('ActionModelFacade', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
 
-      const togglePromise = facade.toggleAssociationSection('association_agents');
+      const togglePromise = facade.toggleAssociationSection('agents');
 
       const createReq = httpTesting.expectOne((r) =>
         r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
       );
-      expect(createReq.request.body.section_type).toBe('association_agents');
+      expect(createReq.request.body.key).toBe('agents');
       expect(createReq.request.body.name).toBe('Agents');
-      createReq.flush({ id: 'sec-new', section_type: 'association_agents' });
+      createReq.flush({ id: 'sec-new', key: 'agents' });
 
       await togglePromise;
 
@@ -330,7 +329,7 @@ describe('ActionModelFacade', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
 
-      const togglePromise = facade.toggleAssociationSection('association_sites');
+      const togglePromise = facade.toggleAssociationSection('buildings');
 
       const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE');
       deleteReq.flush({ detail: 'Cannot delete' }, { status: 500, statusText: 'Internal Server Error' });
@@ -351,9 +350,8 @@ describe('ActionModelFacade', () => {
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
-        section_type: 'application' as const,
-        owner_type: 'action_model' as const,
-        owner_id: 'am-1',
+        key: 'application' as const,
+
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -399,9 +397,8 @@ describe('ActionModelFacade', () => {
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
-        section_type: 'application' as const,
-        owner_type: 'action_model' as const,
-        owner_id: 'am-1',
+        key: 'application' as const,
+
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -423,7 +420,8 @@ describe('ActionModelFacade', () => {
           required_rule: 'false',
           disabled_rule: 'false',
           default_value_rule: 'false',
-          duplicable_rule: 'false',
+          occurrence_min_rule: 'false',
+          occurrence_max_rule: 'false',
           constrained_rule: 'false',
           position: 0,
         }],
@@ -479,9 +477,8 @@ describe('ActionModelFacade', () => {
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
-        section_type: 'application' as const,
-        owner_type: 'action_model' as const,
-        owner_id: 'am-1',
+        key: 'application' as const,
+
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -502,9 +499,9 @@ describe('ActionModelFacade', () => {
 
       const merged = facade.mergedFixedSections();
       expect(merged).toHaveLength(2);
-      expect(merged[0].section_type).toBe('application');
+      expect(merged[0].key).toBe('application');
       expect(merged[0].id).toBe('sec-app');
-      expect(merged[1].section_type).toBe('progress');
+      expect(merged[1].key).toBe('progress');
       expect(merged[1].id).toBeNull();
     });
 
@@ -527,9 +524,8 @@ describe('ActionModelFacade', () => {
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
-        section_type: 'application' as const,
-        owner_type: 'action_model' as const,
-        owner_id: 'am-1',
+        key: 'application' as const,
+
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -561,7 +557,7 @@ describe('ActionModelFacade', () => {
       const createReq = httpTesting.expectOne((r) =>
         r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
       );
-      expect(createReq.request.body.section_type).toBe('progress');
+      expect(createReq.request.body.key).toBe('progress');
       createReq.flush({ id: 'sec-new-progress' });
 
       const id = await promise;

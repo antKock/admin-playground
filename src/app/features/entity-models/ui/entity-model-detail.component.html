@@ -1,0 +1,105 @@
+@if (facade.detailError()) {
+  <div class="p-6 text-center py-16">
+    <app-breadcrumb [items]="[{ label: 'Modèles d\'entités', route: '/entity-models' }, { label: 'Erreur' }]" />
+    <p class="text-error mb-4">{{ facade.detailError() }}</p>
+  </div>
+} @else {
+  <app-detail-page-layout
+    [breadcrumbs]="breadcrumbs()"
+    [isLoading]="facade.isLoadingDetail()"
+  >
+    <div metadata>
+      <div class="mb-6">
+        <button
+          class="text-sm text-brand hover:underline mb-3 inline-block"
+          (click)="router.navigate(['/entity-models'])"
+        >
+          ← Retour
+        </button>
+        <h1 class="text-2xl font-bold text-text-primary">{{ headerLabel() }}</h1>
+      </div>
+
+      <app-metadata-grid [fields]="fields()" />
+
+      <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 24px 0;" />
+
+      <h2 class="text-lg font-semibold text-text-primary mb-4">Propriétés</h2>
+      <app-entity-model-form-section />
+    </div>
+
+    <div sections>
+      <!-- Additional Info Section -->
+      <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
+      <div class="mt-6">
+        <h2 class="text-lg font-semibold text-text-primary mb-4">Informations complémentaires</h2>
+
+        @if (sectionView(); as view) {
+          <app-section-card
+            [sectionName]="view.section.name"
+            [sectionType]="view.section.key"
+            [indicatorCount]="(view.section.indicators ?? []).length"
+            [collapsed]="false"
+          >
+            <app-section-params-editor
+              [params]="getSectionParams(view.section)"
+              [isPending]="facade.sectionMutationPending()"
+              (paramsChange)="onSectionParamsChange(view.section, $event)"
+            />
+            <div class="border-t border-dotted border-gray-300 my-3"></div>
+            @if (view.indicatorCards.length === 0) {
+              <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
+            } @else {
+              <div class="space-y-2 mb-3">
+                @for (card of view.indicatorCards; track card.id) {
+                  <div class="flex items-center justify-between py-1.5 px-2 bg-white rounded border border-gray-200">
+                    <div>
+                      <span class="text-sm font-medium text-text-primary">{{ card.name }}</span>
+                      <span class="text-xs text-text-tertiary ml-2">{{ card.type }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <app-param-hint-icons [hints]="card.paramHints" />
+                      <button
+                        class="text-text-tertiary hover:text-status-invalid text-xs px-1"
+                        title="Retirer"
+                        (click)="onSectionDetach(view.section, card.id)"
+                        [disabled]="facade.sectionMutationPending()"
+                      >✕</button>
+                    </div>
+                  </div>
+                  @if (card.children?.length) {
+                    @for (child of card.children; track child.id) {
+                      <div class="flex items-center justify-between py-1 px-2 ml-6 bg-white rounded border border-gray-100">
+                        <div>
+                          <span class="text-xs font-medium text-text-secondary">{{ child.name }}</span>
+                          <span class="text-xs text-text-tertiary ml-2">{{ child.type }}</span>
+                        </div>
+                        <app-param-hint-icons [hints]="child.paramHints" />
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            }
+            <app-indicator-picker
+              [options]="pickerOptions()"
+              [attachedIds]="view.attachedIds"
+              [loading]="facade.indicatorsLoading()"
+              (attach)="onSectionAttach(view.section, $event)"
+            />
+          </app-section-card>
+        } @else {
+          <p class="text-sm text-text-secondary">Aucune section d'informations complémentaires configurée</p>
+          <p class="text-xs text-text-tertiary mt-1">La section sera créée automatiquement lors de l'ajout d'un indicateur.</p>
+          <div class="mt-3">
+            <app-indicator-picker
+              [options]="pickerOptions()"
+              [attachedIds]="[]"
+              [loading]="facade.indicatorsLoading()"
+              (attach)="onCreateSectionAndAttach($event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  </app-detail-page-layout>
+}

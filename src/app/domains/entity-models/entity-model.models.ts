@@ -2,9 +2,9 @@
 // Regenerate with: bash scripts/generate-api-types.sh
 import { components } from '@app/core/api/generated/api-types';
 
-export type FolderModel = components['schemas']['FolderModelRead'];
-export type FolderModelCreate = components['schemas']['FolderModelCreate'];
-export type FolderModelUpdate = components['schemas']['FolderModelUpdate'];
+export type EntityModel = components['schemas']['EntityModelRead'];
+export type EntityModelUpdate = components['schemas']['EntityModelUpdate'];
+export type EntityModelType = components['schemas']['EntityModelType'];
 export type SectionModelCreate = components['schemas']['SectionModelCreate'];
 export type SectionModelUpdate = components['schemas']['SectionModelUpdate'];
 export type SectionModelWithIndicators = components['schemas']['SectionModelWithIndicators'];
