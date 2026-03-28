@@ -11,8 +11,8 @@ import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/se
 import { ToastService } from '@shared/components/toast/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
-import { buildSectionAssociationInputs } from '@features/action-models/use-cases/build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from '@features/action-models/use-cases/section-indicator-param-editor';
+import { buildSectionAssociationInputs } from '@features/shared/section-indicators/build-section-association-inputs';
+import { createSectionIndicatorParamEditor } from '@features/shared/section-indicators/section-indicator-param-editor';
 import { EntityModelFeatureStore } from './entity-model.store';
 
 @Injectable({ providedIn: 'root' })

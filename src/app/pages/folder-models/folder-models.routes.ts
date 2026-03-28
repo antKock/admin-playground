@@ -14,7 +14,7 @@ export const folderModelsRoutes: Routes = [
     children: [
       { path: '', component: FolderModelListComponent },
       { path: 'new', component: FolderModelFormComponent, canDeactivate: [unsavedChangesGuard] },
-      { path: ':id', component: FolderModelDetailComponent },
+      { path: ':id', component: FolderModelDetailComponent, canDeactivate: [unsavedChangesGuard] },
       { path: ':id/edit', component: FolderModelFormComponent, canDeactivate: [unsavedChangesGuard] },
     ],
   },

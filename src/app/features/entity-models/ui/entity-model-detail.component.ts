@@ -21,7 +21,8 @@ import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.compo
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { EntityModelType, SectionModelWithIndicators } from '@domains/entity-models/entity-model.models';
-import { buildSectionIndicatorCards } from '@features/action-models/use-cases/build-section-indicator-cards';
+import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
+import * as helpers from '@features/shared/section-indicators/section-indicator-editing.helpers';
 import { EntityModelFacade } from '../entity-model.facade';
 import { EntityModelFormSectionComponent } from './entity-model-form-section.component';
 
@@ -111,12 +112,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.facade.unsavedCount() > 0) {
-        this.onSave();
-      }
-    }
+    helpers.handleParamSaveKeydown(this.facade, event, () => this.onSave());
   }
 
   ngOnInit(): void {
@@ -143,24 +139,19 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-    return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
+    return helpers.getSectionIndicatorParams(this.facade, sectionId, indicatorId);
   }
 
   getSectionChildParamsMap(sectionId: string, card: IndicatorCardData): Record<string, IndicatorParams> {
-    if (!card.children?.length) return {};
-    const map: Record<string, IndicatorParams> = {};
-    for (const child of card.children) {
-      map[child.id] = this.facade.getSectionChildParams(sectionId, card.id, child.id);
-    }
-    return map;
+    return helpers.getSectionChildParamsMap(this.facade, sectionId, card);
   }
 
   onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-    this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
+    helpers.onSectionIndicatorParamsChange(this.facade, sectionId, indicatorId, params);
   }
 
   onSectionChildParamsChange(sectionId: string, parentId: string, event: ChildParamsChangeEvent): void {
-    this.facade.updateSectionChildParams(sectionId, parentId, event.childId, event.params);
+    helpers.onSectionChildParamsChange(this.facade, sectionId, parentId, event);
   }
 
   onSectionParamsChange(section: SectionModelWithIndicators, params: SectionParams): void {
@@ -176,7 +167,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   onSectionDrop(section: SectionModelWithIndicators, event: CdkDragDrop<string>): void {
-    if (event.previousIndex === event.currentIndex) return;
+    if (!section.id || event.previousIndex === event.currentIndex) return;
 
     const indicators = section.indicators ?? [];
     const ids = indicators.map((ind) => ind.id);
@@ -198,7 +189,6 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    const edits = this.facade.getEditsForSection(sectionId);
-    return edits.size > 0 ? edits : undefined;
+    return helpers.getSectionEdits(this.facade, sectionId);
   }
 }

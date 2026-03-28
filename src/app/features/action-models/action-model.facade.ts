@@ -9,9 +9,8 @@ import {
   ActionModelCreate, ActionModelUpdate,
 } from '@domains/action-models/action-model.models';
 import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
-import { SectionModelWithIndicators } from '@domains/action-models/action-model.models';
-
-export type DisplaySection = Omit<SectionModelWithIndicators, 'id'> & { id: string | null };
+import { DisplaySection } from '@features/shared/section-indicators/display-section.model';
+export type { DisplaySection } from '@features/shared/section-indicators/display-section.model';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -19,8 +18,8 @@ import { ToastService } from '@shared/components/toast/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { buildSectionAssociationInputs } from './use-cases/build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from './use-cases/section-indicator-param-editor';
+import { buildSectionAssociationInputs } from '@features/shared/section-indicators/build-section-association-inputs';
+import { createSectionIndicatorParamEditor } from '@features/shared/section-indicators/section-indicator-param-editor';
 import { ActionModelFeatureStore } from './action-model.store';
 
 @Injectable({ providedIn: 'root' })

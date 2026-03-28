@@ -23,8 +23,10 @@ import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.compo
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { FolderModelFacade, DisplaySection } from '../folder-model.facade';
-import { buildSectionIndicatorCards } from '@features/action-models/use-cases/build-section-indicator-cards';
+import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
+import * as helpers from '@features/shared/section-indicators/section-indicator-editing.helpers';
 
 @Component({
   selector: 'app-folder-model-detail',
@@ -45,7 +47,7 @@ import { buildSectionIndicatorCards } from '@features/action-models/use-cases/bu
   ],
   templateUrl: './folder-model-detail.component.html',
 })
-export class FolderModelDetailComponent implements OnInit, OnDestroy {
+export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsavedChanges {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(FolderModelFacade);
@@ -105,12 +107,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.facade.unsavedCount() > 0) {
-        this.onSave();
-      }
-    }
+    helpers.handleParamSaveKeydown(this.facade, event, () => this.onSave());
   }
 
   getSectionParams(section: DisplaySection): SectionParams {
@@ -125,24 +122,19 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   }
 
   getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-    return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
+    return helpers.getSectionIndicatorParams(this.facade, sectionId, indicatorId);
   }
 
   getSectionChildParamsMap(sectionId: string, card: IndicatorCardData): Record<string, IndicatorParams> {
-    if (!card.children?.length) return {};
-    const map: Record<string, IndicatorParams> = {};
-    for (const child of card.children) {
-      map[child.id] = this.facade.getSectionChildParams(sectionId, card.id, child.id);
-    }
-    return map;
+    return helpers.getSectionChildParamsMap(this.facade, sectionId, card);
   }
 
   onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-    this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
+    helpers.onSectionIndicatorParamsChange(this.facade, sectionId, indicatorId, params);
   }
 
   onSectionChildParamsChange(sectionId: string, parentId: string, event: ChildParamsChangeEvent): void {
-    this.facade.updateSectionChildParams(sectionId, parentId, event.childId, event.params);
+    helpers.onSectionChildParamsChange(this.facade, sectionId, parentId, event);
   }
 
   onSectionParamsChange(section: DisplaySection, params: SectionParams): void {
@@ -188,6 +180,10 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
     this.facade.clearSelection();
   }
 
+  hasUnsavedChanges(): boolean {
+    return this.facade.unsavedCount() > 0;
+  }
+
   formatDate(value: string | null | undefined): string {
     return formatDateFr(value);
   }
@@ -209,7 +205,6 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy {
   }
 
   private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    const edits = this.facade.getEditsForSection(sectionId);
-    return edits.size > 0 ? edits : undefined;
+    return helpers.getSectionEdits(this.facade, sectionId);
   }
 }

@@ -5,7 +5,7 @@ import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
-import { FolderModelCreate, FolderModelUpdate, SectionModelUpdate, SectionModelWithIndicators } from '@domains/folder-models/folder-model.models';
+import { FolderModelCreate, FolderModelUpdate, SectionModelUpdate } from '@domains/folder-models/folder-model.models';
 import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -13,11 +13,12 @@ import { ToastService } from '@shared/components/toast/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { buildSectionAssociationInputs } from '@features/action-models/use-cases/build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from '@features/action-models/use-cases/section-indicator-param-editor';
+import { buildSectionAssociationInputs } from '@features/shared/section-indicators/build-section-association-inputs';
+import { createSectionIndicatorParamEditor } from '@features/shared/section-indicators/section-indicator-param-editor';
 import { FolderModelFeatureStore } from './folder-model.store';
 
-export type DisplaySection = Omit<SectionModelWithIndicators, 'id'> & { id: string | null };
+import { DisplaySection } from '@features/shared/section-indicators/display-section.model';
+export type { DisplaySection } from '@features/shared/section-indicators/display-section.model';
 
 @Injectable({ providedIn: 'root' })
 export class FolderModelFacade {
@@ -64,12 +65,11 @@ export class FolderModelFacade {
   readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
   readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
   readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
-  readonly sectionMutationPending = computed(() =>
-    this.createSectionIsPending() || this.updateSectionIsPending() || this.deleteSectionIsPending(),
-  );
-
-  // Indicator mutation status
   readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  readonly sectionMutationPending = computed(() =>
+    this.createSectionIsPending() || this.updateSectionIsPending() ||
+    this.deleteSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+  );
 
   // Cross-domain: indicator model signals
   readonly availableIndicators = this.featureStore.availableIndicators;

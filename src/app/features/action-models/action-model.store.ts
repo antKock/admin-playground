@@ -44,9 +44,6 @@ export const ActionModelFeatureStore = signalStore(
       availableIndicators: computed(() => imStore.items() as IndicatorModel[]),
       indicatorsLoading: computed(() => imStore.isLoading()),
 
-      // Attached indicators (from selected action model)
-      attachedIndicators: computed(() => domainStore.selectedItem()?.indicator_models ?? []),
-
       // Sections grouped by type
       associationSections: computed(() => {
         const sections = domainStore.selectedItem()?.sections ?? [];

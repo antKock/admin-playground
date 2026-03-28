@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, computed, signal, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
@@ -26,8 +26,10 @@ import { SectionCardComponent } from '@app/shared/components/section-card/sectio
 import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
 import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
+import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { ActionModelFacade, DisplaySection } from '../action-model.facade';
-import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator-cards';
+import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
+import * as helpers from '@features/shared/section-indicators/section-indicator-editing.helpers';
 
 @Component({
   selector: 'app-action-model-detail',
@@ -49,7 +51,7 @@ import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator
   ],
   templateUrl: './action-model-detail.component.html',
 })
-export class ActionModelDetailComponent implements OnInit, OnDestroy {
+export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsavedChanges {
   private readonly route = inject(ActivatedRoute);
   private readonly confirmDialog = inject(ConfirmDialogService);
   readonly facade = inject(ActionModelFacade);
@@ -135,9 +137,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     })),
   );
 
-  // Local override for optimistic drag-to-reorder per section
-  private readonly _localSectionCardOrder = signal<Map<string, IndicatorCardData[]>>(new Map());
-
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -150,35 +149,29 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     this.facade.clearSelection();
   }
 
+  hasUnsavedChanges(): boolean {
+    return this.facade.unsavedCount() > 0;
+  }
+
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-      event.preventDefault();
-      if (this.facade.unsavedCount() > 0) {
-        this.onSave();
-      }
-    }
+    helpers.handleParamSaveKeydown(this.facade, event, () => this.onSave());
   }
 
   getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-    return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
+    return helpers.getSectionIndicatorParams(this.facade, sectionId, indicatorId);
   }
 
   getSectionChildParamsMap(sectionId: string, card: IndicatorCardData): Record<string, IndicatorParams> {
-    if (!card.children?.length) return {};
-    const map: Record<string, IndicatorParams> = {};
-    for (const child of card.children) {
-      map[child.id] = this.facade.getSectionChildParams(sectionId, card.id, child.id);
-    }
-    return map;
+    return helpers.getSectionChildParamsMap(this.facade, sectionId, card);
   }
 
   onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-    this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
+    helpers.onSectionIndicatorParamsChange(this.facade, sectionId, indicatorId, params);
   }
 
   onSectionChildParamsChange(sectionId: string, parentId: string, event: ChildParamsChangeEvent): void {
-    this.facade.updateSectionChildParams(sectionId, parentId, event.childId, event.params);
+    helpers.onSectionChildParamsChange(this.facade, sectionId, parentId, event);
   }
 
   async onSave(): Promise<void> {
@@ -265,7 +258,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
   }
 
   private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    const edits = this.facade.getEditsForSection(sectionId);
-    return edits.size > 0 ? edits : undefined;
+    return helpers.getSectionEdits(this.facade, sectionId);
   }
 }
