@@ -72,48 +72,6 @@
     </div>
 
     <div sections>
-      <!-- Indicators Section -->
-      <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
-      <div id="section-indicators" class="mt-6">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-          <h2 class="text-lg font-semibold text-text-primary" style="margin: 0;">Indicateurs</h2>
-          <span style="font-size: 13px; color: var(--color-text-tertiary);">{{ indicatorCards().length }} attaché(s)</span>
-        </div>
-
-        @if (indicatorCards().length === 0) {
-          <p class="text-sm text-text-secondary mb-3">Aucun indicateur attaché</p>
-        } @else {
-          <div
-            cdkDropList
-            class="space-y-2 mb-3"
-            (cdkDropListDropped)="onDrop($event)"
-          >
-            @for (card of indicatorCards(); track card.id) {
-              <div cdkDrag cdkDragLockAxis="y">
-                <app-indicator-card
-                  [indicator]="card"
-                  [params]="getParams(card.id)"
-                  [childParams]="getChildParamsMap(card.id)"
-                  [modified]="isModified(card.id)"
-                  modelType="action"
-                  [modelId]="model()!.id"
-                  (remove)="onDetach($event)"
-                  (paramsChange)="onParamsChange(card.id, $event)"
-                  (childParamsChange)="onChildParamsChange(card.id, $event)"
-                />
-              </div>
-            }
-          </div>
-        }
-
-        <app-indicator-picker
-          [options]="pickerOptions()"
-          [attachedIds]="attachedIds()"
-          [loading]="facade.indicatorsLoading()"
-          (attach)="onAttach($event)"
-        />
-      </div>
-
       <!-- Association Sections (always render all 3 types with toggles) -->
       <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
       <div id="section-association-sections" class="mt-6">
@@ -145,6 +103,8 @@
                   <app-section-params-editor
                     [params]="getSectionParams(view.section)"
                     [isPending]="facade.sectionMutationPending()"
+                    modelType="action"
+                    [modelId]="model()!.id"
                     (paramsChange)="onSectionParamsChange(view.section, $event)"
                   />
                 </div>
@@ -153,34 +113,24 @@
                   @if (view.indicatorCards.length === 0) {
                     <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
                   } @else {
-                    <div class="space-y-2 mb-3">
+                    <div
+                      cdkDropList
+                      [cdkDropListData]="view.section.id"
+                      class="space-y-2 mb-3"
+                      (cdkDropListDropped)="onSectionDrop(view.section, $event)"
+                    >
                       @for (card of view.indicatorCards; track card.id) {
-                        <div class="flex items-center justify-between py-1.5 px-2 bg-white rounded border border-gray-200">
-                          <div>
-                            <span class="text-sm font-medium text-text-primary">{{ card.name }}</span>
-                            <span class="text-xs text-text-tertiary ml-2">{{ card.type }}</span>
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <app-param-hint-icons [hints]="card.paramHints" />
-                            <button
-                              class="text-text-tertiary hover:text-status-invalid text-xs px-1"
-                              title="Retirer"
-                              (click)="onSectionDetach(view.section, card.id)"
-                              [disabled]="facade.sectionMutationPending()"
-                            >✕</button>
-                          </div>
+                        <div cdkDrag cdkDragLockAxis="y">
+                          <app-indicator-card
+                            [indicator]="card"
+                            [params]="getSectionIndicatorParams(view.section.id!, card.id)"
+                            [modified]="facade.isSectionIndicatorModified(view.section.id!, card.id)"
+                            modelType="action"
+                            [modelId]="model()!.id"
+                            (remove)="onSectionDetach(view.section, $event)"
+                            (paramsChange)="onSectionIndicatorParamsChange(view.section.id!, card.id, $event)"
+                          />
                         </div>
-                        @if (card.children?.length) {
-                          @for (child of card.children; track child.id) {
-                            <div class="flex items-center justify-between py-1 px-2 ml-6 bg-white rounded border border-gray-100">
-                              <div>
-                                <span class="text-xs font-medium text-text-secondary">{{ child.name }}</span>
-                                <span class="text-xs text-text-tertiary ml-2">{{ child.type }}</span>
-                              </div>
-                              <app-param-hint-icons [hints]="child.paramHints" />
-                            </div>
-                          }
-                        }
                       }
                     </div>
                   }
@@ -212,42 +162,33 @@
               <app-section-params-editor
                 [params]="getSectionParams(view.section)"
                 [isPending]="facade.sectionMutationPending()"
+                modelType="action"
+                [modelId]="model()!.id"
                 (paramsChange)="onSectionParamsChange(view.section, $event)"
               />
               <div class="border-t border-dotted border-gray-300 my-3"></div>
               @if (view.indicatorCards.length === 0) {
                 <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
               } @else {
-                <div class="space-y-2 mb-3">
+                <div
+                  cdkDropList
+                  [cdkDropListData]="view.section.id"
+                  class="space-y-2 mb-3"
+                  (cdkDropListDropped)="onSectionDrop(view.section, $event)"
+                >
                   @for (card of view.indicatorCards; track card.id) {
-                    <div class="flex items-center justify-between py-1.5 px-2 bg-white rounded border border-gray-200">
-                      <div>
-                        <span class="text-sm font-medium text-text-primary">{{ card.name }}</span>
-                        <span class="text-xs text-text-tertiary ml-2">{{ card.type }}</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <app-param-hint-icons [hints]="card.paramHints" />
-                        @if (view.section.id) {
-                          <button
-                            class="text-text-tertiary hover:text-status-invalid text-xs px-1"
-                            title="Retirer"
-                            (click)="onSectionDetach(view.section, card.id)"
-                            [disabled]="facade.sectionMutationPending()"
-                          >✕</button>
-                        }
-                      </div>
+                    <div cdkDrag cdkDragLockAxis="y">
+                      <app-indicator-card
+                        [indicator]="card"
+                        [params]="getSectionIndicatorParams(view.section.id ?? '', card.id)"
+
+                        [modified]="view.section.id ? facade.isSectionIndicatorModified(view.section.id, card.id) : false"
+                        modelType="action"
+                        [modelId]="model()!.id"
+                        (remove)="onSectionDetach(view.section, $event)"
+                        (paramsChange)="onSectionIndicatorParamsChange(view.section.id ?? '', card.id, $event)"
+                      />
                     </div>
-                    @if (card.children?.length) {
-                      @for (child of card.children; track child.id) {
-                        <div class="flex items-center justify-between py-1 px-2 ml-6 bg-white rounded border border-gray-100">
-                          <div>
-                            <span class="text-xs font-medium text-text-secondary">{{ child.name }}</span>
-                            <span class="text-xs text-text-tertiary ml-2">{{ child.type }}</span>
-                          </div>
-                          <app-param-hint-icons [hints]="child.paramHints" />
-                        </div>
-                      }
-                    }
                   }
                 </div>
               }
@@ -276,7 +217,7 @@
 
 <app-save-bar
   [count]="facade.unsavedCount()"
-  [saving]="facade.updateIsPending()"
+  [saving]="facade.updateSectionIndicatorsIsPending()"
   (save)="onSave()"
   (discard)="onDiscard()"
 />

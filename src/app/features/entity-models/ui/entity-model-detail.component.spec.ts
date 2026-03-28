@@ -187,9 +187,8 @@ describe('EntityModelDetailComponent', () => {
     const removeSpy = vi.spyOn(component.facade, 'removeIndicatorFromSection').mockResolvedValue();
     initAndFlush();
 
-    const removeBtn = fixture.nativeElement.querySelector('button[title="Retirer"]') as HTMLButtonElement;
-    expect(removeBtn).toBeTruthy();
-    removeBtn.click();
+    const section = mockEntityModel.sections![0];
+    await component.onSectionDetach(section, 'ind-1');
 
     expect(removeSpy).toHaveBeenCalledWith('s-1', 'ind-1');
   });

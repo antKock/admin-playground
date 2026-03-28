@@ -29,10 +29,10 @@ describe('SectionParamsEditorComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render all 4 toggle rows', () => {
+  it('should render all 5 toggle rows', () => {
     fixture.detectChanges();
     const toggles = fixture.nativeElement.querySelectorAll('app-toggle-row');
-    expect(toggles.length).toBe(4);
+    expect(toggles.length).toBe(5);
   });
 
   it('should emit paramsChange with toggled field when toggle is activated', () => {

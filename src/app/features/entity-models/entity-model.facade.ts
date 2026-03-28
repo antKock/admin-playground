@@ -9,8 +9,10 @@ import { EntityModelUpdate, EntityModelType, SectionModelUpdate, SectionIndicato
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { ToastService } from '@shared/components/toast/toast.service';
+import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { buildSectionAssociationInputs } from '@features/action-models/use-cases/build-section-association-inputs';
+import { createSectionIndicatorParamEditor } from '@features/action-models/use-cases/section-indicator-param-editor';
 import { EntityModelFeatureStore } from './entity-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +55,114 @@ export class EntityModelFacade {
     this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
   );
 
+  // --- Section indicator parameter edit sub-system ---
+  private readonly sectionParamEditor = createSectionIndicatorParamEditor(() => {
+    const sections = this.selectedItem()?.sections ?? [];
+    return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
+  });
+
+  readonly sectionParamEdits = this.sectionParamEditor.edits;
+  readonly unsavedCount = this.sectionParamEditor.unsavedCount;
+  readonly modifiedIds = this.sectionParamEditor.modifiedIds;
+
+  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
+    return this.sectionParamEditor.getParamsForIndicator(sectionId, indicatorId);
+  }
+
+  getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
+    return this.sectionParamEditor.getParamsForChild(sectionId, parentId, childId);
+  }
+
+  updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
+    this.sectionParamEditor.updateParams(sectionId, indicatorId, params);
+  }
+
+  updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
+    this.sectionParamEditor.updateChildParams(sectionId, parentId, childId, params);
+  }
+
+  getEditsForSection(sectionId: string): Map<string, IndicatorParams> {
+    return this.sectionParamEditor.getEditsForSection(sectionId);
+  }
+
+  isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
+    return this.sectionParamEditor.isModified(sectionId, indicatorId);
+  }
+
+  discardParamEdits(): void {
+    this.sectionParamEditor.discard();
+  }
+
+  async saveParamEdits(): Promise<void> {
+    const validationError = this.sectionParamEditor.validateRules();
+    if (validationError) {
+      this.toast.error(validationError);
+      return;
+    }
+
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const editedSectionIds = this.sectionParamEditor.editedSectionIds();
+    if (editedSectionIds.size === 0) return;
+
+    const sections = m.sections ?? [];
+    let hasError = false;
+
+    for (const sectionId of editedSectionIds) {
+      const section = sections.find((s) => s.id === sectionId);
+      if (!section) continue;
+
+      const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
+      const inputs = buildSectionAssociationInputs(section.indicators ?? [], sectionEdits);
+
+      const result = await this.domainStore.updateSectionIndicatorsMutation({
+        entityType: m.entity_type,
+        sectionId,
+        data: inputs,
+      });
+      if (result.status === 'error') {
+        handleMutationError(this.toast, result.error);
+        hasError = true;
+        break;
+      }
+    }
+
+    if (!hasError) {
+      this.toast.success('Paramètres enregistrés');
+      this.sectionParamEditor.discard();
+      this.domainStore.selectByType(m.entity_type);
+    }
+  }
+
+  async reorderSectionIndicators(sectionId: string, orderedIds: string[]): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const section = (m.sections ?? []).find((s) => s.id === sectionId);
+    if (!section) return;
+
+    const indicators = section.indicators ?? [];
+    const reordered = orderedIds
+      .map((id) => indicators.find((ind) => ind.id === id))
+      .filter((ind): ind is NonNullable<typeof ind> => !!ind);
+
+    const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
+    const inputs = buildSectionAssociationInputs(reordered, sectionEdits);
+
+    const result = await this.domainStore.updateSectionIndicatorsMutation({
+      entityType: m.entity_type,
+      sectionId,
+      data: inputs,
+    });
+    if (result.status === 'success') {
+      this.domainStore.selectByType(m.entity_type);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error);
+      this.domainStore.selectByType(m.entity_type);
+    }
+  }
+
   // Intention methods
   loadAll(): void {
     this.domainStore.loadAll(undefined);
@@ -64,6 +174,7 @@ export class EntityModelFacade {
 
   clearSelection(): void {
     this.domainStore.clearSelection();
+    this.sectionParamEditor.discard();
   }
 
   loadIndicators(): void {

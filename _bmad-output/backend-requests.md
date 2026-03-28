@@ -16,6 +16,16 @@ Open requests from frontend to backend. Verified at each API changelog review �
 - Frontend code for agent update has not changed — this appears to be a backend authorization policy issue
 **Request:** Verify that admin users have PUT permission on `/agents/{id}`. If this is intentional, document which roles can update agents.
 
+### 15. Reject root-level indicator associations on action models
+**Reported:** 2026-03-28 (section-only indicator migration)
+**Impact:** Data integrity — action models should only have indicators inside sections, never at root level. The frontend no longer sends `indicator_model_associations` or `indicator_model_ids` on action model create/update, but the API still accepts them.
+**Details:**
+- `ActionModelCreate` and `ActionModelUpdate` both still accept `indicator_model_associations` and `indicator_model_ids` fields
+- The frontend has been updated to manage all indicator associations exclusively through section endpoints (`PUT /action-models/{id}/sections/{section_id}/indicators`)
+- Any existing root-level associations should be migrated into the appropriate section
+- After migration, the backend should reject `indicator_model_associations` and `indicator_model_ids` on action model create/update (return 422 or ignore the fields)
+**Request:** (1) Migrate any existing root-level indicator associations on action models into their sections. (2) Remove or reject `indicator_model_associations` / `indicator_model_ids` from `ActionModelCreate` and `ActionModelUpdate` schemas.
+
 ### ~~13. Add `sections` field to `FolderModelRead` response~~ → CLOSED
 **Reported:** 2026-03-25 (v2.1 story review — Epic 19 prerequisite) | **Closed:** 2026-03-27
 **Resolution:** `FolderModelRead` now includes `sections: SectionModelWithIndicators[]`, matching `ActionModelRead` pattern. Epic 19 unblocked.

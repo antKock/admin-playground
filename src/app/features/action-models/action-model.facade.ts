@@ -7,7 +7,6 @@ import { Router } from '@angular/router';
 import { ActionModelDomainStore } from '@domains/action-models/action-model.store';
 import {
   ActionModelCreate, ActionModelUpdate,
-  IndicatorModelWithAssociation,
 } from '@domains/action-models/action-model.models';
 import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
 import { SectionModelWithIndicators } from '@domains/action-models/action-model.models';
@@ -20,10 +19,8 @@ import { ToastService } from '@shared/components/toast/toast.service';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { buildIndicatorCards } from './use-cases/build-indicator-cards';
-import { buildAssociationInput, buildAllAssociationInputs } from './use-cases/build-association-inputs';
 import { buildSectionAssociationInputs } from './use-cases/build-section-association-inputs';
-import { createIndicatorParamEditor } from './use-cases/indicator-param-editor';
+import { createSectionIndicatorParamEditor } from './use-cases/section-indicator-param-editor';
 import { ActionModelFeatureStore } from './action-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -56,7 +53,6 @@ export class ActionModelFacade {
   // Cross-domain: indicator model signals
   readonly availableIndicators = this.featureStore.availableIndicators;
   readonly indicatorsLoading = this.featureStore.indicatorsLoading;
-  readonly attachedIndicators = this.featureStore.attachedIndicators;
 
   // Sections (read-only display)
   readonly associationSections = this.featureStore.associationSections;
@@ -110,58 +106,83 @@ export class ActionModelFacade {
     this.publishIsPending() || this.disableIsPending() || this.activateIsPending(),
   );
 
-  // --- Indicator parameter edit sub-system (delegated to use-case) ---
-  private readonly paramEditor = createIndicatorParamEditor(() => this.attachedIndicators());
+  // --- Section indicator parameter edit sub-system ---
+  private readonly sectionParamEditor = createSectionIndicatorParamEditor(() => {
+    const sections = this.selectedItem()?.sections ?? [];
+    return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
+  });
 
-  readonly paramEdits = this.paramEditor.edits;
-  readonly unsavedCount = this.paramEditor.unsavedCount;
-  readonly modifiedIds = this.paramEditor.modifiedIds;
+  readonly sectionParamEdits = this.sectionParamEditor.edits;
+  readonly unsavedCount = this.sectionParamEditor.unsavedCount;
+  readonly modifiedIds = this.sectionParamEditor.modifiedIds;
 
-  // Display-ready indicator cards for detail component
-  readonly indicatorCards = computed(() => buildIndicatorCards({
-    attached: this.attachedIndicators(),
-    available: this.availableIndicators(),
-    paramEdits: this.paramEditor.edits(),
-  }));
-
-  getParamsForIndicator(indicatorId: string): IndicatorParams {
-    return this.paramEditor.getParamsForIndicator(indicatorId);
+  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
+    return this.sectionParamEditor.getParamsForIndicator(sectionId, indicatorId);
   }
 
-  getParamsForChild(parentId: string, childId: string): IndicatorParams {
-    return this.paramEditor.getParamsForChild(parentId, childId);
+  getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
+    return this.sectionParamEditor.getParamsForChild(sectionId, parentId, childId);
   }
 
-  updateParams(indicatorId: string, params: IndicatorParams): void {
-    this.paramEditor.updateParams(indicatorId, params);
+  updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
+    this.sectionParamEditor.updateParams(sectionId, indicatorId, params);
   }
 
-  updateChildParams(parentId: string, childId: string, params: IndicatorParams): void {
-    this.paramEditor.updateChildParams(parentId, childId, params);
+  updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
+    this.sectionParamEditor.updateChildParams(sectionId, parentId, childId, params);
+  }
+
+  getEditsForSection(sectionId: string): Map<string, IndicatorParams> {
+    return this.sectionParamEditor.getEditsForSection(sectionId);
+  }
+
+  isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
+    return this.sectionParamEditor.isModified(sectionId, indicatorId);
   }
 
   discardParamEdits(): void {
-    this.paramEditor.discard();
+    this.sectionParamEditor.discard();
   }
 
-  async saveParamEdits(actionModelId: string): Promise<void> {
-    const validationError = this.paramEditor.validateRules();
+  async saveParamEdits(): Promise<void> {
+    const validationError = this.sectionParamEditor.validateRules();
     if (validationError) {
       this.toast.error(validationError);
       return;
     }
 
-    const associations = buildAllAssociationInputs(this.attachedIndicators(), this.paramEditor.edits());
-    const result = await this.domainStore.updateMutation({
-      id: actionModelId,
-      data: { indicator_model_associations: associations },
-    });
-    if (result.status === 'success') {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const editedSectionIds = this.sectionParamEditor.editedSectionIds();
+    if (editedSectionIds.size === 0) return;
+
+    const sections = m.sections ?? [];
+    let hasError = false;
+
+    for (const sectionId of editedSectionIds) {
+      const section = sections.find((s) => s.id === sectionId);
+      if (!section) continue;
+
+      const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
+      const inputs = buildSectionAssociationInputs(section.indicators ?? [], sectionEdits);
+
+      const result = await this.domainStore.updateSectionIndicatorsMutation({
+        actionModelId: m.id,
+        sectionId,
+        data: inputs,
+      });
+      if (result.status === 'error') {
+        handleMutationError(this.toast, result.error);
+        hasError = true;
+        break;
+      }
+    }
+
+    if (!hasError) {
       this.toast.success('Paramètres enregistrés');
-      this.paramEditor.discard();
-      this.domainStore.selectById(actionModelId);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
+      this.sectionParamEditor.discard();
+      this.domainStore.selectById(m.id);
     }
   }
 
@@ -189,7 +210,7 @@ export class ActionModelFacade {
 
   clearSelection(): void {
     this.domainStore.clearSelection();
-    this.paramEditor.discard();
+    this.sectionParamEditor.discard();
   }
 
   async create(data: ActionModelCreate): Promise<void> {
@@ -251,54 +272,6 @@ export class ActionModelFacade {
       this.domainStore.selectById(id);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible d\'activer le modèle d\'action');
-    }
-  }
-
-  async attachIndicator(actionModelId: string, indicatorModelId: string): Promise<void> {
-    const current = this.attachedIndicators();
-    if (current.some((im) => im.id === indicatorModelId)) {
-      this.toast.error('L\'indicateur est déjà attaché');
-      return;
-    }
-    const associations = [
-      ...buildAllAssociationInputs(current, this.paramEditor.edits()),
-      {
-        indicator_model_id: indicatorModelId,
-        hidden_rule: 'false',
-        required_rule: 'false',
-        disabled_rule: 'false',
-        default_value_rule: 'false',
-        occurrence_rule: { min: 'false', max: 'false' },
-        constrained_rule: 'false',
-        position: current.length,
-      },
-    ];
-    const result = await this.domainStore.updateMutation({
-      id: actionModelId,
-      data: { indicator_model_associations: associations },
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur attaché');
-      this.domainStore.selectById(actionModelId);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
-    }
-  }
-
-  async detachIndicator(actionModelId: string, indicatorModelId: string): Promise<void> {
-    const current = this.attachedIndicators();
-    const remaining = current.filter((im) => im.id !== indicatorModelId);
-    const associations = remaining
-      .map((im, index) => buildAssociationInput(im, this.paramEditor.edits(), undefined, index));
-    const result = await this.domainStore.updateMutation({
-      id: actionModelId,
-      data: { indicator_model_associations: associations },
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur retiré');
-      this.domainStore.selectById(actionModelId);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
     }
   }
 
@@ -385,6 +358,34 @@ export class ActionModelFacade {
       this.domainStore.selectById(m.id);
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de retirer l\'indicateur');
+    }
+  }
+
+  async reorderSectionIndicators(sectionId: string, orderedIds: string[]): Promise<void> {
+    const m = this.selectedItem();
+    if (!m) return;
+
+    const section = (m.sections ?? []).find((s) => s.id === sectionId);
+    if (!section) return;
+
+    const indicators = section.indicators ?? [];
+    const reordered = orderedIds
+      .map((id) => indicators.find((ind) => ind.id === id))
+      .filter((ind): ind is NonNullable<typeof ind> => !!ind);
+
+    const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
+    const inputs = buildSectionAssociationInputs(reordered, sectionEdits);
+
+    const result = await this.domainStore.updateSectionIndicatorsMutation({
+      actionModelId: m.id,
+      sectionId,
+      data: inputs,
+    });
+    if (result.status === 'success') {
+      this.domainStore.selectById(m.id);
+    } else if (result.status === 'error') {
+      handleMutationError(this.toast, result.error);
+      this.domainStore.selectById(m.id);
     }
   }
 
@@ -477,25 +478,5 @@ export class ActionModelFacade {
         this.domainStore.selectById(m.id);
       }
     }
-  }
-
-  reorderIndicators(actionModelId: string, reorderedIds: string[]): void {
-    const current = this.attachedIndicators();
-    const associations = reorderedIds
-      .map((id) => current.find((im) => im.id === id))
-      .filter((im): im is IndicatorModelWithAssociation => !!im)
-      .map((im) => buildAssociationInput(im, this.paramEditor.edits()));
-    // Fire-and-forget for optimistic UI — component reorders locally, server confirms or reverts
-    this.domainStore.updateMutation({
-      id: actionModelId,
-      data: { indicator_model_associations: associations },
-    }).then((result) => {
-      if (result.status === 'success') {
-        this.domainStore.selectById(actionModelId);
-      } else if (result.status === 'error') {
-        handleMutationError(this.toast, result.error);
-        this.domainStore.selectById(actionModelId); // Revert to server state
-      }
-    });
   }
 }

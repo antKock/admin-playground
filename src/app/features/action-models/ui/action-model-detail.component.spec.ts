@@ -39,12 +39,8 @@ describe('ActionModelDetailComponent', () => {
     expect(loadIndicatorsSpy).toHaveBeenCalled();
   });
 
-  it('should compute empty indicatorCards when no attached indicators', () => {
-    expect(component.indicatorCards()).toEqual([]);
-  });
-
-  it('should delegate param updates to facade', () => {
-    const updateSpy = vi.spyOn(component.facade, 'updateParams');
+  it('should delegate section indicator param updates to facade', () => {
+    const updateSpy = vi.spyOn(component.facade, 'updateSectionIndicatorParams');
     const params = {
       hidden_rule: 'true',
       required_rule: 'true',
@@ -53,8 +49,8 @@ describe('ActionModelDetailComponent', () => {
       occurrence_rule: null,
       constrained_rule: null,
     };
-    component.onParamsChange('ind-1', params);
-    expect(updateSpy).toHaveBeenCalledWith('ind-1', params);
+    component.onSectionIndicatorParamsChange('section-1', 'ind-1', params);
+    expect(updateSpy).toHaveBeenCalledWith('section-1', 'ind-1', params);
   });
 
   it('should delegate discard to facade', () => {

@@ -1,13 +1,21 @@
-import { Component, inject, OnInit, OnDestroy, computed, viewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, viewChild, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { MetadataGridComponent, MetadataField } from '@app/shared/components/metadata-grid/metadata-grid.component';
 import { BreadcrumbComponent, BreadcrumbItem } from '@app/shared/components/breadcrumb/breadcrumb.component';
 import { DetailPageLayoutComponent } from '@app/shared/components/layouts/detail-page-layout.component';
 import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
-import { IndicatorPickerComponent, IndicatorOption } from '@app/shared/components/indicator-picker/indicator-picker.component';
-import { ParamHintIconsComponent } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
+import {
+  IndicatorPickerComponent,
+  IndicatorOption,
+} from '@app/shared/components/indicator-picker/indicator-picker.component';
+import {
+  IndicatorCardComponent,
+  IndicatorParams,
+} from '@app/shared/components/indicator-card/indicator-card.component';
+import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { EntityModelType, SectionModelWithIndicators } from '@domains/entity-models/entity-model.models';
@@ -30,7 +38,10 @@ const ENTITY_TYPE_LABELS: Record<EntityModelType, string> = {
     SectionCardComponent,
     SectionParamsEditorComponent,
     IndicatorPickerComponent,
-    ParamHintIconsComponent,
+    IndicatorCardComponent,
+    SaveBarComponent,
+    CdkDropList,
+    CdkDrag,
     EntityModelFormSectionComponent,
   ],
   templateUrl: './entity-model-detail.component.html',
@@ -75,9 +86,10 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   readonly sectionView = computed(() => {
     const section = this.additionalInfoSection();
     if (!section) return null;
+    const sectionEdits = this._getSectionEdits(section.id);
     return {
       section,
-      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? [], sectionEdits),
       attachedIds: (section.indicators ?? []).map((ind) => ind.id),
     };
   });
@@ -92,7 +104,17 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   );
 
   hasUnsavedChanges(): boolean {
-    return this.formSection()?.hasUnsavedChanges() ?? false;
+    return (this.formSection()?.hasUnsavedChanges() ?? false) || this.facade.unsavedCount() > 0;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      if (this.facade.unsavedCount() > 0) {
+        this.onSave();
+      }
+    }
   }
 
   ngOnInit(): void {
@@ -118,6 +140,14 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     };
   }
 
+  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
+    return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
+  }
+
+  onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
+    this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
+  }
+
   onSectionParamsChange(section: SectionModelWithIndicators, params: SectionParams): void {
     this.facade.updateSectionParams(section.id, section.key, params);
   }
@@ -130,7 +160,30 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     await this.facade.removeIndicatorFromSection(section.id, indicatorId);
   }
 
+  onSectionDrop(section: SectionModelWithIndicators, event: CdkDragDrop<string>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const indicators = section.indicators ?? [];
+    const ids = indicators.map((ind) => ind.id);
+    moveItemInArray(ids, event.previousIndex, event.currentIndex);
+
+    this.facade.reorderSectionIndicators(section.id, ids);
+  }
+
   async onCreateSectionAndAttach(indicator: IndicatorOption): Promise<void> {
     await this.facade.addIndicatorToSection(null, 'additional_info', indicator.id);
+  }
+
+  async onSave(): Promise<void> {
+    await this.facade.saveParamEdits();
+  }
+
+  onDiscard(): void {
+    this.facade.discardParamEdits();
+  }
+
+  private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
+    const edits = this.facade.getEditsForSection(sectionId);
+    return edits.size > 0 ? edits : undefined;
   }
 }

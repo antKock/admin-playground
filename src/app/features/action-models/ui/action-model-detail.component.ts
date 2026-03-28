@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, computed, signal, effect, HostListener } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, signal, HostListener } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
@@ -18,14 +18,12 @@ import {
   IndicatorCardComponent,
   IndicatorCardData,
   IndicatorParams,
-  ChildParamsChangeEvent,
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
 import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
 import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
-import { ParamHintIconsComponent } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
 import { ActionModelFacade, DisplaySection } from '../action-model.facade';
 import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator-cards';
@@ -47,7 +45,6 @@ import { buildSectionIndicatorCards } from '../use-cases/build-section-indicator
     SectionCardComponent,
     AssociationSectionToggleComponent,
     SectionParamsEditorComponent,
-    ParamHintIconsComponent,
   ],
   templateUrl: './action-model-detail.component.html',
 })
@@ -75,7 +72,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
 
   readonly sectionDefs = computed<SectionDef[]>(() => [
     { label: 'Métadonnées', targetId: 'section-metadata' },
-    { label: 'Indicateurs', targetId: 'section-indicators', count: this.indicatorCards().length },
     { label: 'Sections d\'association', targetId: 'section-association-sections' },
     { label: 'Sections', targetId: 'section-fixed-sections' },
     { label: 'Activité', targetId: 'section-activity' },
@@ -95,40 +91,39 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     ];
   });
 
-  // Local override for optimistic drag-to-reorder — cleared when server data refreshes
-  private readonly _localCardOrder = signal<IndicatorCardData[] | null>(null);
-
-  readonly indicatorCards = computed(() => this._localCardOrder() ?? this.facade.indicatorCards());
-
   readonly mergedFixedSections = this.facade.mergedFixedSections;
   readonly sectionTypeMap = SECTION_TYPE_MAP;
 
-  // Pre-computed association section view data (avoids method calls per-CD-cycle)
+  // Pre-computed association section view data
   readonly associationSectionViews = computed(() =>
     ASSOCIATION_SECTION_TYPES.map((sType) => {
       const sections = this.facade.selectedItem()?.sections ?? [];
       const section = sections.find((s) => s.key === sType) as DisplaySection | undefined;
+      const sectionId = section?.id ?? '';
+      const sectionEdits = sectionId ? this._getSectionEdits(sectionId) : undefined;
       return {
         sType,
         enabled: !!section,
         section,
         config: SECTION_TYPE_MAP[sType],
-        indicatorCards: section ? buildSectionIndicatorCards(section.indicators ?? []) : [],
+        indicatorCards: section ? buildSectionIndicatorCards(section.indicators ?? [], sectionEdits) : [],
         attachedIds: (section?.indicators ?? []).map((ind) => ind.id),
       };
     }),
   );
 
-  // Pre-computed fixed section indicator cards (avoids rebuilding arrays per-CD-cycle)
+  // Pre-computed fixed section indicator cards
   readonly fixedSectionViews = computed(() =>
-    this.mergedFixedSections().map((section) => ({
-      section,
-      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
-      attachedIds: (section.indicators ?? []).map((ind) => ind.id),
-    })),
+    this.mergedFixedSections().map((section) => {
+      const sectionId = section.id ?? '';
+      const sectionEdits = sectionId ? this._getSectionEdits(sectionId) : undefined;
+      return {
+        section,
+        indicatorCards: buildSectionIndicatorCards(section.indicators ?? [], sectionEdits),
+        attachedIds: (section.indicators ?? []).map((ind) => ind.id),
+      };
+    }),
   );
-
-  readonly attachedIds = computed(() => this.facade.attachedIndicators().map((im) => im.id));
 
   readonly pickerOptions = computed<IndicatorOption[]>(() =>
     this.facade.availableIndicators().map((im) => ({
@@ -139,13 +134,8 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     })),
   );
 
-  constructor() {
-    // Clear local order override when server data changes
-    effect(() => {
-      this.facade.indicatorCards();
-      this._localCardOrder.set(null);
-    });
-  }
+  // Local override for optimistic drag-to-reorder per section
+  private readonly _localSectionCardOrder = signal<Map<string, IndicatorCardData[]>>(new Map());
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -155,7 +145,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Required: clear stale selection so navigating to a different item doesn't briefly show the old one.
   ngOnDestroy(): void {
     this.facade.clearSelection();
   }
@@ -170,36 +159,16 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  getParams(indicatorId: string): IndicatorParams {
-    return this.facade.getParamsForIndicator(indicatorId);
+  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
+    return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
   }
 
-  isModified(indicatorId: string): boolean {
-    return this.facade.modifiedIds().includes(indicatorId);
-  }
-
-  onParamsChange(indicatorId: string, params: IndicatorParams): void {
-    this.facade.updateParams(indicatorId, params);
-  }
-
-  getChildParamsMap(parentId: string): Record<string, IndicatorParams> {
-    const attached = this.facade.attachedIndicators().find((im) => im.id === parentId);
-    if (!attached?.children?.length) return {};
-    const map: Record<string, IndicatorParams> = {};
-    for (const child of attached.children) {
-      map[child.id] = this.facade.getParamsForChild(parentId, child.id);
-    }
-    return map;
-  }
-
-  onChildParamsChange(parentId: string, event: ChildParamsChangeEvent): void {
-    this.facade.updateChildParams(parentId, event.childId, event.params);
+  onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
+    this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
   }
 
   async onSave(): Promise<void> {
-    const m = this.model();
-    if (!m) return;
-    await this.facade.saveParamEdits(m.id);
+    await this.facade.saveParamEdits();
   }
 
   onDiscard(): void {
@@ -238,42 +207,6 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     await this.facade.delete(m.id);
   }
 
-  async onAttach(indicator: IndicatorOption): Promise<void> {
-    const m = this.model();
-    if (!m) return;
-    await this.facade.attachIndicator(m.id, indicator.id);
-  }
-
-  async onDetach(indicatorId: string): Promise<void> {
-    const m = this.model();
-    if (!m) return;
-
-    const indicator = this.facade.attachedIndicators().find((im) => im.id === indicatorId);
-    const confirmed = await this.confirmDialog.confirm({
-      title: 'Retirer l\'indicateur',
-      message: `Êtes-vous sûr de vouloir retirer '${indicator?.name ?? 'cet indicateur'}' ?`,
-      confirmLabel: 'Retirer',
-      confirmVariant: 'danger',
-    });
-
-    if (!confirmed) return;
-
-    await this.facade.detachIndicator(m.id, indicatorId);
-  }
-
-  onDrop(event: CdkDragDrop<unknown>): void {
-    const m = this.model();
-    if (!m || event.previousIndex === event.currentIndex) return;
-
-    // Optimistic UI: reorder locally before API call
-    const cards = [...this.indicatorCards()];
-    moveItemInArray(cards, event.previousIndex, event.currentIndex);
-    this._localCardOrder.set(cards);
-
-    const ids = cards.map((c) => c.id);
-    this.facade.reorderIndicators(m.id, ids);
-  }
-
   onToggleAssociation(sectionKey: SectionKey): void {
     this.facade.toggleAssociationSection(sectionKey);
   }
@@ -302,7 +235,23 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     await this.facade.removeIndicatorFromSection(section.id, indicatorId);
   }
 
+  onSectionDrop(section: DisplaySection, event: CdkDragDrop<string | null>): void {
+    if (!section.id || event.previousIndex === event.currentIndex) return;
+
+    const sectionId = section.id;
+    const indicators = section.indicators ?? [];
+    const ids = indicators.map((ind) => ind.id);
+    moveItemInArray(ids, event.previousIndex, event.currentIndex);
+
+    this.facade.reorderSectionIndicators(sectionId, ids);
+  }
+
   formatDate(value: string | null | undefined): string {
     return formatDateFr(value);
+  }
+
+  private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
+    const edits = this.facade.getEditsForSection(sectionId);
+    return edits.size > 0 ? edits : undefined;
   }
 }
