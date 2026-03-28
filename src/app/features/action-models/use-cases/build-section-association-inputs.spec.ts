@@ -54,39 +54,29 @@ describe('buildSectionAssociationInputs', () => {
     expect(buildSectionAssociationInputs([])).toEqual([]);
   });
 
-  it('should flatten children after their parent', () => {
-    const inputs = buildSectionAssociationInputs([
-      makeIndicator({
-        id: 'parent-1',
-        children: [
-          { id: 'child-1', name: 'C1', technical_label: 'c1', type: 'number', created_at: '', last_updated_at: '', hidden_rule: 'false', required_rule: 'true', disabled_rule: 'false', default_value_rule: 'false', occurrence_min_rule: 'false', occurrence_max_rule: 'false', constrained_rule: 'false' },
-        ],
-      }),
+  it('should apply param edits by indicator ID', () => {
+    const paramEdits = new Map([
+      ['ind-1', { hidden_rule: 'true', required_rule: null, disabled_rule: null, default_value_rule: null, occurrence_rule: null, constrained_rule: null }],
     ]);
+    const inputs = buildSectionAssociationInputs([makeIndicator({ id: 'ind-1' })], paramEdits);
 
-    expect(inputs).toHaveLength(2);
-    expect(inputs[0].indicator_model_id).toBe('parent-1');
-    expect(inputs[0].position).toBe(0);
-    expect(inputs[1].indicator_model_id).toBe('child-1');
-    expect(inputs[1].position).toBe(1);
-    expect(inputs[1].required_rule).toBe('true');
+    expect(inputs[0].hidden_rule).toBe('true');
+    expect(inputs[0].required_rule).toBe('false');
   });
 
-  it('should apply param edits to children', () => {
+  it('should apply param edits to children using parentId:childId key', () => {
     const paramEdits = new Map([
       ['parent-1:child-1', { hidden_rule: 'true', required_rule: null, disabled_rule: null, default_value_rule: null, occurrence_rule: null, constrained_rule: null }],
     ]);
+    // Children appear as top-level entries in the indicators array
     const inputs = buildSectionAssociationInputs([
-      makeIndicator({
-        id: 'parent-1',
-        children: [
-          { id: 'child-1', name: 'C1', technical_label: 'c1', type: 'number', created_at: '', last_updated_at: '', hidden_rule: 'false', required_rule: 'false', disabled_rule: 'false', default_value_rule: 'false', occurrence_min_rule: 'false', occurrence_max_rule: 'false', constrained_rule: 'false' },
-        ],
-      }),
+      makeIndicator({ id: 'parent-1' }),
+      makeIndicator({ id: 'child-1' }),
     ], paramEdits);
 
+    expect(inputs[0].hidden_rule).toBe('false'); // parent unchanged
     expect(inputs[1].indicator_model_id).toBe('child-1');
-    expect(inputs[1].hidden_rule).toBe('true');
+    expect(inputs[1].hidden_rule).toBe('true'); // child edited
   });
 
   it('should include occurrence rules', () => {

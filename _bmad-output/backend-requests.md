@@ -16,6 +16,17 @@ Open requests from frontend to backend. Verified at each API changelog review �
 - Frontend code for agent update has not changed — this appears to be a backend authorization policy issue
 **Request:** Verify that admin users have PUT permission on `/agents/{id}`. If this is intentional, document which roles can update agents.
 
+### 16. Section update ignores rule values — `PUT .../sections/{id}` returns 200 but doesn't persist
+**Reported:** 2026-03-28 (staging UAT — section param editing)
+**Impact:** Section parameter toggles appear broken on all model types. Frontend sends correct payload, backend returns 200 but the response shows unchanged values.
+**Details:**
+- Tested on entity model section (`additional_info`), same behavior likely on folder/action model sections
+- Payload sent: `{ "required_rule": "true", "hidden_rule": "false", "disabled_rule": "false", "constrained_rule": "false" }`
+- Response (200 OK): `{ "required_rule": "false", ... }` — value not updated
+- The `last_updated_at` timestamp IS updated, confirming the PUT was processed
+- Affects all section rule fields: `hidden_rule`, `required_rule`, `disabled_rule`, `occurrence_min_rule`, `occurrence_max_rule`, `constrained_rule`
+**Request:** Fix `PUT /entity-models/{type}/sections/{id}`, `PUT /folder-models/{id}/sections/{id}`, and `PUT /action-models/{id}/sections/{id}` to actually persist rule field values from the request body.
+
 ### 15. Reject root-level indicator associations on action models
 **Reported:** 2026-03-28 (section-only indicator migration)
 **Impact:** Data integrity — action models should only have indicators inside sections, never at root level. The frontend no longer sends `indicator_model_associations` or `indicator_model_ids` on action model create/update, but the API still accepts them.
