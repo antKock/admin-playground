@@ -377,7 +377,6 @@ export class FolderModelFacade {
     });
 
     if (result.status === 'success') {
-      this.domainStore.selectById(m.id);
       return (result.value as { id: string }).id;
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de créer la section');

@@ -562,9 +562,6 @@ describe('ActionModelFacade', () => {
 
       const id = await promise;
       expect(id).toBe('sec-new-progress');
-
-      // Re-select triggers detail fetch
-      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1')).flush(mockWithSection);
     });
   });
 

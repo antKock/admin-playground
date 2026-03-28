@@ -94,12 +94,13 @@
                       <app-indicator-card
                         [indicator]="card"
                         [params]="getSectionIndicatorParams(view.section.id ?? '', card.id)"
-
+                        [childParams]="getSectionChildParamsMap(view.section.id ?? '', card)"
                         [modified]="view.section.id ? facade.isSectionIndicatorModified(view.section.id, card.id) : false"
                         modelType="folder"
                         [modelId]="model()!.id"
                         (remove)="onSectionDetach(view.section, $event)"
                         (paramsChange)="onSectionIndicatorParamsChange(view.section.id ?? '', card.id, $event)"
+                        (childParamsChange)="onSectionChildParamsChange(view.section.id ?? '', card.id, $event)"
                       />
                     </div>
                   }

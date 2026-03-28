@@ -262,9 +262,6 @@ describe('FolderModelFacade', () => {
 
       const id = await promise;
       expect(id).toBe('sec-new-progress');
-
-      // Re-select triggers detail fetch
-      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1')).flush(mockWithSection);
     });
   });
 

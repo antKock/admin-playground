@@ -302,7 +302,6 @@ export class EntityModelFacade {
     });
 
     if (result.status === 'success') {
-      this.domainStore.selectByType(m.entity_type);
       return (result.value as { id: string }).id;
     } else if (result.status === 'error') {
       handleMutationError(this.toast, result.error, 'Impossible de créer la section');

@@ -18,6 +18,7 @@ import {
   IndicatorCardComponent,
   IndicatorCardData,
   IndicatorParams,
+  ChildParamsChangeEvent,
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { ActivityListComponent } from '@app/shared/components/activity-list/activity-list.component';
@@ -163,8 +164,21 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy {
     return this.facade.getSectionIndicatorParams(sectionId, indicatorId);
   }
 
+  getSectionChildParamsMap(sectionId: string, card: IndicatorCardData): Record<string, IndicatorParams> {
+    if (!card.children?.length) return {};
+    const map: Record<string, IndicatorParams> = {};
+    for (const child of card.children) {
+      map[child.id] = this.facade.getSectionChildParams(sectionId, card.id, child.id);
+    }
+    return map;
+  }
+
   onSectionIndicatorParamsChange(sectionId: string, indicatorId: string, params: IndicatorParams): void {
     this.facade.updateSectionIndicatorParams(sectionId, indicatorId, params);
+  }
+
+  onSectionChildParamsChange(sectionId: string, parentId: string, event: ChildParamsChangeEvent): void {
+    this.facade.updateSectionChildParams(sectionId, parentId, event.childId, event.params);
   }
 
   async onSave(): Promise<void> {
