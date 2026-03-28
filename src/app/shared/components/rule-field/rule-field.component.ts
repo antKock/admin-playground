@@ -64,7 +64,7 @@ export class RuleFieldComponent implements AfterViewInit, OnDestroy {
   readonly label = input('JSONLogic Rule');
   readonly placeholder = input('');
   readonly mode = input<ProseMode>('condition');
-  readonly modelType = input<'action' | 'folder' | undefined>(undefined);
+  readonly modelType = input<'action' | 'folder' | 'entity' | undefined>(undefined);
   readonly modelId = input<string | undefined>(undefined);
   readonly excludeIndicator = input<string | undefined>(undefined);
 

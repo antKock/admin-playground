@@ -29,9 +29,6 @@ export const FolderModelFeatureStore = signalStore(
       totalLoaded: computed(() => domainStore.totalLoaded()),
       totalCount: computed(() => domainStore.totalCount()),
 
-      // Sections (from selected folder model)
-      sections: computed(() => domainStore.selectedItem()?.sections ?? []),
-
       // Cross-domain signals for FP multi-selector
       fpOptions: computed(() =>
         (fpStore.items() as FundingProgram[]).map((fp) => ({ id: fp.id, label: fp.name })),

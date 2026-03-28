@@ -43,6 +43,8 @@
             <app-section-params-editor
               [params]="getSectionParams(view.section)"
               [isPending]="facade.sectionMutationPending()"
+              modelType="entity"
+              [modelId]="model()!.entity_type"
               (paramsChange)="onSectionParamsChange(view.section, $event)"
             />
             <div class="border-t border-dotted border-gray-300 my-3"></div>
@@ -62,6 +64,8 @@
                       [params]="getSectionIndicatorParams(view.section.id, card.id)"
                       [childParams]="getSectionChildParamsMap(view.section.id, card)"
                       [modified]="facade.isSectionIndicatorModified(view.section.id, card.id)"
+                      modelType="entity"
+                      [modelId]="model()!.entity_type"
                       (remove)="onSectionDetach(view.section, $event)"
                       (paramsChange)="onSectionIndicatorParamsChange(view.section.id, card.id, $event)"
                       (childParamsChange)="onSectionChildParamsChange(view.section.id, card.id, $event)"

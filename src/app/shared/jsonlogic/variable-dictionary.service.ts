@@ -147,7 +147,7 @@ export class VariableDictionaryService {
    * Returns a Signal containing the list of available ProseVariables for a given model.
    * Results are cached per modelType:modelId key.
    */
-  getVariables(modelType: 'action' | 'folder', modelId: string): Signal<ProseVariable[]> {
+  getVariables(modelType: 'action' | 'folder' | 'entity', modelId: string): Signal<ProseVariable[]> {
     const key = `${modelType}:${modelId}`;
     const cached = this.cache.get(key);
     if (cached) return cached;
@@ -160,7 +160,19 @@ export class VariableDictionaryService {
     return sig;
   }
 
-  private buildVariables$(modelType: 'action' | 'folder', modelId: string): Observable<ProseVariable[]> {
+  private buildVariables$(modelType: 'action' | 'folder' | 'entity', modelId: string): Observable<ProseVariable[]> {
+    // Entity models: return only indicator variables (no linked entity properties)
+    if (modelType === 'entity') {
+      return this.fetchIndicators$().pipe(
+        map((indicators) => indicators.map((im) => ({
+          path: im.technical_label,
+          type: mapIndicatorType(im.type),
+          group: '',
+          source: 'indicator' as const,
+        }))),
+      );
+    }
+
     // Use server-side filtering for action models; fetch all indicators for folder models
     const indicators$ = modelType === 'action'
       ? this.fetchIndicators$(modelId)

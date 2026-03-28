@@ -68,7 +68,7 @@ export class IndicatorCardComponent {
   readonly indicator = input.required<IndicatorCardData>();
   readonly params = input.required<IndicatorParams>();
   readonly modified = input(false);
-  readonly modelType = input<'action' | 'folder'>();
+  readonly modelType = input<'action' | 'folder' | 'entity'>();
   readonly modelId = input<string>();
 
   readonly childParams = input<Record<string, IndicatorParams>>({});

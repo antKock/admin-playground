@@ -5,14 +5,11 @@ import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { EntityModelDomainStore } from '@domains/entity-models/entity-model.store';
-import { EntityModelUpdate, EntityModelType, SectionModelUpdate, SectionIndicatorAssociationInput } from '@domains/entity-models/entity-model.models';
+import { EntityModelUpdate, EntityModelType } from '@domains/entity-models/entity-model.models';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
-import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { ToastService } from '@shared/components/toast/toast.service';
-import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
-import { buildSectionAssociationInputs } from '@features/shared/section-indicators/build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from '@features/shared/section-indicators/section-indicator-param-editor';
+import { createSectionFacadeHelpers } from '@features/shared/section-indicators/section-facade.helpers';
 import { EntityModelFeatureStore } from './entity-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -55,113 +52,40 @@ export class EntityModelFacade {
     this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
   );
 
-  // --- Section indicator parameter edit sub-system ---
-  private readonly sectionParamEditor = createSectionIndicatorParamEditor(() => {
-    const sections = this.selectedItem()?.sections ?? [];
-    return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
-  });
+  // --- Section indicator operations (shared helpers) ---
+  private readonly _sectionHelpers = createSectionFacadeHelpers(
+    {
+      toast: this.toast,
+      getSelectedItem: () => this.selectedItem(),
+      updateSectionIndicatorsMutation: (sectionId, data) =>
+        this.domainStore.updateSectionIndicatorsMutation({ entityType: this.selectedItem()!.entity_type, sectionId, data }),
+      createSectionMutation: (data) =>
+        this.domainStore.createSectionMutation({ entityType: this.selectedItem()!.entity_type, data }),
+      updateSectionMutation: (sectionId, data) =>
+        this.domainStore.updateSectionMutation({ entityType: this.selectedItem()!.entity_type, sectionId, data } as any),
+      refresh: () => this.domainStore.selectByType(this.selectedItem()!.entity_type),
+    },
+    () => {
+      const sections = this.selectedItem()?.sections ?? [];
+      return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
+    },
+  );
 
-  readonly sectionParamEdits = this.sectionParamEditor.edits;
-  readonly unsavedCount = this.sectionParamEditor.unsavedCount;
-  readonly modifiedIds = this.sectionParamEditor.modifiedIds;
-
-  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-    return this.sectionParamEditor.getParamsForIndicator(sectionId, indicatorId);
-  }
-
-  getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
-    return this.sectionParamEditor.getParamsForChild(sectionId, parentId, childId);
-  }
-
-  updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-    this.sectionParamEditor.updateParams(sectionId, indicatorId, params);
-  }
-
-  updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
-    this.sectionParamEditor.updateChildParams(sectionId, parentId, childId, params);
-  }
-
-  getEditsForSection(sectionId: string): Map<string, IndicatorParams> {
-    return this.sectionParamEditor.getEditsForSection(sectionId);
-  }
-
-  isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
-    return this.sectionParamEditor.isModified(sectionId, indicatorId);
-  }
-
-  discardParamEdits(): void {
-    this.sectionParamEditor.discard();
-  }
-
-  async saveParamEdits(): Promise<void> {
-    const validationError = this.sectionParamEditor.validateRules();
-    if (validationError) {
-      this.toast.error(validationError);
-      return;
-    }
-
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const editedSectionIds = this.sectionParamEditor.editedSectionIds();
-    if (editedSectionIds.size === 0) return;
-
-    const sections = m.sections ?? [];
-    let hasError = false;
-
-    for (const sectionId of editedSectionIds) {
-      const section = sections.find((s) => s.id === sectionId);
-      if (!section) continue;
-
-      const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
-      const inputs = buildSectionAssociationInputs(section.indicators ?? [], sectionEdits);
-
-      const result = await this.domainStore.updateSectionIndicatorsMutation({
-        entityType: m.entity_type,
-        sectionId,
-        data: inputs,
-      });
-      if (result.status === 'error') {
-        handleMutationError(this.toast, result.error);
-        hasError = true;
-        break;
-      }
-    }
-
-    if (!hasError) {
-      this.toast.success('Paramètres enregistrés');
-      this.sectionParamEditor.discard();
-      this.domainStore.selectByType(m.entity_type);
-    }
-  }
-
-  async reorderSectionIndicators(sectionId: string, orderedIds: string[]): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const section = (m.sections ?? []).find((s) => s.id === sectionId);
-    if (!section) return;
-
-    const indicators = section.indicators ?? [];
-    const reordered = orderedIds
-      .map((id) => indicators.find((ind) => ind.id === id))
-      .filter((ind): ind is NonNullable<typeof ind> => !!ind);
-
-    const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
-    const inputs = buildSectionAssociationInputs(reordered, sectionEdits);
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      entityType: m.entity_type,
-      sectionId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.domainStore.selectByType(m.entity_type);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
-      this.domainStore.selectByType(m.entity_type);
-    }
-  }
+  readonly sectionParamEdits = this._sectionHelpers.sectionParamEdits;
+  readonly unsavedCount = this._sectionHelpers.unsavedCount;
+  readonly modifiedIds = this._sectionHelpers.modifiedIds;
+  readonly getSectionIndicatorParams = this._sectionHelpers.getSectionIndicatorParams;
+  readonly getSectionChildParams = this._sectionHelpers.getSectionChildParams;
+  readonly updateSectionIndicatorParams = this._sectionHelpers.updateSectionIndicatorParams;
+  readonly updateSectionChildParams = this._sectionHelpers.updateSectionChildParams;
+  readonly getEditsForSection = this._sectionHelpers.getEditsForSection;
+  readonly isSectionIndicatorModified = this._sectionHelpers.isSectionIndicatorModified;
+  readonly discardParamEdits = this._sectionHelpers.discardParamEdits;
+  readonly saveParamEdits = this._sectionHelpers.saveParamEdits;
+  readonly reorderSectionIndicators = this._sectionHelpers.reorderSectionIndicators;
+  readonly addIndicatorToSection = this._sectionHelpers.addIndicatorToSection;
+  readonly removeIndicatorFromSection = this._sectionHelpers.removeIndicatorFromSection;
+  readonly updateSectionParams = this._sectionHelpers.updateSectionParams;
 
   // Intention methods
   loadAll(): void {
@@ -174,7 +98,7 @@ export class EntityModelFacade {
 
   clearSelection(): void {
     this.domainStore.clearSelection();
-    this.sectionParamEditor.discard();
+    this._sectionHelpers.discardParamEdits();
   }
 
   loadIndicators(): void {
@@ -191,122 +115,7 @@ export class EntityModelFacade {
     }
   }
 
-  async updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: SectionModelUpdate): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    let resolvedId = sectionId;
-    if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionKey);
-      if (!resolvedId) return;
-    }
-
-    const result = await this.domainStore.updateSectionMutation({
-      entityType: m.entity_type,
-      sectionId: resolvedId,
-      data: params,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Paramètres de section enregistrés');
-      this.domainStore.selectByType(m.entity_type);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de mettre à jour la section');
-    }
-  }
-
-  async addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    let resolvedId = sectionId;
-    if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionKey);
-      if (!resolvedId) return;
-    }
-
-    const section = (m.sections ?? []).find((s) => s.id === resolvedId);
-    const existing = section?.indicators ?? [];
-    const inputs: SectionIndicatorAssociationInput[] = [
-      ...buildSectionAssociationInputs(existing),
-      {
-        indicator_model_id: indicatorModelId,
-        hidden_rule: 'false',
-        required_rule: 'false',
-        disabled_rule: 'false',
-        default_value_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-        position: existing.length,
-      },
-    ];
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      entityType: m.entity_type,
-      sectionId: resolvedId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur ajouté à la section');
-      this.domainStore.selectByType(m.entity_type);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible d\'ajouter l\'indicateur');
-    }
-  }
-
-  async removeIndicatorFromSection(sectionId: string, indicatorModelId: string): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const section = (m.sections ?? []).find((s) => s.id === sectionId);
-    if (!section) return;
-
-    const remaining = (section.indicators ?? []).filter((ind) => ind.id !== indicatorModelId);
-    const inputs = buildSectionAssociationInputs(remaining);
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      entityType: m.entity_type,
-      sectionId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur retiré de la section');
-      this.domainStore.selectByType(m.entity_type);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de retirer l\'indicateur');
-    }
-  }
-
-  async ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
-    const m = this.selectedItem();
-    if (!m) return null;
-
-    const existing = (m.sections ?? []).find((s) => s.key === sectionKey);
-    if (existing) return existing.id;
-
-    const config = SECTION_TYPE_MAP[sectionKey];
-    const result = await this.domainStore.createSectionMutation({
-      entityType: m.entity_type,
-      data: {
-        key: sectionKey,
-        name: config.label,
-        is_enabled: true,
-        position: 0,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
-        required_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-      },
-    });
-
-    if (result.status === 'success') {
-      return (result.value as { id: string }).id;
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de créer la section');
-      return null;
-    }
-    return null;
+  async ensureSectionExists(sectionKey: import('@shared/components/section-card/section-card.models').SectionKey): Promise<string | null> {
+    return this._sectionHelpers.ensureSectionExists(sectionKey);
   }
 }

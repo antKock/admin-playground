@@ -132,7 +132,7 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
 export class SectionParamsEditorComponent {
   readonly params = input.required<SectionParams>();
   readonly isPending = input(false);
-  readonly modelType = input<'action' | 'folder' | undefined>(undefined);
+  readonly modelType = input<'action' | 'folder' | 'entity' | undefined>(undefined);
   readonly modelId = input<string | undefined>(undefined);
   readonly paramsChange = output<SectionParams>();
 

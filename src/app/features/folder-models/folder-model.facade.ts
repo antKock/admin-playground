@@ -5,16 +5,14 @@ import { Injectable, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { FolderModelDomainStore } from '@domains/folder-models/folder-model.store';
-import { FolderModelCreate, FolderModelUpdate, SectionModelUpdate } from '@domains/folder-models/folder-model.models';
-import { SectionKey, SECTION_TYPE_MAP, FIXED_SECTION_TYPES } from '@shared/components/section-card/section-card.models';
+import { FolderModelCreate, FolderModelUpdate } from '@domains/folder-models/folder-model.models';
+import { buildMergedFixedSections } from '@features/shared/section-indicators/build-merged-fixed-sections';
+import { createSectionFacadeHelpers } from '@features/shared/section-indicators/section-facade.helpers';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { ToastService } from '@shared/components/toast/toast.service';
-import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { FilterParams } from '@domains/shared/with-cursor-pagination';
-import { buildSectionAssociationInputs } from '@features/shared/section-indicators/build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from '@features/shared/section-indicators/section-indicator-param-editor';
 import { FolderModelFeatureStore } from './folder-model.store';
 
 import { DisplaySection } from '@features/shared/section-indicators/display-section.model';
@@ -76,138 +74,45 @@ export class FolderModelFacade {
   readonly indicatorsLoading = this.featureStore.indicatorsLoading;
 
   // Merged fixed sections — always includes application + progress, with stubs for missing
-  readonly mergedFixedSections = computed<DisplaySection[]>(() => {
-    const sections = this.selectedItem()?.sections ?? [];
-    return FIXED_SECTION_TYPES.map((sType, idx) => {
-      const existing = sections.find((s) => s.key === sType);
-      if (existing) return existing as DisplaySection;
-      const config = SECTION_TYPE_MAP[sType];
-      return {
-        id: null,
-        name: config.label,
-        key: sType,
-        is_enabled: true,
-        position: idx,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
-        required_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-        created_at: '',
-        last_updated_at: '',
-        indicators: [],
-      } as DisplaySection;
-    });
-  });
+  readonly mergedFixedSections = computed<DisplaySection[]>(() =>
+    buildMergedFixedSections(this.selectedItem()?.sections ?? []),
+  );
 
-  // --- Section indicator parameter edit sub-system ---
-  private readonly sectionParamEditor = createSectionIndicatorParamEditor(() => {
-    const sections = this.selectedItem()?.sections ?? [];
-    return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
-  });
+  // --- Section indicator operations (shared helpers) ---
+  private readonly _sectionHelpers = createSectionFacadeHelpers(
+    {
+      toast: this.toast,
+      getSelectedItem: () => this.selectedItem(),
+      updateSectionIndicatorsMutation: (sectionId, data) =>
+        this.domainStore.updateSectionIndicatorsMutation({ folderModelId: this.selectedItem()!.id, sectionId, data }),
+      createSectionMutation: (data) =>
+        this.domainStore.createSectionMutation({ folderModelId: this.selectedItem()!.id, data }),
+      updateSectionMutation: (sectionId, data) =>
+        this.domainStore.updateSectionMutation({ folderModelId: this.selectedItem()!.id, sectionId, data } as any),
+      refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
+    },
+    () => {
+      const sections = this.selectedItem()?.sections ?? [];
+      return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
+    },
+  );
 
-  readonly sectionParamEdits = this.sectionParamEditor.edits;
-  readonly unsavedCount = this.sectionParamEditor.unsavedCount;
-  readonly modifiedIds = this.sectionParamEditor.modifiedIds;
-
-  getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-    return this.sectionParamEditor.getParamsForIndicator(sectionId, indicatorId);
-  }
-
-  getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
-    return this.sectionParamEditor.getParamsForChild(sectionId, parentId, childId);
-  }
-
-  updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-    this.sectionParamEditor.updateParams(sectionId, indicatorId, params);
-  }
-
-  updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
-    this.sectionParamEditor.updateChildParams(sectionId, parentId, childId, params);
-  }
-
-  getEditsForSection(sectionId: string): Map<string, IndicatorParams> {
-    return this.sectionParamEditor.getEditsForSection(sectionId);
-  }
-
-  isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
-    return this.sectionParamEditor.isModified(sectionId, indicatorId);
-  }
-
-  discardParamEdits(): void {
-    this.sectionParamEditor.discard();
-  }
-
-  async saveParamEdits(): Promise<void> {
-    const validationError = this.sectionParamEditor.validateRules();
-    if (validationError) {
-      this.toast.error(validationError);
-      return;
-    }
-
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const editedSectionIds = this.sectionParamEditor.editedSectionIds();
-    if (editedSectionIds.size === 0) return;
-
-    const sections = m.sections ?? [];
-    let hasError = false;
-
-    for (const sectionId of editedSectionIds) {
-      const section = sections.find((s) => s.id === sectionId);
-      if (!section) continue;
-
-      const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
-      const inputs = buildSectionAssociationInputs(section.indicators ?? [], sectionEdits);
-
-      const result = await this.domainStore.updateSectionIndicatorsMutation({
-        folderModelId: m.id,
-        sectionId,
-        data: inputs,
-      });
-      if (result.status === 'error') {
-        handleMutationError(this.toast, result.error);
-        hasError = true;
-        break;
-      }
-    }
-
-    if (!hasError) {
-      this.toast.success('Paramètres enregistrés');
-      this.sectionParamEditor.discard();
-      this.domainStore.selectById(m.id);
-    }
-  }
-
-  async reorderSectionIndicators(sectionId: string, orderedIds: string[]): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const section = (m.sections ?? []).find((s) => s.id === sectionId);
-    if (!section) return;
-
-    const indicators = section.indicators ?? [];
-    const reordered = orderedIds
-      .map((id) => indicators.find((ind) => ind.id === id))
-      .filter((ind): ind is NonNullable<typeof ind> => !!ind);
-
-    const sectionEdits = this.sectionParamEditor.getEditsForSection(sectionId);
-    const inputs = buildSectionAssociationInputs(reordered, sectionEdits);
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      folderModelId: m.id,
-      sectionId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.domainStore.selectById(m.id);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error);
-      this.domainStore.selectById(m.id);
-    }
-  }
+  readonly sectionParamEdits = this._sectionHelpers.sectionParamEdits;
+  readonly unsavedCount = this._sectionHelpers.unsavedCount;
+  readonly modifiedIds = this._sectionHelpers.modifiedIds;
+  readonly getSectionIndicatorParams = this._sectionHelpers.getSectionIndicatorParams;
+  readonly getSectionChildParams = this._sectionHelpers.getSectionChildParams;
+  readonly updateSectionIndicatorParams = this._sectionHelpers.updateSectionIndicatorParams;
+  readonly updateSectionChildParams = this._sectionHelpers.updateSectionChildParams;
+  readonly getEditsForSection = this._sectionHelpers.getEditsForSection;
+  readonly isSectionIndicatorModified = this._sectionHelpers.isSectionIndicatorModified;
+  readonly discardParamEdits = this._sectionHelpers.discardParamEdits;
+  readonly saveParamEdits = this._sectionHelpers.saveParamEdits;
+  readonly reorderSectionIndicators = this._sectionHelpers.reorderSectionIndicators;
+  readonly addIndicatorToSection = this._sectionHelpers.addIndicatorToSection;
+  readonly removeIndicatorFromSection = this._sectionHelpers.removeIndicatorFromSection;
+  readonly ensureSectionExists = this._sectionHelpers.ensureSectionExists;
+  readonly updateSectionParams = this._sectionHelpers.updateSectionParams;
 
   // Intention methods
   loadAssociationData(): void {
@@ -228,7 +133,7 @@ export class FolderModelFacade {
 
   clearSelection(): void {
     this.domainStore.clearSelection();
-    this.sectionParamEditor.discard();
+    this._sectionHelpers.discardParamEdits();
   }
 
   async create(data: FolderModelCreate): Promise<void> {
@@ -262,126 +167,7 @@ export class FolderModelFacade {
     }
   }
 
-  async updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: SectionModelUpdate): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    let resolvedId = sectionId;
-    if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionKey);
-      if (!resolvedId) return;
-    }
-
-    const result = await this.domainStore.updateSectionMutation({
-      folderModelId: m.id,
-      sectionId: resolvedId,
-      data: params,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Paramètres de section enregistrés');
-      this.domainStore.selectById(m.id);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de mettre à jour la section');
-    }
-  }
-
   loadIndicators(): void {
     this.imDomainStore.loadAll(undefined);
-  }
-
-  async addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    let resolvedId = sectionId;
-    if (!resolvedId) {
-      resolvedId = await this.ensureSectionExists(sectionKey);
-      if (!resolvedId) return;
-    }
-
-    const section = (m.sections ?? []).find((s) => s.id === resolvedId);
-    const existing = section?.indicators ?? [];
-    const inputs = [
-      ...buildSectionAssociationInputs(existing),
-      {
-        indicator_model_id: indicatorModelId,
-        hidden_rule: 'false',
-        required_rule: 'false',
-        disabled_rule: 'false',
-        default_value_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-        position: existing.length,
-      },
-    ];
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      folderModelId: m.id,
-      sectionId: resolvedId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur ajouté à la section');
-      this.domainStore.selectById(m.id);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible d\'ajouter l\'indicateur');
-    }
-  }
-
-  async removeIndicatorFromSection(sectionId: string, indicatorModelId: string): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const section = (m.sections ?? []).find((s) => s.id === sectionId);
-    if (!section) return;
-
-    const remaining = (section.indicators ?? []).filter((ind) => ind.id !== indicatorModelId);
-    const inputs = buildSectionAssociationInputs(remaining);
-
-    const result = await this.domainStore.updateSectionIndicatorsMutation({
-      folderModelId: m.id,
-      sectionId,
-      data: inputs,
-    });
-    if (result.status === 'success') {
-      this.toast.success('Indicateur retiré de la section');
-      this.domainStore.selectById(m.id);
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de retirer l\'indicateur');
-    }
-  }
-
-  async ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
-    const m = this.selectedItem();
-    if (!m) return null;
-
-    const existing = (m.sections ?? []).find((s) => s.key === sectionKey);
-    if (existing) return existing.id;
-
-    const config = SECTION_TYPE_MAP[sectionKey];
-    const result = await this.domainStore.createSectionMutation({
-      folderModelId: m.id,
-      data: {
-        key: sectionKey,
-        name: config.label,
-        is_enabled: true,
-        position: 0,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
-        required_rule: 'false',
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
-        constrained_rule: 'false',
-      },
-    });
-
-    if (result.status === 'success') {
-      return (result.value as { id: string }).id;
-    } else if (result.status === 'error') {
-      handleMutationError(this.toast, result.error, 'Impossible de créer la section');
-      return null;
-    }
-    return null;
   }
 }
