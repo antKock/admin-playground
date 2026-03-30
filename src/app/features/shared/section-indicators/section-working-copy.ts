@@ -52,12 +52,15 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** Normalize null/undefined/'false' to 'false' for comparison purposes. */
+/** Normalize null/undefined to 'false' for comparison and API serialization. */
 function norm(value: string | null | undefined): string {
   return value ?? 'false';
 }
 
-function occurrenceRuleEqual(
+/** Alias for API payloads — same logic as norm(). */
+const ruleForApi = norm;
+
+export function occurrenceRuleEqual(
   a: { min: string; max: string } | null | undefined,
   b: { min: string; max: string } | null | undefined,
 ): boolean {
@@ -133,10 +136,6 @@ function extractSectionParams(s: DisplaySection): SectionParams {
     },
     constrained_rule: s.constrained_rule,
   };
-}
-
-function ruleForApi(value: string | null | undefined): string {
-  return value ?? 'false';
 }
 
 function buildIndicatorInputs(indicators: SectionIndicatorModelRead[]): SectionIndicatorAssociationInput[] {

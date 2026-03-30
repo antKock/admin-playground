@@ -46,13 +46,10 @@ export class EntityModelFacade {
 
   // Mutation status signals (directly from domain store)
   readonly updateIsPending = this.domainStore.updateMutationIsPending;
-  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
-  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
-  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
-  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  // Section mutation status (combined — individual signals not exposed since batch save)
   readonly sectionMutationPending = computed(() =>
-    this.createSectionIsPending() || this.deleteSectionIsPending() ||
-    this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+    this.domainStore.createSectionMutationIsPending() || this.domainStore.deleteSectionMutationIsPending() ||
+    this.domainStore.updateSectionMutationIsPending() || this.domainStore.updateSectionIndicatorsMutationIsPending(),
   );
 
   // --- Section indicator operations (shared helpers) ---

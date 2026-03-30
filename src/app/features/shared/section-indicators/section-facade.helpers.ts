@@ -7,10 +7,10 @@
  */
 import { components } from '@app/core/api/generated/api-types';
 import { SectionKey } from '@shared/components/section-card/section-card.models';
-import { IndicatorParams, OccurrenceRule } from '@app/shared/components/indicator-card/indicator-card.component';
+import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SectionParams } from '@shared/components/section-card/section-params-editor.component';
 import { ToastService } from '@shared/components/toast/toast.service';
-import { createSectionWorkingCopy, SaveCallbacks } from './section-working-copy';
+import { createSectionWorkingCopy, occurrenceRuleEqual, SaveCallbacks } from './section-working-copy';
 import { DisplaySection } from './display-section.model';
 
 type SectionIndicatorModelRead = components['schemas']['SectionIndicatorModelRead'];
@@ -35,19 +35,13 @@ export interface SectionFacadeContext {
   refresh: () => void;
 }
 
-function occurrenceRuleEquals(a: OccurrenceRule | null | undefined, b: OccurrenceRule | null | undefined): boolean {
-  if (a == null && b == null) return true;
-  if (a == null || b == null) return false;
-  return a.min === b.min && a.max === b.max;
-}
-
 function isParamModified(original: IndicatorParams, current: IndicatorParams): boolean {
   return (
     (original.hidden_rule ?? 'false') !== (current.hidden_rule ?? 'false') ||
     (original.required_rule ?? 'false') !== (current.required_rule ?? 'false') ||
     (original.disabled_rule ?? 'false') !== (current.disabled_rule ?? 'false') ||
     (original.default_value_rule ?? 'false') !== (current.default_value_rule ?? 'false') ||
-    !occurrenceRuleEquals(current.occurrence_rule, original.occurrence_rule) ||
+    !occurrenceRuleEqual(current.occurrence_rule, original.occurrence_rule) ||
     (original.constrained_rule ?? 'false') !== (current.constrained_rule ?? 'false')
   );
 }
@@ -155,16 +149,12 @@ export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
   }
 
   return {
-    // New API
     isDirty,
     workingSections,
-    save,
-    discard,
+    unsavedCount,
 
     // Working copy instance (for advanced usage)
     workingCopy: wc,
-
-    unsavedCount,
 
     getSectionIndicatorParams,
     getSectionChildParams,
@@ -172,11 +162,10 @@ export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
     updateSectionChildParams,
     isSectionIndicatorModified,
 
-    // Backward compat aliases
-    discardParamEdits: discard,
     saveParamEdits: save,
+    discardParamEdits: discard,
 
-    // Section operations (now local-only)
+    // Section operations (all local-only until saveParamEdits)
     reorderSectionIndicators,
     addIndicatorToSection,
     removeIndicatorFromSection,

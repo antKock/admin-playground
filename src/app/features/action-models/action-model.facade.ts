@@ -58,14 +58,10 @@ export class ActionModelFacade {
   readonly associationSections = this.featureStore.associationSections;
   readonly fixedSections = this.featureStore.fixedSections;
 
-  // Section mutation status
-  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
-  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
-  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
-  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  // Section mutation status (combined — individual signals not exposed since batch save)
   readonly sectionMutationPending = computed(() =>
-    this.createSectionIsPending() || this.deleteSectionIsPending() ||
-    this.updateSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+    this.domainStore.createSectionMutationIsPending() || this.domainStore.deleteSectionMutationIsPending() ||
+    this.domainStore.updateSectionMutationIsPending() || this.domainStore.updateSectionIndicatorsMutationIsPending(),
   );
 
   // Merged fixed sections — always includes both application + progress, with stubs for missing

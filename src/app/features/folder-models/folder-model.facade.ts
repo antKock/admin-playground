@@ -62,14 +62,10 @@ export class FolderModelFacade {
     this.createIsPending() || this.updateIsPending() || this.deleteIsPending(),
   );
 
-  // Section mutation status
-  readonly createSectionIsPending = this.domainStore.createSectionMutationIsPending;
-  readonly updateSectionIsPending = this.domainStore.updateSectionMutationIsPending;
-  readonly deleteSectionIsPending = this.domainStore.deleteSectionMutationIsPending;
-  readonly updateSectionIndicatorsIsPending = this.domainStore.updateSectionIndicatorsMutationIsPending;
+  // Section mutation status (combined — individual signals not exposed since batch save)
   readonly sectionMutationPending = computed(() =>
-    this.createSectionIsPending() || this.updateSectionIsPending() ||
-    this.deleteSectionIsPending() || this.updateSectionIndicatorsIsPending(),
+    this.domainStore.createSectionMutationIsPending() || this.domainStore.updateSectionMutationIsPending() ||
+    this.domainStore.deleteSectionMutationIsPending() || this.domainStore.updateSectionIndicatorsMutationIsPending(),
   );
 
   // Cross-domain: indicator model signals
