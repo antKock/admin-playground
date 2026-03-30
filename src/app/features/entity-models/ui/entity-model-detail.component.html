@@ -38,7 +38,7 @@
             [sectionName]="view.section.name"
             [sectionType]="view.section.key"
             [indicatorCount]="(view.section.indicators ?? []).length"
-            [collapsed]="false"
+            [collapsed]="true"
           >
             <app-section-params-editor
               [params]="getSectionParams(view.section)"

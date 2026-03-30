@@ -51,6 +51,7 @@ describe('SectionCardComponent', () => {
   });
 
   it('should not show badge when expanded', () => {
+    fixture.componentRef.setInput('collapsed', false);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('indicateur');
   });
@@ -107,6 +108,11 @@ describe('SectionCardComponent (content projection)', () => {
   });
 
   it('should project content when expanded', () => {
+    // Default is collapsed — expand by clicking header
+    const header = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
+    header.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('.projected-content')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Projected content');
   });

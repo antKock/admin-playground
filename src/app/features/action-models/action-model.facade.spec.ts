@@ -493,23 +493,27 @@ describe('ActionModelFacade', () => {
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithFixedSections);
 
       const merged = facade.mergedFixedSections();
-      expect(merged).toHaveLength(2);
+      expect(merged).toHaveLength(3);
       expect(merged[0].key).toBe('application');
       expect(merged[0].id).toBe('sec-app');
       expect(merged[1].key).toBe('progress');
       expect(merged[1].id).toBeNull();
+      expect(merged[2].key).toBe('financial');
+      expect(merged[2].id).toBeNull();
     });
 
-    it('should create stubs for both missing fixed sections', () => {
+    it('should create stubs for all missing fixed sections', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush({ ...mockActionModel, sections: [] });
 
       const merged = facade.mergedFixedSections();
-      expect(merged).toHaveLength(2);
+      expect(merged).toHaveLength(3);
       expect(merged[0].id).toBeNull();
       expect(merged[0].name).toBe('Candidature');
       expect(merged[1].id).toBeNull();
       expect(merged[1].name).toBe('Suivi');
+      expect(merged[2].id).toBeNull();
+      expect(merged[2].name).toBe('Financier');
     });
   });
 

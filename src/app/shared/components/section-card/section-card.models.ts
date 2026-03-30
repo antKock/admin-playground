@@ -26,6 +26,7 @@ export const ASSOCIATION_SECTION_TYPES: SectionKey[] = [
 export const FIXED_SECTION_TYPES: SectionKey[] = [
   'application',
   'progress',
+  'financial',
 ];
 
 export function isAssociationSection(section: { association_entity_type?: string | null }): boolean {

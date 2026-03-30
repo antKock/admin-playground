@@ -11,7 +11,7 @@ export class SectionCardComponent {
   readonly sectionName = input.required<string>();
   readonly sectionType = input.required<SectionKey>();
   readonly indicatorCount = input(0);
-  readonly collapsed = input(false);
+  readonly collapsed = input(true);
 
   readonly toggleCollapse = output<void>();
 

@@ -146,9 +146,15 @@ describe('EntityModelDetailComponent', () => {
     expect(sectionCard).toBeTruthy();
   });
 
-  it('should render indicator within additional_info section', () => {
+  it('should render indicator within additional_info section after expanding', () => {
     initAndFlush();
     const el = fixture.nativeElement as HTMLElement;
+
+    // Section is collapsed by default — expand it by clicking the header
+    const header = el.querySelector('app-section-card [role="button"]') as HTMLElement;
+    header.click();
+    fixture.detectChanges();
+
     expect(el.textContent).toContain('Population');
     expect(el.textContent).toContain('number');
   });

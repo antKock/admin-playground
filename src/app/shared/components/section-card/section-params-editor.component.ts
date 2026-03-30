@@ -38,25 +38,27 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
         }
       </div>
 
-      <!-- Obligatoire -->
-      <div>
-        <app-toggle-row
-          label="Obligatoire"
-          [icon]="Asterisk"
-          [enabled]="isOverridden(params().required_rule)"
-          (toggled)="onToggle('required_rule', $event)"
-        />
-        @if (isOverridden(params().required_rule)) {
-          <div class="pl-8 pb-1">
-            <app-rule-field
-              [value]="isCustomRule(params().required_rule) ? params().required_rule : ''"
-              [modelType]="modelType()"
-              [modelId]="modelId()"
-              (valueChange)="onRuleChange('required_rule', $event)"
-            />
-          </div>
-        }
-      </div>
+      @if (isAssociation()) {
+        <!-- Obligatoire -->
+        <div>
+          <app-toggle-row
+            label="Obligatoire"
+            [icon]="Asterisk"
+            [enabled]="isOverridden(params().required_rule)"
+            (toggled)="onToggle('required_rule', $event)"
+          />
+          @if (isOverridden(params().required_rule)) {
+            <div class="pl-8 pb-1">
+              <app-rule-field
+                [value]="isCustomRule(params().required_rule) ? params().required_rule : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                (valueChange)="onRuleChange('required_rule', $event)"
+              />
+            </div>
+          }
+        </div>
+      }
 
       <!-- Non éditable -->
       <div>
@@ -78,59 +80,62 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
         }
       </div>
 
-      <!-- Occurrences -->
-      <div>
-        <app-toggle-row
-          label="Occurrences"
-          [icon]="CopyIcon"
-          [enabled]="isOccurrenceOverridden()"
-          (toggled)="onOccurrenceToggle($event)"
-        />
-        @if (isOccurrenceOverridden()) {
-          <div class="pl-8 pb-1 flex gap-2">
-            <app-rule-field
-              placeholder="Min"
-              [value]="isCustomRule(params().occurrence_rule.min) ? params().occurrence_rule.min : ''"
-              [modelType]="modelType()"
-              [modelId]="modelId()"
-              (valueChange)="onOccurrenceMinChange($event)"
-            />
-            <app-rule-field
-              placeholder="Max"
-              [value]="isCustomRule(params().occurrence_rule.max) ? params().occurrence_rule.max : ''"
-              [modelType]="modelType()"
-              [modelId]="modelId()"
-              (valueChange)="onOccurrenceMaxChange($event)"
-            />
-          </div>
-        }
-      </div>
+      @if (isAssociation()) {
+        <!-- Occurrences -->
+        <div>
+          <app-toggle-row
+            label="Occurrences"
+            [icon]="CopyIcon"
+            [enabled]="isOccurrenceOverridden()"
+            (toggled)="onOccurrenceToggle($event)"
+          />
+          @if (isOccurrenceOverridden()) {
+            <div class="pl-8 pb-1 flex gap-2">
+              <app-rule-field
+                placeholder="Min"
+                [value]="isCustomRule(params().occurrence_rule.min) ? params().occurrence_rule.min : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                (valueChange)="onOccurrenceMinChange($event)"
+              />
+              <app-rule-field
+                placeholder="Max"
+                [value]="isCustomRule(params().occurrence_rule.max) ? params().occurrence_rule.max : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                (valueChange)="onOccurrenceMaxChange($event)"
+              />
+            </div>
+          }
+        </div>
 
-      <!-- Contrainte -->
-      <div>
-        <app-toggle-row
-          label="Contrainte"
-          [icon]="Braces"
-          [enabled]="isOverridden(params().constrained_rule)"
-          (toggled)="onToggle('constrained_rule', $event)"
-        />
-        @if (isOverridden(params().constrained_rule)) {
-          <div class="pl-8 pb-1">
-            <app-rule-field
-              [value]="isCustomRule(params().constrained_rule) ? params().constrained_rule : ''"
-              [modelType]="modelType()"
-              [modelId]="modelId()"
-              (valueChange)="onRuleChange('constrained_rule', $event)"
-            />
-          </div>
-        }
-      </div>
+        <!-- Contrainte -->
+        <div>
+          <app-toggle-row
+            label="Contrainte"
+            [icon]="Braces"
+            [enabled]="isOverridden(params().constrained_rule)"
+            (toggled)="onToggle('constrained_rule', $event)"
+          />
+          @if (isOverridden(params().constrained_rule)) {
+            <div class="pl-8 pb-1">
+              <app-rule-field
+                [value]="isCustomRule(params().constrained_rule) ? params().constrained_rule : ''"
+                [modelType]="modelType()"
+                [modelId]="modelId()"
+                (valueChange)="onRuleChange('constrained_rule', $event)"
+              />
+            </div>
+          }
+        </div>
+      }
     </div>
   `,
 })
 export class SectionParamsEditorComponent {
   readonly params = input.required<SectionParams>();
   readonly isPending = input(false);
+  readonly isAssociation = input(false);
   readonly modelType = input<'action' | 'folder' | 'entity' | undefined>(undefined);
   readonly modelId = input<string | undefined>(undefined);
   readonly paramsChange = output<SectionParams>();

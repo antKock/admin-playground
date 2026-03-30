@@ -64,13 +64,12 @@
       <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
       <div id="section-fixed-sections" class="mt-6">
         <h2 class="text-lg font-semibold text-text-primary mb-4">Sections</h2>
-        <div class="space-y-3">
+        <div class="space-y-8">
           @for (view of fixedSectionViews(); track view.section.key) {
             <app-section-card
               [sectionName]="view.section.name"
               [sectionType]="view.section.key"
               [indicatorCount]="(view.section.indicators ?? []).length"
-              [collapsed]="true"
             >
               <app-section-params-editor
                 [params]="getSectionParams(view.section)"

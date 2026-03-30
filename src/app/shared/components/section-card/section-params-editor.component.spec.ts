@@ -28,7 +28,14 @@ describe('SectionParamsEditorComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render all 5 toggle rows', () => {
+  it('should render 2 toggle rows by default (non-association)', () => {
+    fixture.detectChanges();
+    const toggles = fixture.nativeElement.querySelectorAll('app-toggle-row');
+    expect(toggles.length).toBe(2);
+  });
+
+  it('should render all 5 toggle rows when isAssociation is true', () => {
+    fixture.componentRef.setInput('isAssociation', true);
     fixture.detectChanges();
     const toggles = fixture.nativeElement.querySelectorAll('app-toggle-row');
     expect(toggles.length).toBe(5);
