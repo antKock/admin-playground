@@ -6,32 +6,28 @@
  * orchestration logic (validate, mutate, toast, refresh).
  */
 import { components } from '@app/core/api/generated/api-types';
+import { MutationResult } from '@angular-architects/ngrx-toolkit';
 import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
 import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { buildSectionAssociationInputs } from './build-section-association-inputs';
 import { createSectionIndicatorParamEditor } from './section-indicator-param-editor';
+import { SECTION_RULE_DEFAULTS } from './display-section.model';
 
 type SectionIndicatorModelRead = components['schemas']['SectionIndicatorModelRead'];
 type SectionIndicatorAssociationInput = components['schemas']['SectionIndicatorAssociationInput'];
-
-/** Result shape returned by httpMutation — we only inspect status + error/value. */
-interface MutationResult {
-  status: string;
-  value?: unknown;
-  error?: unknown;
-}
+type SectionModelUpdate = components['schemas']['SectionModelUpdate'];
 
 export interface SectionFacadeContext {
   toast: ToastService;
   getSelectedItem(): { sections?: { id: string; key: string; indicators?: SectionIndicatorModelRead[] }[] } | null;
-  updateSectionIndicatorsMutation(sectionId: string, data: SectionIndicatorAssociationInput[]): Promise<MutationResult>;
+  updateSectionIndicatorsMutation(sectionId: string, data: SectionIndicatorAssociationInput[]): Promise<MutationResult<unknown>>;
   createSectionMutation(data: { key: SectionKey; name: string; is_enabled: boolean; position: number;
     hidden_rule: string; disabled_rule: string; required_rule: string;
     occurrence_min_rule: string; occurrence_max_rule: string; constrained_rule: string;
-  }): Promise<MutationResult>;
-  updateSectionMutation(sectionId: string, data: unknown): Promise<MutationResult>;
+  }): Promise<MutationResult<{ id: string }>>;
+  updateSectionMutation(sectionId: string, data: SectionModelUpdate): Promise<MutationResult<unknown>>;
   refresh(): void;
 }
 
@@ -126,13 +122,8 @@ export async function addIndicatorToSection(
     ...buildSectionAssociationInputs(existing),
     {
       indicator_model_id: indicatorModelId,
-      hidden_rule: 'false',
-      required_rule: 'false',
-      disabled_rule: 'false',
+      ...SECTION_RULE_DEFAULTS,
       default_value_rule: 'false',
-      occurrence_min_rule: 'false',
-      occurrence_max_rule: 'false',
-      constrained_rule: 'false',
       position: existing.length,
     },
   ];
@@ -185,16 +176,11 @@ export async function ensureSectionExists(
     name: config.label,
     is_enabled: true,
     position: 0,
-    hidden_rule: 'false',
-    disabled_rule: 'false',
-    required_rule: 'false',
-    occurrence_min_rule: 'false',
-    occurrence_max_rule: 'false',
-    constrained_rule: 'false',
+    ...SECTION_RULE_DEFAULTS,
   });
 
   if (result.status === 'success') {
-    return (result.value as { id: string }).id;
+    return result.value.id;
   } else if (result.status === 'error') {
     handleMutationError(ctx.toast, result.error, 'Impossible de créer la section');
     return null;
@@ -206,7 +192,7 @@ export async function updateSectionParams(
   ctx: SectionFacadeContext,
   sectionId: string | null,
   sectionKey: SectionKey,
-  params: unknown,
+  params: SectionModelUpdate,
 ): Promise<void> {
   const m = ctx.getSelectedItem();
   if (!m) return;
@@ -279,7 +265,7 @@ export function createSectionFacadeHelpers(
     ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
       return ensureSectionExists(ctx, sectionKey);
     },
-    updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: unknown): Promise<void> {
+    updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: SectionModelUpdate): Promise<void> {
       return updateSectionParams(ctx, sectionId, sectionKey, params);
     },
   };

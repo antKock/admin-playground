@@ -93,7 +93,7 @@ export class ActionModelFacade {
       createSectionMutation: (data) =>
         this.domainStore.createSectionMutation({ actionModelId: this.selectedItem()!.id, data }),
       updateSectionMutation: (sectionId, data) =>
-        this.domainStore.updateSectionMutation({ actionModelId: this.selectedItem()!.id, sectionId, data } as any),
+        this.domainStore.updateSectionMutation({ actionModelId: this.selectedItem()!.id, sectionId, data }),
       refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
     },
     () => {

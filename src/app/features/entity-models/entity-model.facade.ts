@@ -10,6 +10,7 @@ import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-m
 import { ToastService } from '@shared/components/toast/toast.service';
 import { handleMutationError } from '@domains/shared/mutation-error-handler';
 import { createSectionFacadeHelpers } from '@features/shared/section-indicators/section-facade.helpers';
+import { SectionKey } from '@shared/components/section-card/section-card.models';
 import { EntityModelFeatureStore } from './entity-model.store';
 
 @Injectable({ providedIn: 'root' })
@@ -62,7 +63,7 @@ export class EntityModelFacade {
       createSectionMutation: (data) =>
         this.domainStore.createSectionMutation({ entityType: this.selectedItem()!.entity_type, data }),
       updateSectionMutation: (sectionId, data) =>
-        this.domainStore.updateSectionMutation({ entityType: this.selectedItem()!.entity_type, sectionId, data } as any),
+        this.domainStore.updateSectionMutation({ entityType: this.selectedItem()!.entity_type, sectionId, data }),
       refresh: () => this.domainStore.selectByType(this.selectedItem()!.entity_type),
     },
     () => {
@@ -115,7 +116,7 @@ export class EntityModelFacade {
     }
   }
 
-  async ensureSectionExists(sectionKey: import('@shared/components/section-card/section-card.models').SectionKey): Promise<string | null> {
+  async ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
     return this._sectionHelpers.ensureSectionExists(sectionKey);
   }
 }

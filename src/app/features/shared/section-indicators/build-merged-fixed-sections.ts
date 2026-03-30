@@ -1,6 +1,7 @@
 import { components } from '@app/core/api/generated/api-types';
 import { FIXED_SECTION_TYPES, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { DisplaySection } from './display-section.model';
+import { SECTION_RULE_DEFAULTS } from './display-section.model';
 
 type SectionModelWithIndicators = components['schemas']['SectionModelWithIndicators'];
 
@@ -21,12 +22,7 @@ export function buildMergedFixedSections(
       key: sType,
       is_enabled: true,
       position: idx,
-      hidden_rule: 'false',
-      disabled_rule: 'false',
-      required_rule: 'false',
-      occurrence_min_rule: 'false',
-      occurrence_max_rule: 'false',
-      constrained_rule: 'false',
+      ...SECTION_RULE_DEFAULTS,
       created_at: '',
       last_updated_at: '',
       indicators: [],

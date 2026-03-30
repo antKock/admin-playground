@@ -88,7 +88,7 @@ export class FolderModelFacade {
       createSectionMutation: (data) =>
         this.domainStore.createSectionMutation({ folderModelId: this.selectedItem()!.id, data }),
       updateSectionMutation: (sectionId, data) =>
-        this.domainStore.updateSectionMutation({ folderModelId: this.selectedItem()!.id, sectionId, data } as any),
+        this.domainStore.updateSectionMutation({ folderModelId: this.selectedItem()!.id, sectionId, data }),
       refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
     },
     () => {
