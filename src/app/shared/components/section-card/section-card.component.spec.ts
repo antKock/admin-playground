@@ -34,26 +34,20 @@ describe('SectionCardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('📋');
   });
 
-  it('should show indicator count badge when collapsed', () => {
+  it('should show "Paramètres" hint when collapsed', () => {
     fixture.componentRef.setInput('collapsed', true);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('3 indicateurs');
+    expect(fixture.nativeElement.textContent).toContain('Paramètres');
+    expect(fixture.nativeElement.textContent).not.toContain('Masquer');
   });
 
-  it('should show singular "indicateur" for count of 1', () => {
-    fixture.componentRef.setInput('collapsed', true);
-    fixture.componentRef.setInput('indicatorCount', 1);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('1 indicateur');
-    expect(fixture.nativeElement.textContent).not.toContain('indicateurs');
-  });
-
-  it('should not show badge when expanded', () => {
+  it('should show "Masquer" when expanded', () => {
     fixture.componentRef.setInput('collapsed', false);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('indicateur');
+
+    expect(fixture.nativeElement.textContent).toContain('Masquer');
+    expect(fixture.nativeElement.textContent).not.toContain('Paramètres');
   });
 
   it('should toggle collapse on header click', () => {
@@ -73,15 +67,16 @@ describe('SectionCardComponent', () => {
     fixture.componentRef.setInput('collapsed', true);
     fixture.detectChanges();
 
-    // Badge visible when collapsed
-    expect(fixture.nativeElement.textContent).toContain('3 indicateurs');
+    // "Paramètres" hint visible when collapsed
+    expect(fixture.nativeElement.textContent).toContain('Paramètres');
 
     const header = fixture.nativeElement.querySelector('.cursor-pointer');
     header.click();
     fixture.detectChanges();
 
-    // Badge hidden after expanding
-    expect(fixture.nativeElement.textContent).not.toContain('indicateurs');
+    // "Masquer" shown after expanding
+    expect(fixture.nativeElement.textContent).toContain('Masquer');
+    expect(fixture.nativeElement.textContent).not.toContain('Paramètres');
   });
 });
 

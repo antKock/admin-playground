@@ -154,21 +154,22 @@
       <hr style="border: none; border-top: 1px solid var(--color-stroke-standard); margin: 32px 0 0;" />
       <div id="section-fixed-sections" class="mt-6">
         <h2 class="text-lg font-semibold text-text-primary mb-4">Sections</h2>
-        <div class="space-y-8">
+        <div class="space-y-6">
           @for (view of fixedSectionViews(); track view.section.key) {
             <app-section-card
               [sectionName]="view.section.name"
               [sectionType]="view.section.key"
               [indicatorCount]="(view.section.indicators ?? []).length"
             >
-              <app-section-params-editor
-                [params]="getSectionParams(view.section)"
-                [isPending]="facade.sectionMutationPending()"
-                modelType="action"
-                [modelId]="model()!.id"
-                (paramsChange)="onSectionParamsChange(view.section, $event)"
-              />
-              <div class="border-t border-dotted border-gray-300 my-3"></div>
+              <div params>
+                <app-section-params-editor
+                  [params]="getSectionParams(view.section)"
+                  [isPending]="facade.sectionMutationPending()"
+                  modelType="action"
+                  [modelId]="model()!.id"
+                  (paramsChange)="onSectionParamsChange(view.section, $event)"
+                />
+              </div>
               @if (view.indicatorCards.length === 0) {
                 <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
               } @else {

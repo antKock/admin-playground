@@ -38,16 +38,16 @@
             [sectionName]="view.section.name"
             [sectionType]="view.section.key"
             [indicatorCount]="(view.section.indicators ?? []).length"
-            [collapsed]="true"
           >
-            <app-section-params-editor
-              [params]="getSectionParams(view.section)"
-              [isPending]="facade.sectionMutationPending()"
-              modelType="entity"
-              [modelId]="model()!.entity_type"
-              (paramsChange)="onSectionParamsChange(view.section, $event)"
-            />
-            <div class="border-t border-dotted border-gray-300 my-3"></div>
+            <div params>
+              <app-section-params-editor
+                [params]="getSectionParams(view.section)"
+                [isPending]="facade.sectionMutationPending()"
+                modelType="entity"
+                [modelId]="model()!.entity_type"
+                (paramsChange)="onSectionParamsChange(view.section, $event)"
+              />
+            </div>
             @if (view.indicatorCards.length === 0) {
               <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
             } @else {

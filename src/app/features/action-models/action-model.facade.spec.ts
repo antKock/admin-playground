@@ -494,11 +494,11 @@ describe('ActionModelFacade', () => {
 
       const merged = facade.mergedFixedSections();
       expect(merged).toHaveLength(3);
-      expect(merged[0].key).toBe('application');
-      expect(merged[0].id).toBe('sec-app');
-      expect(merged[1].key).toBe('progress');
-      expect(merged[1].id).toBeNull();
-      expect(merged[2].key).toBe('financial');
+      expect(merged[0].key).toBe('financial');
+      expect(merged[0].id).toBeNull();
+      expect(merged[1].key).toBe('application');
+      expect(merged[1].id).toBe('sec-app');
+      expect(merged[2].key).toBe('progress');
       expect(merged[2].id).toBeNull();
     });
 
@@ -509,11 +509,11 @@ describe('ActionModelFacade', () => {
       const merged = facade.mergedFixedSections();
       expect(merged).toHaveLength(3);
       expect(merged[0].id).toBeNull();
-      expect(merged[0].name).toBe('Candidature');
+      expect(merged[0].name).toBe('Financier');
       expect(merged[1].id).toBeNull();
-      expect(merged[1].name).toBe('Suivi');
+      expect(merged[1].name).toBe('Candidature');
       expect(merged[2].id).toBeNull();
-      expect(merged[2].name).toBe('Financier');
+      expect(merged[2].name).toBe('Suivi');
     });
   });
 

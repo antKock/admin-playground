@@ -42,12 +42,12 @@ describe('FolderModelDetailComponent', () => {
   it('should compute three merged fixed sections when no sections exist', () => {
     const merged = component.mergedFixedSections();
     expect(merged).toHaveLength(3);
-    expect(merged[0].key).toBe('application');
-    expect(merged[0].name).toBe('Candidature');
-    expect(merged[1].key).toBe('progress');
-    expect(merged[1].name).toBe('Suivi');
-    expect(merged[2].key).toBe('financial');
-    expect(merged[2].name).toBe('Financier');
+    expect(merged[0].key).toBe('financial');
+    expect(merged[0].name).toBe('Financier');
+    expect(merged[1].key).toBe('application');
+    expect(merged[1].name).toBe('Candidature');
+    expect(merged[2].key).toBe('progress');
+    expect(merged[2].name).toBe('Suivi');
   });
 
   it('should delegate section params change to facade', () => {
