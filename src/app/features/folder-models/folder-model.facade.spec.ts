@@ -222,7 +222,7 @@ describe('FolderModelFacade', () => {
     });
   });
 
-  describe('ensureSectionExists', () => {
+  describe('updateSectionParams (local working copy)', () => {
     const mockWithSection = {
       ...mockFolderModel,
       sections: [{
@@ -242,72 +242,24 @@ describe('FolderModelFacade', () => {
       }],
     };
 
-    it('should return existing section ID without API call', async () => {
+    it('should update working copy locally without API call', () => {
       facade.select('fm-1');
       httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSection);
 
-      const id = await facade.ensureSectionExists('application');
-      expect(id).toBe('sec-app');
-    });
-
-    it('should create section and return new ID when not found', async () => {
-      facade.select('fm-1');
-      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush({ ...mockFolderModel, sections: [] });
-
-      const promise = facade.ensureSectionExists('progress');
-
-      const createReq = httpTesting.expectOne((r) =>
-        r.method === 'POST' && r.url.includes('folder-models/fm-1/sections'),
-      );
-      expect(createReq.request.body.key).toBe('progress');
-      createReq.flush({ id: 'sec-new-progress' });
-
-      const id = await promise;
-      expect(id).toBe('sec-new-progress');
-    });
-  });
-
-  describe('updateSectionParams', () => {
-    const mockWithSection = {
-      ...mockFolderModel,
-      sections: [{
-        id: 'sec-app',
-        name: 'Candidature',
-        key: 'application' as const,
-        is_enabled: true,
-        position: 0,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
+      facade.updateSectionParams('sec-app', 'application', {
+        hidden_rule: 'true',
         required_rule: 'false',
+        disabled_rule: 'false',
         occurrence_rule: { min: 'false', max: 'false' },
         constrained_rule: 'false',
-        created_at: '2026-01-01T00:00:00Z',
-        last_updated_at: '2026-01-01T00:00:00Z',
-        indicators: [],
-      }],
-    };
+      });
 
-    it('should update existing section via PUT', async () => {
-      facade.select('fm-1');
-      httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSection);
-
-      const promise = facade.updateSectionParams('sec-app', 'application', { hidden_rule: 'true' });
-
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app'),
-      );
-      expect(putReq.request.body.hidden_rule).toBe('true');
-      putReq.flush({ ...mockWithSection.sections[0], hidden_rule: 'true' });
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Paramètres de section enregistrés');
-
-      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1')).flush(mockWithSection);
+      // No API call expected — change is local
+      expect(facade.isDirty()).toBe(true);
     });
   });
 
-  describe('section indicator management', () => {
+  describe('section indicator management (local working copy)', () => {
     const mockWithSectionAndIndicator = {
       ...mockFolderModel,
       sections: [{
@@ -341,46 +293,25 @@ describe('FolderModelFacade', () => {
       }],
     };
 
-    it('should add indicator to section via PUT replace-all', async () => {
+    it('should add indicator to working copy locally', () => {
       facade.select('fm-1');
       httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSectionAndIndicator);
 
-      const promise = facade.addIndicatorToSection('sec-app', 'application', 'ind-new');
+      facade.addIndicatorToSection('sec-app', 'application', { id: 'ind-new', name: 'New Indicator', technical_label: 'ind_new', type: 'numeric' });
 
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app/indicators'),
-      );
-      expect(putReq.request.body).toHaveLength(2);
-      expect(putReq.request.body[0].indicator_model_id).toBe('ind-1');
-      expect(putReq.request.body[1].indicator_model_id).toBe('ind-new');
-      putReq.flush(mockWithSectionAndIndicator.sections[0]);
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Indicateur ajouté à la section');
-
-      httpTesting.match((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1'))
-        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+      // No API call expected — change is local
+      expect(facade.isDirty()).toBe(true);
+      expect(facade.unsavedCount()).toBeGreaterThan(0);
     });
 
-    it('should remove indicator from section', async () => {
+    it('should remove indicator from working copy locally', () => {
       facade.select('fm-1');
       httpTesting.expectOne((r) => r.url.includes('folder-models/fm-1')).flush(mockWithSectionAndIndicator);
 
-      const promise = facade.removeIndicatorFromSection('sec-app', 'ind-1');
+      facade.removeIndicatorFromSection('sec-app', 'application', 'ind-1');
 
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('folder-models/fm-1/sections/sec-app/indicators'),
-      );
-      expect(putReq.request.body).toHaveLength(0);
-      putReq.flush({ ...mockWithSectionAndIndicator.sections[0], indicators: [] });
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Indicateur retiré de la section');
-
-      httpTesting.match((r) => r.method === 'GET' && r.url.includes('folder-models/fm-1'))
-        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+      // No API call expected — change is local
+      expect(facade.isDirty()).toBe(true);
     });
   });
 

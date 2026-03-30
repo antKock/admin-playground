@@ -82,8 +82,6 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     { label: 'Activité', targetId: 'section-activity' },
   ]);
 
-  readonly mergedFixedSections = this.facade.mergedFixedSections;
-
   readonly pickerOptions = computed<IndicatorOption[]>(() =>
     this.facade.availableIndicators().map((im) => ({
       id: im.id,
@@ -94,15 +92,11 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   );
 
   readonly fixedSectionViews = computed(() =>
-    this.mergedFixedSections().map((section) => {
-      const sectionId = section.id ?? '';
-      const sectionEdits = sectionId ? this._getSectionEdits(sectionId) : undefined;
-      return {
-        section,
-        indicatorCards: buildSectionIndicatorCards(section.indicators ?? [], sectionEdits),
-        attachedIds: (section.indicators ?? []).map((ind) => ind.id),
-      };
-    }),
+    this.facade.workingSections().map((section) => ({
+      section,
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
+      attachedIds: (section.indicators ?? []).map((ind) => ind.id),
+    })),
   );
 
   @HostListener('window:keydown', ['$event'])
@@ -141,22 +135,21 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
-    await this.facade.addIndicatorToSection(section.id, section.key, indicator.id);
+    this.facade.addIndicatorToSection(section.id, section.key, indicator);
   }
 
   async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {
-    if (!section.id) return;
-    await this.facade.removeIndicatorFromSection(section.id, indicatorId);
+    this.facade.removeIndicatorFromSection(section.id, section.key, indicatorId);
   }
 
   onSectionDrop(section: DisplaySection, event: CdkDragDrop<string | null>): void {
-    if (!section.id || event.previousIndex === event.currentIndex) return;
+    if (event.previousIndex === event.currentIndex) return;
 
     const indicators = section.indicators ?? [];
     const ids = indicators.map((ind) => ind.id);
     moveItemInArray(ids, event.previousIndex, event.currentIndex);
 
-    this.facade.reorderSectionIndicators(section.id, ids);
+    this.facade.reorderSectionIndicators(section.id, section.key, ids);
   }
 
   async onSave(): Promise<void> {
@@ -180,7 +173,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   hasUnsavedChanges(): boolean {
-    return this.facade.unsavedCount() > 0;
+    return this.facade.isDirty();
   }
 
   formatDate(value: string | null | undefined): string {
@@ -203,7 +196,4 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     await this.facade.delete(m.id);
   }
 
-  private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    return helpers.getSectionEdits(this.facade, sectionId);
-  }
 }

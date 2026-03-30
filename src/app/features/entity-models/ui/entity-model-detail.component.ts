@@ -20,8 +20,9 @@ import {
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
-import { EntityModelType, SectionModelWithIndicators } from '@domains/entity-models/entity-model.models';
+import { EntityModelType } from '@domains/entity-models/entity-model.models';
 import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
+import { DisplaySection } from '@features/shared/section-indicators/display-section.model';
 import * as helpers from '@features/shared/section-indicators/section-indicator-editing.helpers';
 import { EntityModelFacade } from '../entity-model.facade';
 import { EntityModelFormSectionComponent } from './entity-model-form-section.component';
@@ -89,10 +90,9 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   readonly sectionView = computed(() => {
     const section = this.additionalInfoSection();
     if (!section) return null;
-    const sectionEdits = this._getSectionEdits(section.id);
     return {
       section,
-      indicatorCards: buildSectionIndicatorCards(section.indicators ?? [], sectionEdits),
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
       attachedIds: (section.indicators ?? []).map((ind) => ind.id),
     };
   });
@@ -107,7 +107,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   );
 
   hasUnsavedChanges(): boolean {
-    return (this.formSection()?.hasUnsavedChanges() ?? false) || this.facade.unsavedCount() > 0;
+    return (this.formSection()?.hasUnsavedChanges() ?? false) || this.facade.isDirty();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -127,7 +127,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     this.facade.clearSelection();
   }
 
-  getSectionParams(section: SectionModelWithIndicators): SectionParams {
+  getSectionParams(section: DisplaySection): SectionParams {
     return {
       hidden_rule: section.hidden_rule,
       required_rule: section.required_rule,
@@ -153,30 +153,31 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     helpers.onSectionChildParamsChange(this.facade, sectionId, parentId, event);
   }
 
-  onSectionParamsChange(section: SectionModelWithIndicators, params: SectionParams): void {
+  onSectionParamsChange(section: DisplaySection, params: SectionParams): void {
     this.facade.updateSectionParams(section.id, section.key, params);
   }
 
-  async onSectionAttach(section: SectionModelWithIndicators, indicator: IndicatorOption): Promise<void> {
-    await this.facade.addIndicatorToSection(section.id, section.key, indicator.id);
+  async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
+    this.facade.addIndicatorToSection(section.id, section.key, indicator);
   }
 
-  async onSectionDetach(section: SectionModelWithIndicators, indicatorId: string): Promise<void> {
-    await this.facade.removeIndicatorFromSection(section.id, indicatorId);
+  async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {
+    this.facade.removeIndicatorFromSection(section.id, section.key, indicatorId);
   }
 
-  onSectionDrop(section: SectionModelWithIndicators, event: CdkDragDrop<string>): void {
-    if (!section.id || event.previousIndex === event.currentIndex) return;
+  onSectionDrop(section: DisplaySection, event: CdkDragDrop<string | null>): void {
+    if (event.previousIndex === event.currentIndex) return;
 
     const indicators = section.indicators ?? [];
     const ids = indicators.map((ind) => ind.id);
     moveItemInArray(ids, event.previousIndex, event.currentIndex);
 
-    this.facade.reorderSectionIndicators(section.id, ids);
+    this.facade.reorderSectionIndicators(section.id, section.key, ids);
   }
 
   async onCreateSectionAndAttach(indicator: IndicatorOption): Promise<void> {
-    await this.facade.addIndicatorToSection(null, 'additional_info', indicator.id);
+    this.facade.ensureSectionExists('additional_info');
+    this.facade.addIndicatorToSection(null, 'additional_info', indicator);
   }
 
   async onSave(): Promise<void> {
@@ -187,7 +188,4 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     this.facade.discardParamEdits();
   }
 
-  private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    return helpers.getSectionEdits(this.facade, sectionId);
-  }
 }

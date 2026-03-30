@@ -42,7 +42,7 @@
             <div params>
               <app-section-params-editor
                 [params]="getSectionParams(view.section)"
-                [isPending]="facade.sectionMutationPending()"
+                [isPending]="false"
                 modelType="entity"
                 [modelId]="model()!.entity_type"
                 (paramsChange)="onSectionParamsChange(view.section, $event)"
@@ -61,14 +61,14 @@
                   <div cdkDrag cdkDragLockAxis="y">
                     <app-indicator-card
                       [indicator]="card"
-                      [params]="getSectionIndicatorParams(view.section.id, card.id)"
-                      [childParams]="getSectionChildParamsMap(view.section.id, card)"
-                      [modified]="facade.isSectionIndicatorModified(view.section.id, card.id)"
+                      [params]="getSectionIndicatorParams(view.section.id ?? '', card.id)"
+                      [childParams]="getSectionChildParamsMap(view.section.id ?? '', card)"
+                      [modified]="view.section.id ? facade.isSectionIndicatorModified(view.section.id, card.id) : false"
                       modelType="entity"
                       [modelId]="model()!.entity_type"
                       (remove)="onSectionDetach(view.section, $event)"
-                      (paramsChange)="onSectionIndicatorParamsChange(view.section.id, card.id, $event)"
-                      (childParamsChange)="onSectionChildParamsChange(view.section.id, card.id, $event)"
+                      (paramsChange)="onSectionIndicatorParamsChange(view.section.id ?? '', card.id, $event)"
+                      (childParamsChange)="onSectionChildParamsChange(view.section.id ?? '', card.id, $event)"
                     />
                   </div>
                 }
@@ -100,7 +100,7 @@
 
 <app-save-bar
   [count]="facade.unsavedCount()"
-  [saving]="facade.updateSectionIndicatorsIsPending()"
+  [saving]="facade.sectionMutationPending()"
   (save)="onSave()"
   (discard)="onDiscard()"
 />

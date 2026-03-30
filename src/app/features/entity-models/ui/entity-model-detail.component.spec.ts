@@ -189,12 +189,12 @@ describe('EntityModelDetailComponent', () => {
   });
 
   it('should call facade.removeIndicatorFromSection on detach', async () => {
-    const removeSpy = vi.spyOn(component.facade, 'removeIndicatorFromSection').mockResolvedValue();
+    const removeSpy = vi.spyOn(component.facade, 'removeIndicatorFromSection').mockReturnValue(undefined as never);
     initAndFlush();
 
-    const section = mockEntityModel.sections![0];
+    const section = mockEntityModel.sections![0] as import('@features/shared/section-indicators/display-section.model').DisplaySection;
     await component.onSectionDetach(section, 'ind-1');
 
-    expect(removeSpy).toHaveBeenCalledWith('s-1', 'ind-1');
+    expect(removeSpy).toHaveBeenCalledWith('s-1', 'additional_info', 'ind-1');
   });
 });

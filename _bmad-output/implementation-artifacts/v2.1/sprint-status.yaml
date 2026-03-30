@@ -67,3 +67,19 @@ development_status:
   20-2-entity-models-list-page: done
   20-3-entity-model-detail-page: done
   epic-20-retrospective: optional
+
+  # Epic 21: Occurrence Rule Consolidation
+  epic-21: in-progress
+  21-1-section-occurrence-rule-consolidation: ready-for-dev
+
+  # Epic 22: Unified Batch Save for Model Configurations
+  # Design doc: temp/batch-save-refactor.md
+  # Scope: Action, Folder, Entity models — all section changes saved at once (working copy pattern)
+  # Shared-first: helpers + facades migrate together, then templates, then cleanup
+  # Execution order: 22.1 → 22.2 → 22.3 → 22.4
+  epic-22: in-progress
+  22-1-section-working-copy-shared-helper: review
+  22-2-rewrite-shared-helpers-migrate-facades: review  # depends: 22.1 — rewrites helpers + all 3 facades in one pass
+  22-3-update-detail-components-templates: review      # depends: 22.2 — all 3 model templates + tests
+  22-4-cleanup-legacy-param-editor: review             # depends: 22.2, 22.3
+  epic-22-retrospective: optional

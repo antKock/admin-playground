@@ -40,7 +40,7 @@ describe('FolderModelDetailComponent', () => {
   });
 
   it('should compute three merged fixed sections when no sections exist', () => {
-    const merged = component.mergedFixedSections();
+    const merged = component.facade.mergedFixedSections();
     expect(merged).toHaveLength(3);
     expect(merged[0].key).toBe('financial');
     expect(merged[0].name).toBe('Financier');
@@ -52,14 +52,14 @@ describe('FolderModelDetailComponent', () => {
 
   it('should delegate section params change to facade', () => {
     const updateSpy = vi.spyOn(component.facade, 'updateSectionParams');
-    const section = component.mergedFixedSections()[0];
+    const section = component.facade.mergedFixedSections()[0];
     const params = { hidden_rule: 'true' };
     component.onSectionParamsChange(section, params as import('@app/shared/components/section-card/section-params-editor.component').SectionParams);
     expect(updateSpy).toHaveBeenCalledWith(section.id, section.key, params);
   });
 
   it('should extract section params from DisplaySection', () => {
-    const section = component.mergedFixedSections()[0];
+    const section = component.facade.mergedFixedSections()[0];
     const params = component.getSectionParams(section);
     expect(params.hidden_rule).toBe('false');
     expect(params.required_rule).toBe('false');

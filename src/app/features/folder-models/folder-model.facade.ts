@@ -8,6 +8,9 @@ import { FolderModelDomainStore } from '@domains/folder-models/folder-model.stor
 import { FolderModelCreate, FolderModelUpdate } from '@domains/folder-models/folder-model.models';
 import { buildMergedFixedSections } from '@features/shared/section-indicators/build-merged-fixed-sections';
 import { createSectionFacadeHelpers } from '@features/shared/section-indicators/section-facade.helpers';
+import { SaveCallbacks } from '@features/shared/section-indicators/section-working-copy';
+import { SectionParams } from '@shared/components/section-card/section-params-editor.component';
+import { SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
 import { ToastService } from '@shared/components/toast/toast.service';
@@ -79,39 +82,57 @@ export class FolderModelFacade {
   );
 
   // --- Section indicator operations (shared helpers) ---
-  private readonly _sectionHelpers = createSectionFacadeHelpers(
-    {
-      toast: this.toast,
-      getSelectedItem: () => this.selectedItem(),
-      updateSectionIndicatorsMutation: (sectionId, data) =>
-        this.domainStore.updateSectionIndicatorsMutation({ folderModelId: this.selectedItem()!.id, sectionId, data }),
-      createSectionMutation: (data) =>
-        this.domainStore.createSectionMutation({ folderModelId: this.selectedItem()!.id, data }),
-      updateSectionMutation: (sectionId, data) =>
-        this.domainStore.updateSectionMutation({ folderModelId: this.selectedItem()!.id, sectionId, data }),
-      refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
+  private readonly _sectionHelpers = createSectionFacadeHelpers({
+    toast: this.toast,
+    getSections: () => buildMergedFixedSections(this.selectedItem()?.sections ?? []),
+    buildSaveCallbacks: (): SaveCallbacks => {
+      const modelId = this.selectedItem()!.id;
+      return {
+        createSection: async (key, assocType) => {
+          const config = SECTION_TYPE_MAP[key];
+          const result = await this.domainStore.createSectionMutation({
+            folderModelId: modelId,
+            data: { key, name: config.label, is_enabled: true, position: 0,
+              hidden_rule: 'false', disabled_rule: 'false', required_rule: 'false',
+              occurrence_rule: { min: 'false', max: 'false' }, constrained_rule: 'false',
+              ...(assocType ? { association_entity_type: assocType } : {}),
+            },
+          });
+          return result.status === 'success' ? { id: result.value.id } : { error: 'Impossible de créer la section' };
+        },
+        deleteSection: async (sectionId) => {
+          const result = await this.domainStore.deleteSectionMutation({ folderModelId: modelId, sectionId });
+          if (result.status === 'error') return { error: 'Impossible de supprimer la section' };
+          return;
+        },
+        updateSection: async (sectionId, key, params: SectionParams) => {
+          const result = await this.domainStore.updateSectionMutation({ folderModelId: modelId, sectionId, data: params });
+          if (result.status === 'error') return { error: 'Impossible de mettre à jour la section' };
+          return;
+        },
+        updateSectionIndicators: async (sectionId, indicators) => {
+          const result = await this.domainStore.updateSectionIndicatorsMutation({ folderModelId: modelId, sectionId, data: indicators });
+          if (result.status === 'error') return { error: 'Impossible de mettre à jour les indicateurs' };
+          return;
+        },
+      };
     },
-    () => {
-      const sections = this.selectedItem()?.sections ?? [];
-      return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
-    },
-  );
+    refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
+  });
 
-  readonly sectionParamEdits = this._sectionHelpers.sectionParamEdits;
+  readonly workingSections = this._sectionHelpers.workingSections;
+  readonly isDirty = this._sectionHelpers.isDirty;
   readonly unsavedCount = this._sectionHelpers.unsavedCount;
-  readonly modifiedIds = this._sectionHelpers.modifiedIds;
   readonly getSectionIndicatorParams = this._sectionHelpers.getSectionIndicatorParams;
   readonly getSectionChildParams = this._sectionHelpers.getSectionChildParams;
   readonly updateSectionIndicatorParams = this._sectionHelpers.updateSectionIndicatorParams;
   readonly updateSectionChildParams = this._sectionHelpers.updateSectionChildParams;
-  readonly getEditsForSection = this._sectionHelpers.getEditsForSection;
   readonly isSectionIndicatorModified = this._sectionHelpers.isSectionIndicatorModified;
   readonly discardParamEdits = this._sectionHelpers.discardParamEdits;
   readonly saveParamEdits = this._sectionHelpers.saveParamEdits;
   readonly reorderSectionIndicators = this._sectionHelpers.reorderSectionIndicators;
   readonly addIndicatorToSection = this._sectionHelpers.addIndicatorToSection;
   readonly removeIndicatorFromSection = this._sectionHelpers.removeIndicatorFromSection;
-  readonly ensureSectionExists = this._sectionHelpers.ensureSectionExists;
   readonly updateSectionParams = this._sectionHelpers.updateSectionParams;
 
   // Intention methods

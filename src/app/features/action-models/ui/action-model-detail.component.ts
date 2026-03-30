@@ -25,10 +25,11 @@ import { ActivityListComponent } from '@app/shared/components/activity-list/acti
 import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
 import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
-import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES } from '@app/shared/components/section-card/section-card.models';
+import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES, isAssociationSection } from '@app/shared/components/section-card/section-card.models';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { ActionModelFacade, DisplaySection } from '../action-model.facade';
 import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
+import { buildMergedFixedSections } from '@features/shared/section-indicators/build-merged-fixed-sections';
 import * as helpers from '@features/shared/section-indicators/section-indicator-editing.helpers';
 
 @Component({
@@ -94,39 +95,33 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     ];
   });
 
-  readonly mergedFixedSections = this.facade.mergedFixedSections;
   readonly sectionTypeMap = SECTION_TYPE_MAP;
 
-  // Pre-computed association section view data
+  // Pre-computed association section view data (reads from working copy)
   readonly associationSectionViews = computed(() =>
     ASSOCIATION_SECTION_TYPES.map((sType) => {
-      const sections = this.facade.selectedItem()?.sections ?? [];
-      const section = sections.find((s) => s.key === sType) as DisplaySection | undefined;
-      const sectionId = section?.id ?? '';
-      const sectionEdits = sectionId ? this._getSectionEdits(sectionId) : undefined;
+      const section = this.facade.workingSections().find((s) => s.key === sType) as DisplaySection | undefined;
       return {
         sType,
         enabled: !!section,
         section,
         config: SECTION_TYPE_MAP[sType],
-        indicatorCards: section ? buildSectionIndicatorCards(section.indicators ?? [], sectionEdits) : [],
+        indicatorCards: section ? buildSectionIndicatorCards(section.indicators ?? []) : [],
         attachedIds: (section?.indicators ?? []).map((ind) => ind.id),
       };
     }),
   );
 
-  // Pre-computed fixed section indicator cards
-  readonly fixedSectionViews = computed(() =>
-    this.mergedFixedSections().map((section) => {
-      const sectionId = section.id ?? '';
-      const sectionEdits = sectionId ? this._getSectionEdits(sectionId) : undefined;
-      return {
-        section,
-        indicatorCards: buildSectionIndicatorCards(section.indicators ?? [], sectionEdits),
-        attachedIds: (section.indicators ?? []).map((ind) => ind.id),
-      };
-    }),
-  );
+  // Pre-computed fixed section indicator cards (reads from working copy)
+  readonly fixedSectionViews = computed(() => {
+    const nonAssociation = this.facade.workingSections().filter((s) => !isAssociationSection(s));
+    const fixed = buildMergedFixedSections(nonAssociation as Parameters<typeof buildMergedFixedSections>[0]);
+    return fixed.map((section) => ({
+      section,
+      indicatorCards: buildSectionIndicatorCards(section.indicators ?? []),
+      attachedIds: (section.indicators ?? []).map((ind) => ind.id),
+    }));
+  });
 
   readonly pickerOptions = computed<IndicatorOption[]>(() =>
     this.facade.availableIndicators().map((im) => ({
@@ -150,7 +145,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   hasUnsavedChanges(): boolean {
-    return this.facade.unsavedCount() > 0;
+    return this.facade.isDirty();
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -233,30 +228,25 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   async onSectionAttach(section: DisplaySection, indicator: IndicatorOption): Promise<void> {
-    await this.facade.addIndicatorToSection(section.id, section.key, indicator.id);
+    this.facade.addIndicatorToSection(section.id, section.key, indicator);
   }
 
   async onSectionDetach(section: DisplaySection, indicatorId: string): Promise<void> {
-    if (!section.id) return;
-    await this.facade.removeIndicatorFromSection(section.id, indicatorId);
+    this.facade.removeIndicatorFromSection(section.id, section.key, indicatorId);
   }
 
   onSectionDrop(section: DisplaySection, event: CdkDragDrop<string | null>): void {
-    if (!section.id || event.previousIndex === event.currentIndex) return;
+    if (event.previousIndex === event.currentIndex) return;
 
-    const sectionId = section.id;
     const indicators = section.indicators ?? [];
     const ids = indicators.map((ind) => ind.id);
     moveItemInArray(ids, event.previousIndex, event.currentIndex);
 
-    this.facade.reorderSectionIndicators(sectionId, ids);
+    this.facade.reorderSectionIndicators(section.id, section.key, ids);
   }
 
   formatDate(value: string | null | undefined): string {
     return formatDateFr(value);
   }
 
-  private _getSectionEdits(sectionId: string): Map<string, IndicatorParams> | undefined {
-    return helpers.getSectionEdits(this.facade, sectionId);
-  }
 }

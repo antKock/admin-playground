@@ -91,7 +91,7 @@
                   }
                   <app-association-section-toggle
                     [enabled]="view.enabled"
-                    [isPending]="facade.sectionMutationPending()"
+                    [isPending]="false"
                     (toggled)="onToggleAssociation(view.sType)"
                   />
                 </div>
@@ -102,7 +102,7 @@
                 <div class="px-4 py-2">
                   <app-section-params-editor
                     [params]="getSectionParams(view.section)"
-                    [isPending]="facade.sectionMutationPending()"
+                    [isPending]="false"
                     [isAssociation]="true"
                     modelType="action"
                     [modelId]="model()!.id"
@@ -221,7 +221,7 @@
 
 <app-save-bar
   [count]="facade.unsavedCount()"
-  [saving]="facade.updateSectionIndicatorsIsPending()"
+  [saving]="facade.sectionMutationPending()"
   (save)="onSave()"
   (discard)="onDiscard()"
 />

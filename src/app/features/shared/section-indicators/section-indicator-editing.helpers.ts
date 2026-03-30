@@ -9,7 +9,6 @@ export interface SectionIndicatorParamFacade {
   getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams;
   updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void;
   updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void;
-  getEditsForSection(sectionId: string): Map<string, IndicatorParams>;
   isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean;
   saveParamEdits(): Promise<void>;
   discardParamEdits(): void;
@@ -35,11 +34,6 @@ export function onSectionIndicatorParamsChange(facade: SectionIndicatorParamFaca
 
 export function onSectionChildParamsChange(facade: SectionIndicatorParamFacade, sectionId: string, parentId: string, event: ChildParamsChangeEvent): void {
   facade.updateSectionChildParams(sectionId, parentId, event.childId, event.params);
-}
-
-export function getSectionEdits(facade: SectionIndicatorParamFacade, sectionId: string): Map<string, IndicatorParams> | undefined {
-  const edits = facade.getEditsForSection(sectionId);
-  return edits.size > 0 ? edits : undefined;
 }
 
 export function handleParamSaveKeydown(facade: SectionIndicatorParamFacade, event: KeyboardEvent, saveFn: () => void): void {

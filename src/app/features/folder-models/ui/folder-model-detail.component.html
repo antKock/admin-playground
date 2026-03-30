@@ -74,7 +74,7 @@
               <div params>
                 <app-section-params-editor
                   [params]="getSectionParams(view.section)"
-                  [isPending]="facade.sectionMutationPending()"
+                  [isPending]="false"
                   modelType="folder"
                   [modelId]="model()!.id"
                   (paramsChange)="onSectionParamsChange(view.section, $event)"
@@ -126,7 +126,7 @@
 
 <app-save-bar
   [count]="facade.unsavedCount()"
-  [saving]="facade.updateSectionIndicatorsIsPending()"
+  [saving]="facade.sectionMutationPending()"
   (save)="onSave()"
   (discard)="onDiscard()"
 />

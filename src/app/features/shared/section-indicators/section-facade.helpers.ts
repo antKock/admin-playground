@@ -1,272 +1,187 @@
 /**
  * Shared helpers for section indicator operations across all model facades.
  *
- * Each facade provides a `SectionFacadeContext` that supplies model-specific
- * mutation functions and refresh callbacks. The helpers implement the shared
- * orchestration logic (validate, mutate, toast, refresh).
+ * Delegates all section/indicator mutations to a SectionWorkingCopy instance.
+ * The facade provides model-specific API callbacks via SaveCallbacks.
+ * All changes are local until save() is called.
  */
 import { components } from '@app/core/api/generated/api-types';
-import { MutationResult } from '@angular-architects/ngrx-toolkit';
-import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
-import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
+import { SectionKey } from '@shared/components/section-card/section-card.models';
+import { IndicatorParams, OccurrenceRule } from '@app/shared/components/indicator-card/indicator-card.component';
+import { SectionParams } from '@shared/components/section-card/section-params-editor.component';
 import { ToastService } from '@shared/components/toast/toast.service';
-import { handleMutationError } from '@domains/shared/mutation-error-handler';
-import { buildSectionAssociationInputs } from './build-section-association-inputs';
-import { createSectionIndicatorParamEditor } from './section-indicator-param-editor';
-import { SECTION_RULE_DEFAULTS } from './display-section.model';
+import { createSectionWorkingCopy, SaveCallbacks } from './section-working-copy';
+import { DisplaySection } from './display-section.model';
 
 type SectionIndicatorModelRead = components['schemas']['SectionIndicatorModelRead'];
-type SectionIndicatorAssociationInput = components['schemas']['SectionIndicatorAssociationInput'];
-type SectionModelUpdate = components['schemas']['SectionModelUpdate'];
+type SectionChildIndicatorModelRead = components['schemas']['SectionChildIndicatorModelRead'];
+
+function sectionIndicatorToParams(ind: SectionIndicatorModelRead | SectionChildIndicatorModelRead): IndicatorParams {
+  const occ = ind.occurrence_rule;
+  return {
+    hidden_rule: ind.hidden_rule,
+    required_rule: ind.required_rule,
+    disabled_rule: ind.disabled_rule,
+    default_value_rule: ind.default_value_rule,
+    occurrence_rule: occ && (occ.min !== 'false' || occ.max !== 'false') ? occ : null,
+    constrained_rule: ind.constrained_rule,
+  };
+}
 
 export interface SectionFacadeContext {
   toast: ToastService;
-  getSelectedItem(): { sections?: { id: string; key: string; indicators?: SectionIndicatorModelRead[] }[] } | null;
-  updateSectionIndicatorsMutation(sectionId: string, data: SectionIndicatorAssociationInput[]): Promise<MutationResult<unknown>>;
-  createSectionMutation(data: { key: SectionKey; name: string; is_enabled: boolean; position: number;
-    hidden_rule: string; disabled_rule: string; required_rule: string;
-    occurrence_rule: { min: string; max: string }; constrained_rule: string;
-  }): Promise<MutationResult<{ id: string }>>;
-  updateSectionMutation(sectionId: string, data: SectionModelUpdate): Promise<MutationResult<unknown>>;
-  refresh(): void;
+  getSections: () => DisplaySection[];
+  buildSaveCallbacks: () => SaveCallbacks;
+  refresh: () => void;
 }
 
-export async function saveParamEdits(
-  ctx: SectionFacadeContext,
-  editor: ReturnType<typeof createSectionIndicatorParamEditor>,
-): Promise<void> {
-  const validationError = editor.validateRules();
-  if (validationError) {
-    ctx.toast.error(validationError);
-    return;
-  }
-
-  const m = ctx.getSelectedItem();
-  if (!m) return;
-
-  const editedSectionIds = editor.editedSectionIds();
-  if (editedSectionIds.size === 0) return;
-
-  const sections = m.sections ?? [];
-  let hasError = false;
-
-  for (const sectionId of editedSectionIds) {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) continue;
-
-    const sectionEdits = editor.getEditsForSection(sectionId);
-    const inputs = buildSectionAssociationInputs(section.indicators ?? [], sectionEdits);
-
-    const result = await ctx.updateSectionIndicatorsMutation(sectionId, inputs);
-    if (result.status === 'error') {
-      handleMutationError(ctx.toast, result.error);
-      hasError = true;
-      break;
-    }
-  }
-
-  if (!hasError) {
-    ctx.toast.success('Paramètres enregistrés');
-    editor.discard();
-    ctx.refresh();
-  }
+function occurrenceRuleEquals(a: OccurrenceRule | null | undefined, b: OccurrenceRule | null | undefined): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return a.min === b.min && a.max === b.max;
 }
 
-export async function reorderSectionIndicators(
-  ctx: SectionFacadeContext,
-  editor: ReturnType<typeof createSectionIndicatorParamEditor>,
-  sectionId: string,
-  orderedIds: string[],
-): Promise<void> {
-  const m = ctx.getSelectedItem();
-  if (!m) return;
-
-  const section = (m.sections ?? []).find((s) => s.id === sectionId);
-  if (!section) return;
-
-  const indicators = section.indicators ?? [];
-  const reordered = orderedIds
-    .map((id) => indicators.find((ind) => ind.id === id))
-    .filter((ind): ind is NonNullable<typeof ind> => !!ind);
-
-  const sectionEdits = editor.getEditsForSection(sectionId);
-  const inputs = buildSectionAssociationInputs(reordered, sectionEdits);
-
-  const result = await ctx.updateSectionIndicatorsMutation(sectionId, inputs);
-  if (result.status === 'success') {
-    ctx.refresh();
-  } else if (result.status === 'error') {
-    handleMutationError(ctx.toast, result.error);
-    ctx.refresh();
-  }
-}
-
-export async function addIndicatorToSection(
-  ctx: SectionFacadeContext,
-  sectionId: string | null,
-  sectionKey: SectionKey,
-  indicatorModelId: string,
-): Promise<void> {
-  const m = ctx.getSelectedItem();
-  if (!m) return;
-
-  let resolvedId = sectionId;
-  if (!resolvedId) {
-    resolvedId = await ensureSectionExists(ctx, sectionKey);
-    if (!resolvedId) return;
-  }
-
-  const section = (m.sections ?? []).find((s) => s.id === resolvedId);
-  const existing = section?.indicators ?? [];
-  const inputs: SectionIndicatorAssociationInput[] = [
-    ...buildSectionAssociationInputs(existing),
-    {
-      indicator_model_id: indicatorModelId,
-      ...SECTION_RULE_DEFAULTS,
-      default_value_rule: 'false',
-      position: existing.length,
-    },
-  ];
-
-  const result = await ctx.updateSectionIndicatorsMutation(resolvedId, inputs);
-  if (result.status === 'success') {
-    ctx.toast.success('Indicateur ajouté à la section');
-    ctx.refresh();
-  } else if (result.status === 'error') {
-    handleMutationError(ctx.toast, result.error, 'Impossible d\'ajouter l\'indicateur');
-  }
-}
-
-export async function removeIndicatorFromSection(
-  ctx: SectionFacadeContext,
-  sectionId: string,
-  indicatorModelId: string,
-): Promise<void> {
-  const m = ctx.getSelectedItem();
-  if (!m) return;
-
-  const section = (m.sections ?? []).find((s) => s.id === sectionId);
-  if (!section) return;
-
-  const remaining = (section.indicators ?? []).filter((ind) => ind.id !== indicatorModelId);
-  const inputs = buildSectionAssociationInputs(remaining);
-
-  const result = await ctx.updateSectionIndicatorsMutation(sectionId, inputs);
-  if (result.status === 'success') {
-    ctx.toast.success('Indicateur retiré de la section');
-    ctx.refresh();
-  } else if (result.status === 'error') {
-    handleMutationError(ctx.toast, result.error, 'Impossible de retirer l\'indicateur');
-  }
-}
-
-export async function ensureSectionExists(
-  ctx: SectionFacadeContext,
-  sectionKey: SectionKey,
-): Promise<string | null> {
-  const m = ctx.getSelectedItem();
-  if (!m) return null;
-
-  const existing = (m.sections ?? []).find((s) => s.key === sectionKey);
-  if (existing) return existing.id;
-
-  const config = SECTION_TYPE_MAP[sectionKey];
-  const result = await ctx.createSectionMutation({
-    key: sectionKey,
-    name: config.label,
-    is_enabled: true,
-    position: 0,
-    ...SECTION_RULE_DEFAULTS,
-  });
-
-  if (result.status === 'success') {
-    return result.value.id;
-  } else if (result.status === 'error') {
-    handleMutationError(ctx.toast, result.error, 'Impossible de créer la section');
-    return null;
-  }
-  return null;
-}
-
-export async function updateSectionParams(
-  ctx: SectionFacadeContext,
-  sectionId: string | null,
-  sectionKey: SectionKey,
-  params: SectionModelUpdate,
-): Promise<void> {
-  const m = ctx.getSelectedItem();
-  if (!m) return;
-
-  let resolvedId = sectionId;
-  if (!resolvedId) {
-    resolvedId = await ensureSectionExists(ctx, sectionKey);
-    if (!resolvedId) return;
-  }
-
-  const result = await ctx.updateSectionMutation(resolvedId, params);
-  if (result.status === 'success') {
-    ctx.toast.success('Paramètres de section enregistrés');
-    ctx.refresh();
-  } else if (result.status === 'error') {
-    handleMutationError(ctx.toast, result.error, 'Impossible de mettre à jour la section');
-  }
+function isParamModified(original: IndicatorParams, current: IndicatorParams): boolean {
+  return (
+    (original.hidden_rule ?? 'false') !== (current.hidden_rule ?? 'false') ||
+    (original.required_rule ?? 'false') !== (current.required_rule ?? 'false') ||
+    (original.disabled_rule ?? 'false') !== (current.disabled_rule ?? 'false') ||
+    (original.default_value_rule ?? 'false') !== (current.default_value_rule ?? 'false') ||
+    !occurrenceRuleEquals(current.occurrence_rule, original.occurrence_rule) ||
+    (original.constrained_rule ?? 'false') !== (current.constrained_rule ?? 'false')
+  );
 }
 
 /**
- * Creates a set of facade methods backed by shared section helpers.
+ * Creates a set of facade methods backed by a SectionWorkingCopy.
  * Each facade calls this once with a model-specific context, then
  * delegates its section methods to the returned object.
  */
-export function createSectionFacadeHelpers(
-  ctx: SectionFacadeContext,
-  sectionsFn: () => { id: string; key: string; indicators?: SectionIndicatorModelRead[] }[],
-) {
-  const editor = createSectionIndicatorParamEditor(sectionsFn);
+export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
+  const wc = createSectionWorkingCopy(ctx.getSections);
+
+  const isDirty = wc.isDirty;
+  const unsavedCount = wc.unsavedCount;
+  const workingSections = wc.workingSections;
+
+  // ─── Indicator param access ─────────────────────────────────────────
+
+  function getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
+    const section = wc.workingSections().find((s) => s.id === sectionId);
+    const ind = section?.indicators?.find((i) => i.id === indicatorId);
+    if (ind) return sectionIndicatorToParams(ind);
+    return { hidden_rule: null, required_rule: null, disabled_rule: null, default_value_rule: null, occurrence_rule: null, constrained_rule: null };
+  }
+
+  function getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
+    const section = wc.workingSections().find((s) => s.id === sectionId);
+    const parent = section?.indicators?.find((i) => i.id === parentId);
+    const child = parent?.children?.find((c) => c.id === childId);
+    if (child) return sectionIndicatorToParams(child);
+    return { hidden_rule: null, required_rule: null, disabled_rule: null, default_value_rule: null, occurrence_rule: null, constrained_rule: null };
+  }
+
+  function updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
+    const section = wc.workingSections().find((s) => s.id === sectionId);
+    if (section) {
+      wc.updateIndicatorParams(sectionId, section.key, indicatorId, params);
+    }
+  }
+
+  function updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
+    const section = wc.workingSections().find((s) => s.id === sectionId);
+    if (section) {
+      wc.updateChildIndicatorParams(sectionId, section.key, parentId, childId, params);
+    }
+  }
+
+  function isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
+    const ws = wc.workingSections().find((s) => s.id === sectionId);
+    const os = wc.originalSections().find((s) => s.id === sectionId);
+    if (!ws || !os) return false;
+    const wi = ws.indicators?.find((i) => i.id === indicatorId);
+    const oi = os.indicators?.find((i) => i.id === indicatorId);
+    if (!wi || !oi) return !!wi !== !!oi; // one exists but not the other
+    return isParamModified(sectionIndicatorToParams(oi), sectionIndicatorToParams(wi));
+  }
+
+  // ─── Section operations ─────────────────────────────────────────────
+
+  function addSection(key: SectionKey, associationEntityType?: string): void {
+    wc.addSection(key, associationEntityType as Parameters<typeof wc.addSection>[1]);
+  }
+
+  function removeSection(sectionId: string): void {
+    wc.removeSection(sectionId);
+  }
+
+  function updateSectionParamsMethod(sectionId: string | null, sectionKey: SectionKey, params: SectionParams): void {
+    wc.updateSectionParams(sectionId, sectionKey, params);
+  }
+
+  function addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicator: { id: string; name: string; technical_label: string; type: string }): void {
+    wc.addIndicator(sectionId, sectionKey, indicator);
+  }
+
+  function removeIndicatorFromSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): void {
+    wc.removeIndicator(sectionId, sectionKey, indicatorModelId);
+  }
+
+  function reorderSectionIndicators(sectionId: string | null, sectionKey: SectionKey, orderedIds: string[]): void {
+    wc.reorderIndicators(sectionId, sectionKey, orderedIds);
+  }
+
+  // ─── Save / Discard ─────────────────────────────────────────────────
+
+  async function save(): Promise<void> {
+    const result = await wc.save(ctx.buildSaveCallbacks());
+    if (result.validationError) {
+      ctx.toast.error(result.validationError);
+      return;
+    }
+    if (result.success) {
+      ctx.toast.success('Configuration enregistrée');
+      ctx.refresh();
+      // After refresh, reset working copy — it will auto-sync from sectionsFn()
+      setTimeout(() => wc.refresh(), 0);
+    } else if (result.failedOperations?.length) {
+      const first = result.failedOperations[0];
+      ctx.toast.error(`Erreur lors de la sauvegarde de la section ${first.sectionKey}`);
+    }
+  }
+
+  function discard(): void {
+    wc.reset();
+  }
 
   return {
-    editor,
-    sectionParamEdits: editor.edits,
-    unsavedCount: editor.unsavedCount,
-    modifiedIds: editor.modifiedIds,
+    // New API
+    isDirty,
+    workingSections,
+    save,
+    discard,
 
-    getSectionIndicatorParams(sectionId: string, indicatorId: string): IndicatorParams {
-      return editor.getParamsForIndicator(sectionId, indicatorId);
-    },
-    getSectionChildParams(sectionId: string, parentId: string, childId: string): IndicatorParams {
-      return editor.getParamsForChild(sectionId, parentId, childId);
-    },
-    updateSectionIndicatorParams(sectionId: string, indicatorId: string, params: IndicatorParams): void {
-      editor.updateParams(sectionId, indicatorId, params);
-    },
-    updateSectionChildParams(sectionId: string, parentId: string, childId: string, params: IndicatorParams): void {
-      editor.updateChildParams(sectionId, parentId, childId, params);
-    },
-    getEditsForSection(sectionId: string): Map<string, IndicatorParams> {
-      return editor.getEditsForSection(sectionId);
-    },
-    isSectionIndicatorModified(sectionId: string, indicatorId: string): boolean {
-      return editor.isModified(sectionId, indicatorId);
-    },
-    discardParamEdits(): void {
-      editor.discard();
-    },
-    saveParamEdits(): Promise<void> {
-      return saveParamEdits(ctx, editor);
-    },
-    reorderSectionIndicators(sectionId: string, orderedIds: string[]): Promise<void> {
-      return reorderSectionIndicators(ctx, editor, sectionId, orderedIds);
-    },
-    addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicatorModelId: string): Promise<void> {
-      return addIndicatorToSection(ctx, sectionId, sectionKey, indicatorModelId);
-    },
-    removeIndicatorFromSection(sectionId: string, indicatorModelId: string): Promise<void> {
-      return removeIndicatorFromSection(ctx, sectionId, indicatorModelId);
-    },
-    ensureSectionExists(sectionKey: SectionKey): Promise<string | null> {
-      return ensureSectionExists(ctx, sectionKey);
-    },
-    updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: SectionModelUpdate): Promise<void> {
-      return updateSectionParams(ctx, sectionId, sectionKey, params);
-    },
+    // Working copy instance (for advanced usage)
+    workingCopy: wc,
+
+    unsavedCount,
+
+    getSectionIndicatorParams,
+    getSectionChildParams,
+    updateSectionIndicatorParams,
+    updateSectionChildParams,
+    isSectionIndicatorModified,
+
+    // Backward compat aliases
+    discardParamEdits: discard,
+    saveParamEdits: save,
+
+    // Section operations (now local-only)
+    reorderSectionIndicators,
+    addIndicatorToSection,
+    removeIndicatorFromSection,
+    addSection,
+    removeSection,
+    updateSectionParams: updateSectionParamsMethod,
   };
 }

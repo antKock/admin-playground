@@ -8,11 +8,13 @@ import { ActionModelDomainStore } from '@domains/action-models/action-model.stor
 import {
   ActionModelCreate, ActionModelUpdate,
 } from '@domains/action-models/action-model.models';
-import { SectionKey, SECTION_TYPE_MAP } from '@shared/components/section-card/section-card.models';
+import { SectionKey, SECTION_TYPE_MAP, isAssociationSection } from '@shared/components/section-card/section-card.models';
+import { SectionParams } from '@shared/components/section-card/section-params-editor.component';
 import { DisplaySection } from '@features/shared/section-indicators/display-section.model';
 export type { DisplaySection } from '@features/shared/section-indicators/display-section.model';
 import { buildMergedFixedSections } from '@features/shared/section-indicators/build-merged-fixed-sections';
 import { createSectionFacadeHelpers } from '@features/shared/section-indicators/section-facade.helpers';
+import { SaveCallbacks } from '@features/shared/section-indicators/section-working-copy';
 import { FundingProgramDomainStore } from '@domains/funding-programs/funding-program.store';
 import { ActionThemeDomainStore } from '@domains/action-themes/action-theme.store';
 import { IndicatorModelDomainStore } from '@domains/indicator-models/indicator-model.store';
@@ -84,39 +86,62 @@ export class ActionModelFacade {
   );
 
   // --- Section indicator operations (shared helpers) ---
-  private readonly _sectionHelpers = createSectionFacadeHelpers(
-    {
-      toast: this.toast,
-      getSelectedItem: () => this.selectedItem(),
-      updateSectionIndicatorsMutation: (sectionId, data) =>
-        this.domainStore.updateSectionIndicatorsMutation({ actionModelId: this.selectedItem()!.id, sectionId, data }),
-      createSectionMutation: (data) =>
-        this.domainStore.createSectionMutation({ actionModelId: this.selectedItem()!.id, data }),
-      updateSectionMutation: (sectionId, data) =>
-        this.domainStore.updateSectionMutation({ actionModelId: this.selectedItem()!.id, sectionId, data }),
-      refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
+  private readonly _sectionHelpers = createSectionFacadeHelpers({
+    toast: this.toast,
+    getSections: () => {
+      const all = this.selectedItem()?.sections ?? [];
+      const fixed = buildMergedFixedSections(all);
+      const associations = all.filter((s) => isAssociationSection(s)) as DisplaySection[];
+      return [...fixed, ...associations];
     },
-    () => {
-      const sections = this.selectedItem()?.sections ?? [];
-      return sections.map((s) => ({ id: s.id, key: s.key, indicators: s.indicators }));
+    buildSaveCallbacks: (): SaveCallbacks => {
+      const modelId = this.selectedItem()!.id;
+      return {
+        createSection: async (key, assocType) => {
+          const config = SECTION_TYPE_MAP[key];
+          const result = await this.domainStore.createSectionMutation({
+            actionModelId: modelId,
+            data: { key, name: config.label, is_enabled: true, position: 0,
+              hidden_rule: 'false', disabled_rule: 'false', required_rule: 'false',
+              occurrence_rule: { min: 'false', max: 'false' }, constrained_rule: 'false',
+              ...(assocType ? { association_entity_type: assocType } : {}),
+            },
+          });
+          return result.status === 'success' ? { id: result.value.id } : { error: 'Impossible de créer la section' };
+        },
+        deleteSection: async (sectionId) => {
+          const result = await this.domainStore.deleteSectionMutation({ actionModelId: modelId, sectionId });
+          if (result.status === 'error') return { error: 'Impossible de supprimer la section' };
+          return;
+        },
+        updateSection: async (sectionId, key, params: SectionParams) => {
+          const result = await this.domainStore.updateSectionMutation({ actionModelId: modelId, sectionId, data: params });
+          if (result.status === 'error') return { error: 'Impossible de mettre à jour la section' };
+          return;
+        },
+        updateSectionIndicators: async (sectionId, indicators) => {
+          const result = await this.domainStore.updateSectionIndicatorsMutation({ actionModelId: modelId, sectionId, data: indicators });
+          if (result.status === 'error') return { error: 'Impossible de mettre à jour les indicateurs' };
+          return;
+        },
+      };
     },
-  );
+    refresh: () => this.domainStore.selectById(this.selectedItem()!.id),
+  });
 
-  readonly sectionParamEdits = this._sectionHelpers.sectionParamEdits;
+  readonly workingSections = this._sectionHelpers.workingSections;
+  readonly isDirty = this._sectionHelpers.isDirty;
   readonly unsavedCount = this._sectionHelpers.unsavedCount;
-  readonly modifiedIds = this._sectionHelpers.modifiedIds;
   readonly getSectionIndicatorParams = this._sectionHelpers.getSectionIndicatorParams;
   readonly getSectionChildParams = this._sectionHelpers.getSectionChildParams;
   readonly updateSectionIndicatorParams = this._sectionHelpers.updateSectionIndicatorParams;
   readonly updateSectionChildParams = this._sectionHelpers.updateSectionChildParams;
-  readonly getEditsForSection = this._sectionHelpers.getEditsForSection;
   readonly isSectionIndicatorModified = this._sectionHelpers.isSectionIndicatorModified;
   readonly discardParamEdits = this._sectionHelpers.discardParamEdits;
   readonly saveParamEdits = this._sectionHelpers.saveParamEdits;
   readonly reorderSectionIndicators = this._sectionHelpers.reorderSectionIndicators;
   readonly addIndicatorToSection = this._sectionHelpers.addIndicatorToSection;
   readonly removeIndicatorFromSection = this._sectionHelpers.removeIndicatorFromSection;
-  readonly ensureSectionExists = this._sectionHelpers.ensureSectionExists;
   readonly updateSectionParams = this._sectionHelpers.updateSectionParams;
 
   // Intention methods
@@ -218,49 +243,12 @@ export class ActionModelFacade {
     return sections.find((s) => s.key === sectionKey)?.id;
   }
 
-  async toggleAssociationSection(sectionKey: SectionKey): Promise<void> {
-    const m = this.selectedItem();
-    if (!m) return;
-
-    const existingSection = (m.sections ?? []).find((s) => s.key === sectionKey);
-
-    if (existingSection) {
-      // Toggle OFF — delete section
-      const result = await this.domainStore.deleteSectionMutation({
-        actionModelId: m.id,
-        sectionId: existingSection.id,
-      });
-      if (result.status === 'success') {
-        this.toast.success('Section supprimée');
-        this.domainStore.selectById(m.id);
-      } else if (result.status === 'error') {
-        handleMutationError(this.toast, result.error, 'Impossible de supprimer la section');
-        this.domainStore.selectById(m.id);
-      }
-    } else {
-      // Toggle ON — create section
-      const config = SECTION_TYPE_MAP[sectionKey];
-      const result = await this.domainStore.createSectionMutation({
-        actionModelId: m.id,
-        data: {
-          key: sectionKey,
-          name: config.label,
-          is_enabled: true,
-          position: 0,
-          hidden_rule: 'false',
-          disabled_rule: 'false',
-          required_rule: 'false',
-          occurrence_rule: { min: 'false', max: 'false' },
-          constrained_rule: 'false',
-        },
-      });
-      if (result.status === 'success') {
-        this.toast.success('Section créée');
-        this.domainStore.selectById(m.id);
-      } else if (result.status === 'error') {
-        handleMutationError(this.toast, result.error, 'Impossible de créer la section');
-        this.domainStore.selectById(m.id);
-      }
+  toggleAssociationSection(sectionKey: SectionKey): void {
+    const existingSection = this._sectionHelpers.workingSections().find((s) => s.key === sectionKey);
+    if (existingSection && existingSection.id) {
+      this._sectionHelpers.removeSection(existingSection.id);
+    } else if (!existingSection) {
+      this._sectionHelpers.addSection(sectionKey);
     }
   }
 }

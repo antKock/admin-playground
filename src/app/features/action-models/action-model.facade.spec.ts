@@ -283,74 +283,34 @@ describe('ActionModelFacade', () => {
       expect(facade.isAssociationSectionEnabled('agents')).toBe(false);
     });
 
-    it('should toggle OFF (delete) an existing section', async () => {
+    it('should toggle OFF (remove) an existing section locally', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
 
-      const togglePromise = facade.toggleAssociationSection('buildings');
+      facade.toggleAssociationSection('buildings');
 
-      const deleteReq = httpTesting.expectOne((r) =>
-        r.method === 'DELETE' && r.url.includes('action-models/am-1/sections/sec-1'),
-      );
-      deleteReq.flush(null);
-
-      await togglePromise;
-
-      expect(successSpy).toHaveBeenCalledWith('Section supprimée');
-
-      // Re-select detail
-      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
-      detailReq.flush({ ...mockActionModel, sections: [] });
+      // No API call — change is local in working copy
+      expect(facade.isDirty()).toBe(true);
     });
 
-    it('should toggle ON (create) a missing section', async () => {
+    it('should toggle ON (add) a missing section locally', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
 
-      const togglePromise = facade.toggleAssociationSection('agents');
+      facade.toggleAssociationSection('agents');
 
-      const createReq = httpTesting.expectOne((r) =>
-        r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
-      );
-      expect(createReq.request.body.key).toBe('agents');
-      expect(createReq.request.body.name).toBe('Agents');
-      createReq.flush({ id: 'sec-new', key: 'agents' });
-
-      await togglePromise;
-
-      expect(successSpy).toHaveBeenCalledWith('Section créée');
-
-      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
-      detailReq.flush(mockWithSections);
-    });
-
-    it('should show error toast on toggle failure', async () => {
-      facade.select('am-1');
-      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
-
-      const togglePromise = facade.toggleAssociationSection('buildings');
-
-      const deleteReq = httpTesting.expectOne((r) => r.method === 'DELETE');
-      deleteReq.flush({ detail: 'Cannot delete' }, { status: 500, statusText: 'Internal Server Error' });
-
-      await togglePromise;
-
-      expect(errorSpy).toHaveBeenCalled();
-
-      // Re-select to revert (server-confirmed approach)
-      const detailReq = httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1'));
-      detailReq.flush(mockWithSections);
+      // No API call — change is local in working copy
+      expect(facade.isDirty()).toBe(true);
     });
   });
 
-  describe('updateSectionParams', () => {
+  describe('updateSectionParams (local working copy)', () => {
     const mockWithSection = {
       ...mockActionModel,
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
         key: 'application' as const,
-
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -364,39 +324,29 @@ describe('ActionModelFacade', () => {
       }],
     };
 
-    it('should update existing section via PUT', async () => {
+    it('should update working copy locally without API call', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSection);
 
-      const promise = facade.updateSectionParams('sec-app', 'application', { hidden_rule: 'true' });
+      facade.updateSectionParams('sec-app', 'application', {
+        hidden_rule: 'true',
+        required_rule: 'false',
+        disabled_rule: 'false',
+        occurrence_rule: { min: 'false', max: 'false' },
+        constrained_rule: 'false',
+      });
 
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app'),
-      );
-      expect(putReq.request.body.hidden_rule).toBe('true');
-      putReq.flush({ ...mockWithSection.sections[0], hidden_rule: 'true' });
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Paramètres de section enregistrés');
-
-      httpTesting.expectOne((r) => r.method === 'GET' && r.url.includes('action-models/am-1')).flush(mockWithSection);
+      expect(facade.isDirty()).toBe(true);
     });
-
-    // Auto-create flow (id === null → ensureSectionExists → update) is tested
-    // via the separate ensureSectionExists tests + this updateSection test.
-    // The combined async flow is complex to test with HttpTestingController
-    // due to overlapping rxMethod subscriptions.
   });
 
-  describe('section indicator management', () => {
+  describe('section indicator management (local working copy)', () => {
     const mockWithSectionAndIndicator = {
       ...mockActionModel,
       sections: [{
         id: 'sec-app',
         name: 'Candidature',
         key: 'application' as const,
-
         is_enabled: true,
         position: 0,
         hidden_rule: 'false',
@@ -424,46 +374,23 @@ describe('ActionModelFacade', () => {
       }],
     };
 
-    it('should add indicator to section via PUT replace-all', async () => {
+    it('should add indicator to working copy locally', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSectionAndIndicator);
 
-      const promise = facade.addIndicatorToSection('sec-app', 'application', 'ind-new');
+      facade.addIndicatorToSection('sec-app', 'application', { id: 'ind-new', name: 'New Indicator', technical_label: 'ind_new', type: 'numeric' });
 
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app/indicators'),
-      );
-      expect(putReq.request.body).toHaveLength(2);
-      expect(putReq.request.body[0].indicator_model_id).toBe('ind-1');
-      expect(putReq.request.body[1].indicator_model_id).toBe('ind-new');
-      putReq.flush(mockWithSectionAndIndicator.sections[0]);
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Indicateur ajouté à la section');
-
-      httpTesting.match((r) => r.method === 'GET' && r.url.includes('action-models/am-1'))
-        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+      expect(facade.isDirty()).toBe(true);
+      expect(facade.unsavedCount()).toBeGreaterThan(0);
     });
 
-    it('should remove indicator from section', async () => {
+    it('should remove indicator from working copy locally', () => {
       facade.select('am-1');
       httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSectionAndIndicator);
 
-      const promise = facade.removeIndicatorFromSection('sec-app', 'ind-1');
+      facade.removeIndicatorFromSection('sec-app', 'application', 'ind-1');
 
-      const putReq = httpTesting.expectOne((r) =>
-        r.method === 'PUT' && r.url.includes('action-models/am-1/sections/sec-app/indicators'),
-      );
-      expect(putReq.request.body).toHaveLength(0);
-      putReq.flush({ ...mockWithSectionAndIndicator.sections[0], indicators: [] });
-
-      await promise;
-
-      expect(successSpy).toHaveBeenCalledWith('Indicateur retiré de la section');
-
-      httpTesting.match((r) => r.method === 'GET' && r.url.includes('action-models/am-1'))
-        .forEach((r) => r.flush(mockWithSectionAndIndicator));
+      expect(facade.isDirty()).toBe(true);
     });
   });
 
@@ -514,52 +441,6 @@ describe('ActionModelFacade', () => {
       expect(merged[1].name).toBe('Candidature');
       expect(merged[2].id).toBeNull();
       expect(merged[2].name).toBe('Suivi');
-    });
-  });
-
-  describe('ensureSectionExists', () => {
-    const mockWithSection = {
-      ...mockActionModel,
-      sections: [{
-        id: 'sec-app',
-        name: 'Candidature',
-        key: 'application' as const,
-
-        is_enabled: true,
-        position: 0,
-        hidden_rule: 'false',
-        disabled_rule: 'false',
-        required_rule: 'false',
-        occurrence_rule: { min: 'false', max: 'false' },
-        constrained_rule: 'false',
-        created_at: '2026-01-01T00:00:00Z',
-        last_updated_at: '2026-01-01T00:00:00Z',
-        indicators: [],
-      }],
-    };
-
-    it('should return existing section ID without API call', async () => {
-      facade.select('am-1');
-      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSection);
-
-      const id = await facade.ensureSectionExists('application');
-      expect(id).toBe('sec-app');
-    });
-
-    it('should create section and return new ID when not found', async () => {
-      facade.select('am-1');
-      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush({ ...mockActionModel, sections: [] });
-
-      const promise = facade.ensureSectionExists('progress');
-
-      const createReq = httpTesting.expectOne((r) =>
-        r.method === 'POST' && r.url.includes('action-models/am-1/sections'),
-      );
-      expect(createReq.request.body.key).toBe('progress');
-      createReq.flush({ id: 'sec-new-progress' });
-
-      const id = await promise;
-      expect(id).toBe('sec-new-progress');
     });
   });
 
