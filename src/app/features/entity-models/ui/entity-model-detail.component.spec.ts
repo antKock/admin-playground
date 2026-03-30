@@ -27,13 +27,12 @@ const mockEntityModel: EntityModel = {
     hidden_rule: 'false',
     required_rule: 'false',
     disabled_rule: 'false',
-    occurrence_min_rule: 'false',
-    occurrence_max_rule: 'false',
+    occurrence_rule: { min: 'false', max: 'false' },
     constrained_rule: 'false',
     created_at: '2026-01-01T00:00:00Z',
     last_updated_at: '2026-01-01T00:00:00Z',
     indicators: [
-      { id: 'ind-1', name: 'Population', technical_label: 'population', type: 'number', hidden_rule: 'false', required_rule: 'false', disabled_rule: 'false', default_value_rule: 'false', occurrence_min_rule: 'false', occurrence_max_rule: 'false', constrained_rule: 'false', position: 0, created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
+      { id: 'ind-1', name: 'Population', technical_label: 'population', type: 'number', hidden_rule: 'false', required_rule: 'false', disabled_rule: 'false', default_value_rule: 'false', occurrence_rule: { min: 'false', max: 'false' }, constrained_rule: 'false', position: 0, created_at: '2026-01-01T00:00:00Z', last_updated_at: '2026-01-01T00:00:00Z' },
     ],
   }],
 };

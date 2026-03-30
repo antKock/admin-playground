@@ -14,6 +14,40 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
+## Changeset: 2026-03-30 10:15 — Pending
+
+### Schema changes
+
+**Modified schemas (all occurrence rule fields restructured):**
+- `SectionModelCreate`, `SectionModelRead`, `SectionModelUpdate`, `SectionModelWithIndicators` — `occurrence_min_rule` (string) + `occurrence_max_rule` (string) replaced by `occurrence_rule: $ref OccurrenceRule`
+- `ActionModelAssociationInput`, `IndicatorModelAssociationInput`, `ChildIndicatorModelAssociationInput` — same change
+- `SectionIndicatorAssociationInput` — same change
+- `IndicatorModelWithAssociation`, `ChildIndicatorModelWithAssociation` — same change (inline object → `$ref OccurrenceRule`)
+- `SectionIndicatorModelRead`, `SectionChildIndicatorModelRead` — same change (inline object → `$ref OccurrenceRule`)
+- `IndicatorRead` — same change
+
+**Modified schema (refined):**
+- `OccurrenceRule` — previously `{ type: object, additionalProperties: true }`, now properly typed as `{ min: string, max: string }`
+
+### Actions
+| Change | Action | Status |
+|--------|--------|--------|
+| Section model schemas (`SectionModelCreate/Read/Update/WithIndicators`): `occurrence_min_rule` + `occurrence_max_rule` → `occurrence_rule: OccurrenceRule` | **section-params-editor.component.ts**: Refactor `SectionParams` interface and all occurrence logic to use `occurrence_rule: OccurrenceRule` instead of separate `occurrence_min_rule`/`occurrence_max_rule` strings | `to do` |
+| Same | **section-facade.helpers.ts**: Update `SectionIndicatorRecord` type and all default/merge helpers to use `occurrence_rule` instead of `occurrence_min_rule`/`occurrence_max_rule` | `to do` |
+| Same | **build-merged-fixed-sections.ts**: Update default section indicator objects to use `occurrence_rule` | `to do` |
+| Same | **build-section-indicator-cards.ts**: Update `SectionIndicatorSource` interface to use `occurrence_rule` | `to do` |
+| Same | **build-section-association-inputs.ts**: Remove old `occurrence_min_rule`/`occurrence_max_rule` mapping, send `occurrence_rule` directly | `to do` |
+| Same | **section-indicator-param-editor.ts**: Remove `toOccurrenceRule`/`fromIndicatorParams` conversion layer — API now matches UI model | `to do` |
+| Same | **action-model.facade.ts** + **detail components** (`action-model-detail`, `entity-model-detail`, `folder-model-detail`): Update section param extraction to use `occurrence_rule` | `to do` |
+| Same | **All affected spec files**: Update test fixtures replacing `occurrence_min_rule`/`occurrence_max_rule` with `occurrence_rule` | `to do` |
+
+### Opportunities
+| Capability | Description | Recommendation | Status |
+|------------|-------------|----------------|--------|
+| `OccurrenceRule` now properly typed | The `OccurrenceRule` schema is now `{ min: string, max: string }` instead of untyped object — generated types are accurate | Use generated `OccurrenceRule` type from api-types.ts instead of local re-declarations where possible | `to evaluate` |
+
+---
+
 ## Changeset: 2026-03-27 14:37 — Applied (baseline reset: 2026-03-27 19:05)
 
 ### Schema changes

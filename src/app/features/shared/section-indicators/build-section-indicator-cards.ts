@@ -25,15 +25,14 @@ function buildParamHints(source: {
   disabled_rule: string;
   default_value_rule: string;
   constrained_rule: string;
-  occurrence_min_rule?: string;
-  occurrence_max_rule?: string;
+  occurrence_rule?: { min: string; max: string };
 }): ParamHints {
   return {
     visibility: ruleState(source.hidden_rule, 'false'),
     required: ruleState(source.required_rule, 'false'),
     editable: ruleState(source.disabled_rule, 'false'),
     defaultValue: ruleState(source.default_value_rule, 'false'),
-    occurrence: occurrenceState(source.occurrence_min_rule, source.occurrence_max_rule),
+    occurrence: occurrenceState(source.occurrence_rule?.min, source.occurrence_rule?.max),
     constrained: ruleState(source.constrained_rule, 'false'),
   };
 }

@@ -9,7 +9,6 @@ export const SECTION_RULE_DEFAULTS = {
   hidden_rule: 'false',
   disabled_rule: 'false',
   required_rule: 'false',
-  occurrence_min_rule: 'false',
-  occurrence_max_rule: 'false',
+  occurrence_rule: { min: 'false', max: 'false' },
   constrained_rule: 'false',
 } as const;

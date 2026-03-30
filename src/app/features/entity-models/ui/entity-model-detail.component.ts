@@ -132,8 +132,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
       hidden_rule: section.hidden_rule,
       required_rule: section.required_rule,
       disabled_rule: section.disabled_rule,
-      occurrence_min_rule: section.occurrence_min_rule,
-      occurrence_max_rule: section.occurrence_max_rule,
+      occurrence_rule: section.occurrence_rule ?? { min: 'false', max: 'false' },
       constrained_rule: section.constrained_rule,
     };
   }

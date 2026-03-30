@@ -1,6 +1,5 @@
 import { components } from '@app/core/api/generated/api-types';
 import { IndicatorParams } from '@app/shared/components/indicator-card/indicator-card.component';
-import { paramsToSectionRules } from './section-indicator-param-editor';
 
 type SectionIndicatorModelRead = components['schemas']['SectionIndicatorModelRead'];
 type SectionIndicatorAssociationInput = components['schemas']['SectionIndicatorAssociationInput'];
@@ -38,19 +37,15 @@ export function buildSectionAssociationInputs(
   const lookup = buildEditLookup(paramEdits);
 
   return indicators.map((ind, index) => {
-    const edited = lookup.get(ind.id);
-    if (edited) {
-      return { indicator_model_id: ind.id, ...paramsToSectionRules(edited), position: index };
-    }
+    const src = lookup.get(ind.id) ?? ind;
     return {
       indicator_model_id: ind.id,
-      hidden_rule: ruleForApi(ind.hidden_rule),
-      required_rule: ruleForApi(ind.required_rule),
-      disabled_rule: ruleForApi(ind.disabled_rule),
-      default_value_rule: ruleForApi(ind.default_value_rule),
-      occurrence_min_rule: ruleForApi(ind.occurrence_min_rule),
-      occurrence_max_rule: ruleForApi(ind.occurrence_max_rule),
-      constrained_rule: ruleForApi(ind.constrained_rule),
+      hidden_rule: ruleForApi(src.hidden_rule),
+      required_rule: ruleForApi(src.required_rule),
+      disabled_rule: ruleForApi(src.disabled_rule),
+      default_value_rule: ruleForApi(src.default_value_rule),
+      occurrence_rule: { min: ruleForApi(src.occurrence_rule?.min), max: ruleForApi(src.occurrence_rule?.max) },
+      constrained_rule: ruleForApi(src.constrained_rule),
       position: index,
     };
   });

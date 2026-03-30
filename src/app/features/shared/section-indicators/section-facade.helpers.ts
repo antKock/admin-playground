@@ -25,7 +25,7 @@ export interface SectionFacadeContext {
   updateSectionIndicatorsMutation(sectionId: string, data: SectionIndicatorAssociationInput[]): Promise<MutationResult<unknown>>;
   createSectionMutation(data: { key: SectionKey; name: string; is_enabled: boolean; position: number;
     hidden_rule: string; disabled_rule: string; required_rule: string;
-    occurrence_min_rule: string; occurrence_max_rule: string; constrained_rule: string;
+    occurrence_rule: { min: string; max: string }; constrained_rule: string;
   }): Promise<MutationResult<{ id: string }>>;
   updateSectionMutation(sectionId: string, data: SectionModelUpdate): Promise<MutationResult<unknown>>;
   refresh(): void;

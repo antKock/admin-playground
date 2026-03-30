@@ -4589,16 +4589,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -4632,16 +4623,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -4700,16 +4682,7 @@ export interface components {
              * @default false
              */
             default_value_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -4758,16 +4731,7 @@ export interface components {
              * @default false
              */
             required_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
@@ -4804,25 +4768,12 @@ export interface components {
              * @default false
              */
             required_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
              */
             constrained_rule: string;
-            /** Occurrence Rule */
-            occurrence_rule?: {
-                [key: string]: unknown;
-            };
             /**
              * Created At
              * Format: date-time
@@ -4850,10 +4801,7 @@ export interface components {
             disabled_rule?: string | null;
             /** Required Rule */
             required_rule?: string | null;
-            /** Occurrence Min Rule */
-            occurrence_min_rule?: string | null;
-            /** Occurrence Max Rule */
-            occurrence_max_rule?: string | null;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"] | null;
             /** Constrained Rule */
             constrained_rule?: string | null;
         };
@@ -4887,25 +4835,12 @@ export interface components {
              * @default false
              */
             required_rule: string;
-            /**
-             * Occurrence Min Rule
-             * @default false
-             */
-            occurrence_min_rule: string;
-            /**
-             * Occurrence Max Rule
-             * @default false
-             */
-            occurrence_max_rule: string;
+            occurrence_rule?: components["schemas"]["OccurrenceRule"];
             /**
              * Constrained Rule
              * @default false
              */
             constrained_rule: string;
-            /** Occurrence Rule */
-            occurrence_rule?: {
-                [key: string]: unknown;
-            };
             /**
              * Created At
              * Format: date-time

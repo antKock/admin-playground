@@ -20,41 +20,15 @@ function indicatorKey(sectionId: string, indicatorId: string): string {
   return `${sectionId}:${indicatorId}`;
 }
 
-function toOccurrenceRule(ind: { occurrence_min_rule?: string; occurrence_max_rule?: string }): OccurrenceRule | null {
-  const min = ind.occurrence_min_rule ?? 'false';
-  const max = ind.occurrence_max_rule ?? 'false';
-  if (min === 'false' && max === 'false') return null;
-  return { min, max };
-}
-
 export function sectionIndicatorToParams(ind: SectionIndicatorModelRead | SectionChildIndicatorModelRead): IndicatorParams {
+  const occ = ind.occurrence_rule;
   return {
     hidden_rule: ind.hidden_rule,
     required_rule: ind.required_rule,
     disabled_rule: ind.disabled_rule,
     default_value_rule: ind.default_value_rule,
-    occurrence_rule: toOccurrenceRule(ind),
+    occurrence_rule: occ && (occ.min !== 'false' || occ.max !== 'false') ? occ : null,
     constrained_rule: ind.constrained_rule,
-  };
-}
-
-export function paramsToSectionRules(params: IndicatorParams): {
-  hidden_rule: string;
-  required_rule: string;
-  disabled_rule: string;
-  default_value_rule: string;
-  occurrence_min_rule: string;
-  occurrence_max_rule: string;
-  constrained_rule: string;
-} {
-  return {
-    hidden_rule: params.hidden_rule ?? 'false',
-    required_rule: params.required_rule ?? 'false',
-    disabled_rule: params.disabled_rule ?? 'false',
-    default_value_rule: params.default_value_rule ?? 'false',
-    occurrence_min_rule: params.occurrence_rule?.min ?? 'false',
-    occurrence_max_rule: params.occurrence_rule?.max ?? 'false',
-    constrained_rule: params.constrained_rule ?? 'false',
   };
 }
 
@@ -73,7 +47,7 @@ export function createSectionIndicatorParamEditor(sectionsFn: () => SectionWithI
   const edits = _edits.asReadonly();
 
   function occurrenceRuleEquals(a: OccurrenceRule | null, b: OccurrenceRule | null | undefined): boolean {
-    if (a == null && (b == null || b === undefined)) return true;
+    if (a == null && b == null) return true;
     if (a == null || b == null) return false;
     return a.min === b.min && a.max === b.max;
   }

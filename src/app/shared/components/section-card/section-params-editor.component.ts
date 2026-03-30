@@ -7,8 +7,7 @@ export interface SectionParams {
   hidden_rule: string;
   required_rule: string;
   disabled_rule: string;
-  occurrence_min_rule: string;
-  occurrence_max_rule: string;
+  occurrence_rule: { min: string; max: string };
   constrained_rule: string;
 }
 
@@ -91,14 +90,14 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
           <div class="pl-8 pb-1 flex gap-2">
             <app-rule-field
               placeholder="Min"
-              [value]="isCustomRule(params().occurrence_min_rule) ? params().occurrence_min_rule : ''"
+              [value]="isCustomRule(params().occurrence_rule.min) ? params().occurrence_rule.min : ''"
               [modelType]="modelType()"
               [modelId]="modelId()"
               (valueChange)="onOccurrenceMinChange($event)"
             />
             <app-rule-field
               placeholder="Max"
-              [value]="isCustomRule(params().occurrence_max_rule) ? params().occurrence_max_rule : ''"
+              [value]="isCustomRule(params().occurrence_rule.max) ? params().occurrence_rule.max : ''"
               [modelType]="modelType()"
               [modelId]="modelId()"
               (valueChange)="onOccurrenceMaxChange($event)"
@@ -173,24 +172,25 @@ export class SectionParamsEditorComponent {
 
   isOccurrenceOverridden(): boolean {
     const p = this.params();
-    return p.occurrence_min_rule !== 'false' || p.occurrence_max_rule !== 'false';
+    return p.occurrence_rule.min !== 'false' || p.occurrence_rule.max !== 'false';
   }
 
   onOccurrenceToggle(enabled: boolean): void {
     if (enabled) {
       this.paramsChange.emit({
         ...this.params(),
-        occurrence_min_rule: this.savedRules['occurrence_min_rule'] ?? 'true',
-        occurrence_max_rule: this.savedRules['occurrence_max_rule'] ?? 'false',
+        occurrence_rule: {
+          min: this.savedRules['occurrence_rule_min'] ?? 'true',
+          max: this.savedRules['occurrence_rule_max'] ?? 'false',
+        },
       });
     } else {
       const p = this.params();
-      if (this.isCustomRule(p.occurrence_min_rule)) this.savedRules['occurrence_min_rule'] = p.occurrence_min_rule;
-      if (this.isCustomRule(p.occurrence_max_rule)) this.savedRules['occurrence_max_rule'] = p.occurrence_max_rule;
+      if (this.isCustomRule(p.occurrence_rule.min)) this.savedRules['occurrence_rule_min'] = p.occurrence_rule.min;
+      if (this.isCustomRule(p.occurrence_rule.max)) this.savedRules['occurrence_rule_max'] = p.occurrence_rule.max;
       this.paramsChange.emit({
         ...this.params(),
-        occurrence_min_rule: 'false',
-        occurrence_max_rule: 'false',
+        occurrence_rule: { min: 'false', max: 'false' },
       });
     }
   }
@@ -198,14 +198,14 @@ export class SectionParamsEditorComponent {
   onOccurrenceMinChange(value: string): void {
     this.paramsChange.emit({
       ...this.params(),
-      occurrence_min_rule: value || 'true',
+      occurrence_rule: { ...this.params().occurrence_rule, min: value || 'true' },
     });
   }
 
   onOccurrenceMaxChange(value: string): void {
     this.paramsChange.emit({
       ...this.params(),
-      occurrence_max_rule: value || 'true',
+      occurrence_rule: { ...this.params().occurrence_rule, max: value || 'true' },
     });
   }
 }

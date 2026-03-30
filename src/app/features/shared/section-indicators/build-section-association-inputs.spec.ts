@@ -14,8 +14,7 @@ const makeIndicator = (overrides: Partial<SectionIndicatorModelRead> = {}): Sect
   required_rule: 'false',
   disabled_rule: 'false',
   default_value_rule: 'false',
-  occurrence_min_rule: 'false',
-  occurrence_max_rule: 'false',
+  occurrence_rule: { min: 'false', max: 'false' },
   constrained_rule: 'false',
   position: 0,
   ...overrides,
@@ -81,10 +80,9 @@ describe('buildSectionAssociationInputs', () => {
 
   it('should include occurrence rules', () => {
     const inputs = buildSectionAssociationInputs([
-      makeIndicator({ occurrence_min_rule: 'true', occurrence_max_rule: '5' }),
+      makeIndicator({ occurrence_rule: { min: 'true', max: '5' } }),
     ]);
 
-    expect(inputs[0].occurrence_min_rule).toBe('true');
-    expect(inputs[0].occurrence_max_rule).toBe('5');
+    expect(inputs[0].occurrence_rule).toEqual({ min: 'true', max: '5' });
   });
 });
