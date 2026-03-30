@@ -6,6 +6,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge.component';
 import { ParamHintIconsComponent, ParamHints } from '../param-hint-icons/param-hint-icons.component';
 import { ToggleRowComponent } from '../toggle-row/toggle-row.component';
 import { RuleFieldComponent } from '../rule-field/rule-field.component';
+import { components } from '@app/core/api/generated/api-types';
 
 export interface ChildCardData {
   id: string;
@@ -29,10 +30,7 @@ export interface IndicatorCardData {
   children?: ChildCardData[];
 }
 
-export interface OccurrenceRule {
-  min: string;
-  max: string;
-}
+export type OccurrenceRule = components['schemas']['OccurrenceRule'];
 
 export interface IndicatorParams {
   hidden_rule: string | null;

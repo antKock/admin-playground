@@ -14,7 +14,7 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 
 ---
 
-## Changeset: 2026-03-30 10:15 — Pending
+## Changeset: 2026-03-30 10:15 — Applied (baseline reset: 2026-03-30 15:58)
 
 ### Schema changes
 
@@ -32,19 +32,19 @@ Tracks API spec changes and frontend actions required. Each changeset lists dete
 ### Actions
 | Change | Action | Status |
 |--------|--------|--------|
-| Section model schemas (`SectionModelCreate/Read/Update/WithIndicators`): `occurrence_min_rule` + `occurrence_max_rule` → `occurrence_rule: OccurrenceRule` | **section-params-editor.component.ts**: Refactor `SectionParams` interface and all occurrence logic to use `occurrence_rule: OccurrenceRule` instead of separate `occurrence_min_rule`/`occurrence_max_rule` strings | `to do` |
-| Same | **section-facade.helpers.ts**: Update `SectionIndicatorRecord` type and all default/merge helpers to use `occurrence_rule` instead of `occurrence_min_rule`/`occurrence_max_rule` | `to do` |
-| Same | **build-merged-fixed-sections.ts**: Update default section indicator objects to use `occurrence_rule` | `to do` |
-| Same | **build-section-indicator-cards.ts**: Update `SectionIndicatorSource` interface to use `occurrence_rule` | `to do` |
-| Same | **build-section-association-inputs.ts**: Remove old `occurrence_min_rule`/`occurrence_max_rule` mapping, send `occurrence_rule` directly | `to do` |
-| Same | **section-indicator-param-editor.ts**: Remove `toOccurrenceRule`/`fromIndicatorParams` conversion layer — API now matches UI model | `to do` |
-| Same | **action-model.facade.ts** + **detail components** (`action-model-detail`, `entity-model-detail`, `folder-model-detail`): Update section param extraction to use `occurrence_rule` | `to do` |
-| Same | **All affected spec files**: Update test fixtures replacing `occurrence_min_rule`/`occurrence_max_rule` with `occurrence_rule` | `to do` |
+| Section model schemas (`SectionModelCreate/Read/Update/WithIndicators`): `occurrence_min_rule` + `occurrence_max_rule` → `occurrence_rule: OccurrenceRule` | **section-params-editor.component.ts**: Refactor `SectionParams` interface and all occurrence logic to use `occurrence_rule: OccurrenceRule` instead of separate `occurrence_min_rule`/`occurrence_max_rule` strings | `done` |
+| Same | **section-facade.helpers.ts**: Update `SectionIndicatorRecord` type and all default/merge helpers to use `occurrence_rule` instead of `occurrence_min_rule`/`occurrence_max_rule` | `done` |
+| Same | **build-merged-fixed-sections.ts**: Update default section indicator objects to use `occurrence_rule` | `done` |
+| Same | **build-section-indicator-cards.ts**: Update `SectionIndicatorSource` interface to use `occurrence_rule` | `done` |
+| Same | **build-section-association-inputs.ts**: Remove old `occurrence_min_rule`/`occurrence_max_rule` mapping, send `occurrence_rule` directly | `done` |
+| Same | **section-indicator-param-editor.ts**: Remove `toOccurrenceRule`/`fromIndicatorParams` conversion layer — API now matches UI model | `done` |
+| Same | **action-model.facade.ts** + **detail components** (`action-model-detail`, `entity-model-detail`, `folder-model-detail`): Update section param extraction to use `occurrence_rule` | `done` |
+| Same | **All affected spec files**: Update test fixtures replacing `occurrence_min_rule`/`occurrence_max_rule` with `occurrence_rule` | `done` |
 
 ### Opportunities
 | Capability | Description | Recommendation | Status |
 |------------|-------------|----------------|--------|
-| `OccurrenceRule` now properly typed | The `OccurrenceRule` schema is now `{ min: string, max: string }` instead of untyped object — generated types are accurate | Use generated `OccurrenceRule` type from api-types.ts instead of local re-declarations where possible | `to evaluate` |
+| `OccurrenceRule` now properly typed | The `OccurrenceRule` schema is now `{ min: string, max: string }` instead of untyped object — generated types are accurate | Use generated `OccurrenceRule` type from api-types.ts instead of local re-declarations where possible | `done` |
 
 ---
 
