@@ -384,9 +384,11 @@ export function translateJsonLogicToProse(jsonString: string, mode: ProseMode = 
   if (!jsonString || jsonString === 'true' || jsonString === 'false') return null;
   try {
     const parsed = JSON.parse(jsonString);
+    if (typeof parsed === 'number') return wrapVal(String(parsed));
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     return translateNode(parsed, 0, true, mode);
   } catch {
-    return null;
+    if (jsonString.startsWith('{') || jsonString.startsWith('[')) return null;
+    return wrapVal(`'${escapeQuotes(escapeHtml(jsonString))}'`);
   }
 }

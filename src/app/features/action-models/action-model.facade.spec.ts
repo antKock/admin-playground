@@ -302,6 +302,37 @@ describe('ActionModelFacade', () => {
       // No API call — change is local in working copy
       expect(facade.isDirty()).toBe(true);
     });
+
+    it('should toggle ON then OFF a stub section without getting stuck', () => {
+      // mockWithSections has 'buildings' but not 'agents'
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
+
+      // Toggle ON: creates a stub section (id: null)
+      facade.toggleAssociationSection('agents');
+      expect(facade.isDirty()).toBe(true);
+
+      // Toggle OFF: must remove the stub — previously got stuck here
+      facade.toggleAssociationSection('agents');
+      expect(facade.isDirty()).toBe(false);
+    });
+
+    it('should freely cycle ON → OFF → ON for a section toggled off from server state', () => {
+      facade.select('am-1');
+      httpTesting.expectOne((r) => r.url.includes('action-models/am-1')).flush(mockWithSections);
+
+      // Toggle OFF a real (server) section
+      facade.toggleAssociationSection('buildings');
+      expect(facade.isDirty()).toBe(true);
+
+      // Toggle ON: creates stub
+      facade.toggleAssociationSection('buildings');
+      expect(facade.isDirty()).toBe(true); // stub ≠ original real section
+
+      // Toggle OFF again: must remove stub
+      facade.toggleAssociationSection('buildings');
+      expect(facade.isDirty()).toBe(true); // still dirty: original had 'buildings', working doesn't
+    });
   });
 
   describe('updateSectionParams (local working copy)', () => {

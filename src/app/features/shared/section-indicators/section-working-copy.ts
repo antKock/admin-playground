@@ -241,6 +241,11 @@ export function createSectionWorkingCopy(sectionsFn: () => DisplaySection[]) {
     _working.update((sections) => sections.filter((s) => s.id !== sectionId));
   }
 
+  function removeStubSection(key: SectionKey): void {
+    forkIfNeeded();
+    _working.update((sections) => sections.filter((s) => !(s.id === null && s.key === key)));
+  }
+
   function updateSectionParams(sectionId: string | null, sectionKey: SectionKey, params: SectionParams): void {
     forkIfNeeded();
     _working.update((sections) =>
@@ -584,6 +589,7 @@ export function createSectionWorkingCopy(sectionsFn: () => DisplaySection[]) {
     // Section mutations
     addSection,
     removeSection,
+    removeStubSection,
     updateSectionParams,
     // Indicator mutations
     addIndicator,

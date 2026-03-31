@@ -109,6 +109,10 @@ export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
     wc.removeSection(sectionId);
   }
 
+  function removeStubSection(key: SectionKey): void {
+    wc.removeStubSection(key);
+  }
+
   function updateSectionParamsMethod(sectionId: string | null, sectionKey: SectionKey, params: SectionParams): void {
     wc.updateSectionParams(sectionId, sectionKey, params);
   }
@@ -171,6 +175,7 @@ export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
     removeIndicatorFromSection,
     addSection,
     removeSection,
+    removeStubSection,
     updateSectionParams: updateSectionParamsMethod,
   };
 }

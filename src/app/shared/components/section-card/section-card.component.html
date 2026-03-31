@@ -1,26 +1,32 @@
 <div class="bg-gray-50 border-l-4 border-blue-400 rounded-lg overflow-hidden" [class.border-gray-300]="disabled()">
-  <!-- Header -->
-  <div class="flex items-center px-4 py-3 gap-2">
-    <ng-content select="[toggle]" />
+  <!-- Header (clickable to expand/collapse params) -->
+  <div
+    role="button"
+    tabindex="0"
+    class="flex items-center px-4 py-3 gap-2 cursor-pointer"
+    (click)="onToggleCollapse()"
+    (keydown.enter)="onToggleCollapse()"
+    (keydown.space)="$event.preventDefault(); onToggleCollapse()"
+  >
+    <!-- Association toggle stops propagation to avoid triggering expand/collapse -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+    <div (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.space)="$event.stopPropagation()">
+      <ng-content select="[toggle]" />
+    </div>
     <span>{{ typeConfig().icon }}</span>
     <h3 class="text-sm font-semibold text-text-primary">{{ sectionName() }}</h3>
     <div class="flex-1"></div>
     @if (paramHints(); as hints) {
       <app-param-hint-icons [hints]="hints" />
     }
-    <button
-      type="button"
-      class="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-      (click)="onToggleCollapse()"
-      aria-label="Toggle parameters"
-    >
+    <div class="p-1 rounded flex-shrink-0" aria-label="Toggle parameters">
       <lucide-icon
         [img]="ChevronDown"
         [size]="16"
         class="text-text-tertiary transition-transform"
         [class.rotate-180]="!isCollapsed()"
       />
-    </button>
+    </div>
   </div>
 
   <!-- Params (collapsible) -->

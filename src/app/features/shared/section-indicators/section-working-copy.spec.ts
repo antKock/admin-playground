@@ -853,6 +853,44 @@ describe('createSectionWorkingCopy', () => {
     });
   });
 
+  // ── removeStubSection ─────────────────────────────────────────────────
+
+  describe('removeStubSection', () => {
+    it('should remove a stub section (id: null) by key', () => {
+      const wc = createSectionWorkingCopy(() => []);
+      wc.addSection('application');
+      expect(wc.workingSections().length).toBe(1);
+
+      wc.removeStubSection('application');
+
+      expect(wc.workingSections().length).toBe(0);
+      expect(wc.isDirty()).toBe(false);
+    });
+
+    it('should not remove a real section that shares the same key', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({ id: 's1', key: 'application' }),
+      ]);
+
+      wc.removeStubSection('application');
+
+      expect(wc.workingSections().length).toBe(1);
+      expect(wc.workingSections()[0].id).toBe('s1');
+    });
+
+    it('should mark working copy clean when stub removal restores original state', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({ id: 's1', key: 'financial' }),
+      ]);
+      wc.addSection('application');
+      expect(wc.isDirty()).toBe(true);
+
+      wc.removeStubSection('application');
+
+      expect(wc.isDirty()).toBe(false);
+    });
+  });
+
   // ── Refresh ───────────────────────────────────────────────────────────
 
   describe('refresh', () => {

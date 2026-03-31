@@ -122,8 +122,13 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse(rule)).toBe(`• ${v('x')} ${kw('&lt;')} ${val('10')}\n• ${v('s')} ${kw('=')} ${val("'p'")} ${kw('et')} ${v('b')} ${kw('&gt;')} ${val('100')}`);
   });
 
-  it('returns null for invalid JSON', () => {
+  it('renders unquoted plain string as a string value', () => {
+    expect(translateJsonLogicToProse('Test')).toBe(val("'Test'"));
+  });
+
+  it('returns null for invalid JSON object/array syntax', () => {
     expect(translateJsonLogicToProse('{invalid}')).toBeNull();
+    expect(translateJsonLogicToProse('[invalid]')).toBeNull();
   });
 
   it('returns null for empty string', () => {
@@ -138,10 +143,15 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse('false')).toBeNull();
   });
 
-  it('returns null for non-object JSON', () => {
+  it('returns null for non-object JSON (array, string)', () => {
     expect(translateJsonLogicToProse('[1, 2, 3]')).toBeNull();
     expect(translateJsonLogicToProse('"hello"')).toBeNull();
-    expect(translateJsonLogicToProse('42')).toBeNull();
+  });
+
+  it('renders bare numeric rule value as prose', () => {
+    expect(translateJsonLogicToProse('42')).toBe(val('42'));
+    expect(translateJsonLogicToProse('0')).toBe(val('0'));
+    expect(translateJsonLogicToProse('3.14')).toBe(val('3.14'));
   });
 
   it('translates some with condition', () => {

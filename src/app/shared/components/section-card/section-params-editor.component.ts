@@ -18,28 +18,8 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
   imports: [ToggleRowComponent, RuleFieldComponent, LucideAngularModule],
   template: `
     <div class="space-y-1">
-      <!-- Masqué -->
-      <div>
-        <app-toggle-row
-          label="Masqué"
-          [icon]="EyeOff"
-          [enabled]="isOverridden(params().hidden_rule)"
-          (toggled)="onToggle('hidden_rule', $event)"
-        />
-        @if (isOverridden(params().hidden_rule)) {
-          <div class="pl-8 pb-1">
-            <app-rule-field
-              [value]="isCustomRule(params().hidden_rule) ? params().hidden_rule : ''"
-              [modelType]="modelType()"
-              [modelId]="modelId()"
-              (valueChange)="onRuleChange('hidden_rule', $event)"
-            />
-          </div>
-        }
-      </div>
-
       @if (isAssociation()) {
-        <!-- Obligatoire -->
+        <!-- Obligatoire (Mandatory) -->
         <div>
           <app-toggle-row
             label="Obligatoire"
@@ -60,7 +40,7 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
         </div>
       }
 
-      <!-- Non éditable -->
+      <!-- Non éditable (Editable) -->
       <div>
         <app-toggle-row
           label="Non éditable"
@@ -75,6 +55,26 @@ type RuleField = 'hidden_rule' | 'required_rule' | 'disabled_rule' | 'constraine
               [modelType]="modelType()"
               [modelId]="modelId()"
               (valueChange)="onRuleChange('disabled_rule', $event)"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- Masqué (Hidden) -->
+      <div>
+        <app-toggle-row
+          label="Masqué"
+          [icon]="EyeOff"
+          [enabled]="isOverridden(params().hidden_rule)"
+          (toggled)="onToggle('hidden_rule', $event)"
+        />
+        @if (isOverridden(params().hidden_rule)) {
+          <div class="pl-8 pb-1">
+            <app-rule-field
+              [value]="isCustomRule(params().hidden_rule) ? params().hidden_rule : ''"
+              [modelType]="modelType()"
+              [modelId]="modelId()"
+              (valueChange)="onRuleChange('hidden_rule', $event)"
             />
           </div>
         }

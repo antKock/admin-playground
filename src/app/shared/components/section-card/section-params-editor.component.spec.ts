@@ -41,6 +41,26 @@ describe('SectionParamsEditorComponent', () => {
     expect(toggles.length).toBe(5);
   });
 
+  it('should render non-association toggles in canonical order: Editable, Hidden', () => {
+    fixture.detectChanges();
+    const toggles = fixture.nativeElement.querySelectorAll('app-toggle-row');
+    expect(toggles.length).toBe(2);
+    expect(toggles[0].getAttribute('label')).toBe('Non éditable');
+    expect(toggles[1].getAttribute('label')).toBe('Masqué');
+  });
+
+  it('should render association toggles in canonical order: Mandatory, Editable, Hidden, Occurrence, Constrained', () => {
+    fixture.componentRef.setInput('isAssociation', true);
+    fixture.detectChanges();
+    const toggles = fixture.nativeElement.querySelectorAll('app-toggle-row');
+    expect(toggles.length).toBe(5);
+    expect(toggles[0].getAttribute('label')).toBe('Obligatoire');
+    expect(toggles[1].getAttribute('label')).toBe('Non éditable');
+    expect(toggles[2].getAttribute('label')).toBe('Masqué');
+    expect(toggles[3].getAttribute('label')).toBe('Occurrences');
+    expect(toggles[4].getAttribute('label')).toBe('Contrainte');
+  });
+
   it('should emit paramsChange with toggled field when toggle is activated', () => {
     fixture.detectChanges();
 

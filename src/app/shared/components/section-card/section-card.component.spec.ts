@@ -40,14 +40,14 @@ describe('SectionCardComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Masquer');
   });
 
-  it('should toggle collapse on chevron click', () => {
+  it('should toggle collapse when header row is clicked', () => {
     fixture.detectChanges();
 
     let toggled = false;
     component.toggleCollapse.subscribe(() => (toggled = true));
 
-    const btn = fixture.nativeElement.querySelector('button[aria-label="Toggle parameters"]') as HTMLElement;
-    btn.click();
+    const header = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
+    header.click();
     fixture.detectChanges();
 
     expect(toggled).toBe(true);
@@ -58,15 +58,14 @@ describe('SectionCardComponent', () => {
     expect(component['isCollapsed']()).toBe(true);
   });
 
-  it('should expand when chevron is clicked while collapsed', () => {
+  it('should expand when header is clicked while collapsed', () => {
     fixture.componentRef.setInput('collapsed', true);
     fixture.detectChanges();
 
-    const btn = fixture.nativeElement.querySelector('button[aria-label="Toggle parameters"]') as HTMLElement;
-    btn.click();
+    const header = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
+    header.click();
     fixture.detectChanges();
 
-    // Collapsed state toggled internally
     expect(component['isCollapsed']()).toBe(false);
   });
 
@@ -127,5 +126,49 @@ describe('SectionCardComponent (content projection)', () => {
     // Default content is in the always-visible area
     expect(fixture.nativeElement.querySelector('.projected-content')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Projected content');
+  });
+});
+
+@Component({
+  imports: [SectionCardComponent],
+  template: `
+    <app-section-card sectionName="Toggle Test" sectionType="application" [indicatorCount]="0" (toggleCollapse)="collapseCount = collapseCount + 1">
+      <button toggle class="test-toggle" (click)="toggleCount = toggleCount + 1">Toggle</button>
+    </app-section-card>
+  `,
+})
+class ToggleHostComponent {
+  toggleCount = 0;
+  collapseCount = 0;
+}
+
+describe('SectionCardComponent (toggle keyboard isolation)', () => {
+  let fixture: ComponentFixture<ToggleHostComponent>;
+  let host: ToggleHostComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ToggleHostComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ToggleHostComponent);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should not trigger expand/collapse when Enter is pressed on projected toggle', () => {
+    const toggleBtn = fixture.nativeElement.querySelector('.test-toggle') as HTMLElement;
+    toggleBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.collapseCount).toBe(0);
+  });
+
+  it('should not trigger expand/collapse when Space is pressed on projected toggle', () => {
+    const toggleBtn = fixture.nativeElement.querySelector('.test-toggle') as HTMLElement;
+    toggleBtn.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.collapseCount).toBe(0);
   });
 });

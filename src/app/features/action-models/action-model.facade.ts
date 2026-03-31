@@ -241,9 +241,12 @@ export class ActionModelFacade {
 
   toggleAssociationSection(sectionKey: SectionKey): void {
     const existingSection = this._sectionHelpers.workingSections().find((s) => s.key === sectionKey);
-    if (existingSection && existingSection.id) {
+    if (existingSection?.id) {
       this._sectionHelpers.removeSection(existingSection.id);
-    } else if (!existingSection) {
+    } else if (existingSection) {
+      // Stub section (id: null) added locally — remove it by key
+      this._sectionHelpers.removeStubSection(sectionKey);
+    } else {
       this._sectionHelpers.addSection(sectionKey);
     }
   }
