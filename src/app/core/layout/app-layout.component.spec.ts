@@ -24,22 +24,23 @@ describe('AppLayoutComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render 12 navigation items', async () => {
+  it('should render 11 navigation items', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const navItems = compiled.querySelectorAll('.nav-item');
-    expect(navItems.length).toBe(12);
+    expect(navItems.length).toBe(11);
   });
 
-  it('should render section labels for Configuration and Administration', async () => {
+  it('should render section labels for Objets, Modèles, and Debugging', async () => {
     const fixture = TestBed.createComponent(AppLayoutComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const labels = compiled.querySelectorAll('.nav-section-label');
-    expect(labels.length).toBe(2);
-    expect(labels[0].textContent).toContain('Configuration');
-    expect(labels[1].textContent).toContain('Administration');
+    expect(labels.length).toBe(3);
+    expect(labels[0].textContent).toContain('Objets');
+    expect(labels[1].textContent).toContain('Modèles');
+    expect(labels[2].textContent).toContain('Debugging');
   });
 
   it('should render help link in header', async () => {

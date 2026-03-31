@@ -34,9 +34,12 @@ describe('ActivityListComponent', () => {
     expect(activityList).toBeTruthy();
   });
 
-  it('should display section header', () => {
+  it('should display section header with beta badge', () => {
     fixture.detectChanges();
     const heading = fixture.nativeElement.querySelector('h2');
     expect(heading.textContent).toContain('Activité');
+    const badge = heading.querySelector('span');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent.trim()).toBe('bêta');
   });
 });

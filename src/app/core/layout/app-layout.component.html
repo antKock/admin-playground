@@ -6,8 +6,8 @@
       <span class="text-lg font-semibold text-brand">Lauréat Admin</span>
     </div>
     <ul class="nav-list">
-      <li class="nav-section-label">Configuration</li>
-      @for (item of configItems; track item.route) {
+      <li class="nav-section-label">Objets</li>
+      @for (item of objetItems; track item.route) {
         <li>
           <a
             [routerLink]="item.route"
@@ -19,8 +19,21 @@
           </a>
         </li>
       }
-      <li class="nav-section-label">Administration</li>
-      @for (item of adminItems; track item.route) {
+      <li class="nav-section-label">Modèles</li>
+      @for (item of modelItems; track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="nav-item-active"
+            class="nav-item"
+          >
+            <lucide-icon [img]="item.icon" [size]="18" class="nav-icon"></lucide-icon>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+      <li class="nav-section-label">Debugging</li>
+      @for (item of debugItems; track item.route) {
         <li>
           <a
             [routerLink]="item.route"
@@ -64,7 +77,6 @@
 
     <main id="main-content" class="content">
       <router-outlet />
-      <app-api-inspector />
     </main>
   </div>
 </div>

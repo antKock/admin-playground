@@ -1,11 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, User, UserCog, BarChart3, LogOut, HelpCircle, Activity, MapPin, Building2, Layers } from 'lucide-angular';
+import { LucideAngularModule, LucideIconData, Landmark, Tags, FileText, FolderOpen, Users, User, BarChart3, LogOut, HelpCircle, Activity, MapPin, Building2, Layers } from 'lucide-angular';
 
 import { AuthStore } from '@domains/auth/auth.store';
 import { OpenApiBannerComponent } from '@app/shared/components/openapi-banner/openapi-banner.component';
-import { ApiInspectorComponent } from '@shared/api-inspector/api-inspector.component';
-
 
 interface NavItem {
   label: string;
@@ -15,7 +13,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, OpenApiBannerComponent, ApiInspectorComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, OpenApiBannerComponent],
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.css',
 })
@@ -26,21 +24,23 @@ export class AppLayoutComponent {
   readonly LogOut = LogOut;
   readonly HelpCircle = HelpCircle;
 
-  readonly configItems: NavItem[] = [
+  readonly objetItems: NavItem[] = [
     { label: 'Programmes', route: '/funding-programs', icon: Landmark },
     { label: 'Thèmes d\'action', route: '/action-themes', icon: Tags },
-    { label: 'Modèles d\'action', route: '/action-models', icon: FileText },
-    { label: 'Modèles de dossier', route: '/folder-models', icon: FolderOpen },
-    { label: 'Modèles d\'indicateur', route: '/indicator-models', icon: BarChart3 },
-    { label: 'Modèles d\'entités', route: '/entity-models', icon: Layers },
+    { label: 'Utilisateurs', route: '/users', icon: User },
   ];
 
-  readonly adminItems: NavItem[] = [
+  readonly modelItems: NavItem[] = [
+    { label: 'Indicateurs', route: '/indicator-models', icon: BarChart3 },
+    { label: 'Actions', route: '/action-models', icon: FileText },
+    { label: 'Dossiers', route: '/folder-models', icon: FolderOpen },
+    { label: 'Entités', route: '/entity-models', icon: Layers },
+  ];
+
+  readonly debugItems: NavItem[] = [
     { label: 'Sites', route: '/sites', icon: MapPin },
     { label: 'Bâtiments', route: '/buildings', icon: Building2 },
     { label: 'Communautés', route: '/communities', icon: Users },
-    { label: 'Agents', route: '/agents', icon: UserCog },
-    { label: 'Utilisateurs', route: '/users', icon: User },
     { label: 'Activité', route: '/activity', icon: Activity },
   ];
 

@@ -3,7 +3,6 @@ import { provideHttpClient, withInterceptors, withXsrfConfiguration } from '@ang
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { authInterceptor } from './core/auth/auth.interceptor';
-import { apiInspectorInterceptor } from '@shared/api-inspector/api-inspector.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -14,7 +13,7 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
     ),
     provideHttpClient(
-      withInterceptors([authInterceptor, apiInspectorInterceptor]),
+      withInterceptors([authInterceptor]),
       withXsrfConfiguration({ cookieName: 'csrftoken', headerName: 'X-CSRFToken' }),
     ),
   ],
