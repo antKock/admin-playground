@@ -143,14 +143,14 @@ describe('IndicatorCardComponent', () => {
     );
   });
 
-  it('should emit paramsChange with null occurrence_rule on toggle off', () => {
+  it('should emit paramsChange with canonical OFF occurrence_rule on toggle off', () => {
     const changeSpy = vi.fn();
     component.paramsChange.subscribe(changeSpy);
 
     component.onOccurrenceToggle(false);
 
     expect(changeSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ occurrence_rule: null }),
+      expect.objectContaining({ occurrence_rule: { min: 'false', max: 'false' } }),
     );
   });
 
@@ -189,6 +189,45 @@ describe('IndicatorCardComponent', () => {
     component.onDefaultValueToggle(false);
 
     expect(changeSpy).toHaveBeenCalledWith(expect.objectContaining({ default_value_rule: null }));
+  });
+
+  it('should toggle occurrence ON → OFF → verify canonical OFF state', () => {
+    fixture.componentRef.setInput('params', {
+      ...mockParams,
+      occurrence_rule: { min: 'true', max: 'false' },
+    });
+
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    component.onOccurrenceToggle(false);
+
+    expect(changeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ occurrence_rule: { min: 'false', max: 'false' } }),
+    );
+  });
+
+  it('should preserve and restore custom occurrence rules across toggle cycle', () => {
+    fixture.componentRef.setInput('params', {
+      ...mockParams,
+      occurrence_rule: { min: '{"gte": 2}', max: '{"lte": 5}' },
+    });
+
+    const changeSpy = vi.fn();
+    component.paramsChange.subscribe(changeSpy);
+
+    // Toggle OFF — saves custom rules, emits canonical OFF
+    component.onOccurrenceToggle(false);
+    expect(changeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ occurrence_rule: { min: 'false', max: 'false' } }),
+    );
+
+    // Toggle ON — restores saved custom rules
+    changeSpy.mockClear();
+    component.onOccurrenceToggle(true);
+    expect(changeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ occurrence_rule: { min: '{"gte": 2}', max: '{"lte": 5}' } }),
+    );
   });
 
   it('should preserve and restore JSONLogic rule across toggle cycle', () => {

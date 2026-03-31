@@ -34,49 +34,70 @@ describe('SectionCardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('📋');
   });
 
-  it('should show "Paramètres" hint when collapsed', () => {
-    fixture.componentRef.setInput('collapsed', true);
+  it('should not show "Paramètres" or "Masquer" labels (removed in 23.2)', () => {
     fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Paramètres');
+    expect(fixture.nativeElement.textContent).not.toContain('Paramètres');
     expect(fixture.nativeElement.textContent).not.toContain('Masquer');
   });
 
-  it('should show "Masquer" when expanded', () => {
-    fixture.componentRef.setInput('collapsed', false);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Masquer');
-    expect(fixture.nativeElement.textContent).not.toContain('Paramètres');
-  });
-
-  it('should toggle collapse on header click', () => {
+  it('should toggle collapse on chevron click', () => {
     fixture.detectChanges();
 
     let toggled = false;
     component.toggleCollapse.subscribe(() => (toggled = true));
 
-    const header = fixture.nativeElement.querySelector('.cursor-pointer');
-    header.click();
+    const btn = fixture.nativeElement.querySelector('button[aria-label="Toggle parameters"]') as HTMLElement;
+    btn.click();
     fixture.detectChanges();
 
     expect(toggled).toBe(true);
   });
 
-  it('should expand when collapsed and header is clicked', () => {
+  it('should start collapsed by default', () => {
+    fixture.detectChanges();
+    expect(component['isCollapsed']()).toBe(true);
+  });
+
+  it('should expand when chevron is clicked while collapsed', () => {
     fixture.componentRef.setInput('collapsed', true);
     fixture.detectChanges();
 
-    // "Paramètres" hint visible when collapsed
-    expect(fixture.nativeElement.textContent).toContain('Paramètres');
-
-    const header = fixture.nativeElement.querySelector('.cursor-pointer');
-    header.click();
+    const btn = fixture.nativeElement.querySelector('button[aria-label="Toggle parameters"]') as HTMLElement;
+    btn.click();
     fixture.detectChanges();
 
-    // "Masquer" shown after expanding
-    expect(fixture.nativeElement.textContent).toContain('Masquer');
-    expect(fixture.nativeElement.textContent).not.toContain('Paramètres');
+    // Collapsed state toggled internally
+    expect(component['isCollapsed']()).toBe(false);
+  });
+
+  it('should render param-hint-icons when paramHints is provided', () => {
+    fixture.componentRef.setInput('paramHints', {
+      visibility: 'on',
+      required: 'off',
+      editable: 'off',
+      defaultValue: 'off',
+      occurrence: 'off',
+      constrained: 'off',
+    });
+    fixture.detectChanges();
+
+    const hintIcons = fixture.nativeElement.querySelector('app-param-hint-icons');
+    expect(hintIcons).toBeTruthy();
+  });
+
+  it('should not render param-hint-icons when paramHints is not provided', () => {
+    fixture.detectChanges();
+
+    const hintIcons = fixture.nativeElement.querySelector('app-param-hint-icons');
+    expect(hintIcons).toBeFalsy();
+  });
+
+  it('should apply border-gray-300 when disabled', () => {
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.border-gray-300');
+    expect(card).toBeTruthy();
   });
 });
 
@@ -102,12 +123,8 @@ describe('SectionCardComponent (content projection)', () => {
     fixture.detectChanges();
   });
 
-  it('should project content when expanded', () => {
-    // Default is collapsed — expand by clicking header
-    const header = fixture.nativeElement.querySelector('[role="button"]') as HTMLElement;
-    header.click();
-    fixture.detectChanges();
-
+  it('should project default content (always visible indicators area)', () => {
+    // Default content is in the always-visible area
     expect(fixture.nativeElement.querySelector('.projected-content')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Projected content');
   });

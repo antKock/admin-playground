@@ -19,6 +19,8 @@ import {
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
+import { sectionParamsToHints } from '@app/shared/components/section-card/section-card.models';
+import { ParamHints } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { EntityModelType } from '@domains/entity-models/entity-model.models';
 import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
@@ -103,6 +105,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
       name: im.name,
       technical_label: im.technical_label,
       type: im.type,
+      children: im.children?.map((c) => ({ id: c.id, name: c.name, technical_label: c.technical_label, type: c.type })),
     })),
   );
 
@@ -125,6 +128,10 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
 
   ngOnDestroy(): void {
     this.facade.clearSelection();
+  }
+
+  computeSectionHints(section: DisplaySection): ParamHints {
+    return sectionParamsToHints(this.getSectionParams(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {

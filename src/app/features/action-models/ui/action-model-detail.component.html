@@ -78,28 +78,20 @@
         <h2 class="text-lg font-semibold text-text-primary mb-4">Sections d'association</h2>
         <div class="space-y-3">
           @for (view of associationSectionViews(); track view.sType) {
-            <div class="bg-gray-50 border-l-4 rounded-lg overflow-hidden" [class.border-blue-400]="view.enabled" [class.border-gray-300]="!view.enabled">
-              <!-- Header with toggle -->
-              <div class="flex items-center justify-between px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <span>{{ view.config.icon }}</span>
-                  <h3 class="text-sm font-semibold text-text-primary">{{ view.config.label }}</h3>
-                </div>
-                <div class="flex items-center gap-3">
-                  @if (!view.enabled) {
-                    <span class="text-xs text-text-tertiary italic">Section désactivée</span>
-                  }
-                  <app-association-section-toggle
-                    [enabled]="view.enabled"
-                    [isPending]="false"
-                    (toggled)="onToggleAssociation(view.sType)"
-                  />
-                </div>
-              </div>
-
-              <!-- Body (only when enabled) -->
+            <app-section-card
+              [sectionName]="view.config.label"
+              [sectionType]="view.sType"
+              [indicatorCount]="(view.section?.indicators ?? []).length"
+              [paramHints]="view.section ? computeSectionHints(view.section) : allOffHints"
+              [disabled]="!view.enabled"
+            >
+              <app-association-section-toggle toggle
+                [enabled]="view.enabled"
+                [isPending]="false"
+                (toggled)="onToggleAssociation(view.sType)"
+              />
               @if (view.enabled && view.section) {
-                <div class="px-4 py-2">
+                <div params>
                   <app-section-params-editor
                     [params]="getSectionParams(view.section)"
                     [isPending]="false"
@@ -109,43 +101,42 @@
                     (paramsChange)="onSectionParamsChange(view.section, $event)"
                   />
                 </div>
-                <div class="border-t border-dotted border-gray-300 mx-4"></div>
-                <div class="px-4 py-3">
-                  @if (view.indicatorCards.length === 0) {
-                    <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
-                  } @else {
-                    <div
-                      cdkDropList
-                      [cdkDropListData]="view.section.id"
-                      class="space-y-2 mb-3"
-                      (cdkDropListDropped)="onSectionDrop(view.section, $event)"
-                    >
-                      @for (card of view.indicatorCards; track card.id) {
-                        <div cdkDrag cdkDragLockAxis="y">
-                          <app-indicator-card
-                            [indicator]="card"
-                            [params]="getSectionIndicatorParams(view.section.id!, card.id)"
-                            [childParams]="getSectionChildParamsMap(view.section.id!, card)"
-                            [modified]="facade.isSectionIndicatorModified(view.section.id!, card.id)"
-                            modelType="action"
-                            [modelId]="model()!.id"
-                            (remove)="onSectionDetach(view.section, $event)"
-                            (paramsChange)="onSectionIndicatorParamsChange(view.section.id!, card.id, $event)"
-                            (childParamsChange)="onSectionChildParamsChange(view.section.id!, card.id, $event)"
-                          />
-                        </div>
-                      }
-                    </div>
-                  }
-                  <app-indicator-picker
-                    [options]="pickerOptions()"
-                    [attachedIds]="view.attachedIds"
-                    [loading]="facade.indicatorsLoading()"
-                    (attach)="onSectionAttach(view.section, $event)"
-                  />
-                </div>
               }
-            </div>
+              @if (view.enabled && view.section) {
+                @if (view.indicatorCards.length === 0) {
+                  <p class="text-sm text-text-secondary mb-3">Aucun indicateur</p>
+                } @else {
+                  <div
+                    cdkDropList
+                    [cdkDropListData]="view.section.id"
+                    class="space-y-2 mb-3"
+                    (cdkDropListDropped)="onSectionDrop(view.section, $event)"
+                  >
+                    @for (card of view.indicatorCards; track card.id) {
+                      <div cdkDrag cdkDragLockAxis="y">
+                        <app-indicator-card
+                          [indicator]="card"
+                          [params]="getSectionIndicatorParams(view.section.id!, card.id)"
+                          [childParams]="getSectionChildParamsMap(view.section.id!, card)"
+                          [modified]="facade.isSectionIndicatorModified(view.section.id!, card.id)"
+                          modelType="action"
+                          [modelId]="model()!.id"
+                          (remove)="onSectionDetach(view.section, $event)"
+                          (paramsChange)="onSectionIndicatorParamsChange(view.section.id!, card.id, $event)"
+                          (childParamsChange)="onSectionChildParamsChange(view.section.id!, card.id, $event)"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+                <app-indicator-picker
+                  [options]="pickerOptions()"
+                  [attachedIds]="view.attachedIds"
+                  [loading]="facade.indicatorsLoading()"
+                  (attach)="onSectionAttach(view.section, $event)"
+                />
+              }
+            </app-section-card>
           }
         </div>
       </div>
@@ -160,6 +151,7 @@
               [sectionName]="view.section.name"
               [sectionType]="view.section.key"
               [indicatorCount]="(view.section.indicators ?? []).length"
+              [paramHints]="computeSectionHints(view.section)"
             >
               <div params>
                 <app-section-params-editor

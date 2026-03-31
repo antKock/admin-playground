@@ -152,9 +152,12 @@ export class IndicatorCardComponent {
 
   onOccurrenceToggle(enabled: boolean): void {
     if (enabled) {
-      this.emitParams({ occurrence_rule: { min: 'true', max: 'false' } });
+      this.emitParams({ occurrence_rule: { min: this.savedRules['occurrence_rule_min'] ?? 'true', max: this.savedRules['occurrence_rule_max'] ?? 'false' } });
     } else {
-      this.emitParams({ occurrence_rule: null });
+      const occ = this.params().occurrence_rule;
+      if (occ && this.isCustomRule(occ.min)) this.savedRules['occurrence_rule_min'] = occ.min;
+      if (occ && this.isCustomRule(occ.max)) this.savedRules['occurrence_rule_max'] = occ.max;
+      this.emitParams({ occurrence_rule: { min: 'false', max: 'false' } });
     }
   }
 
@@ -227,9 +230,14 @@ export class IndicatorCardComponent {
 
   onChildOccurrenceToggle(childId: string, enabled: boolean): void {
     if (enabled) {
-      this.emitChildParams(childId, { occurrence_rule: { min: 'true', max: 'false' } });
+      const saved = this.savedChildRules[childId] ?? {};
+      this.emitChildParams(childId, { occurrence_rule: { min: saved['occurrence_rule_min'] ?? 'true', max: saved['occurrence_rule_max'] ?? 'false' } });
     } else {
-      this.emitChildParams(childId, { occurrence_rule: null });
+      const occ = this.getChildParams(childId).occurrence_rule;
+      if (!this.savedChildRules[childId]) this.savedChildRules[childId] = {};
+      if (occ && this.isCustomRule(occ.min)) this.savedChildRules[childId]['occurrence_rule_min'] = occ.min;
+      if (occ && this.isCustomRule(occ.max)) this.savedChildRules[childId]['occurrence_rule_max'] = occ.max;
+      this.emitChildParams(childId, { occurrence_rule: { min: 'false', max: 'false' } });
     }
   }
 

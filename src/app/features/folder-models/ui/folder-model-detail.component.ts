@@ -23,6 +23,8 @@ import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.compo
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
+import { sectionParamsToHints } from '@app/shared/components/section-card/section-card.models';
+import { ParamHints } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { FolderModelFacade, DisplaySection } from '../folder-model.facade';
 import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
@@ -88,6 +90,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
       name: im.name,
       technical_label: im.technical_label,
       type: im.type,
+      children: im.children?.map((c) => ({ id: c.id, name: c.name, technical_label: c.technical_label, type: c.type })),
     })),
   );
 
@@ -102,6 +105,10 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     helpers.handleParamSaveKeydown(this.facade, event, () => this.onSave());
+  }
+
+  computeSectionHints(section: DisplaySection): ParamHints {
+    return sectionParamsToHints(this.getSectionParams(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {

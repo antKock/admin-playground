@@ -83,3 +83,10 @@ development_status:
   22-3-update-detail-components-templates: review      # depends: 22.2 — all 3 model templates + tests
   22-4-cleanup-legacy-param-editor: review             # depends: 22.2, 22.3
   epic-22-retrospective: optional
+
+  # Epic 23: Post-Epic 22 Bug Fixes & Section UX Improvements
+  # Scope: Fix working copy bugs from Epic 22, improve section card UX
+  # Execution order: 23.1 → 23.2 (bug fixes before UX changes)
+  epic-23: done
+  23-1-working-copy-bug-fixes: done                       # Occurrence rule toggle OFF + new indicator params not editable
+  23-2-section-card-ux-improvements: done                 # Toggle placement + param hints on sections; depends: 23.1

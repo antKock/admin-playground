@@ -113,7 +113,7 @@ export function createSectionFacadeHelpers(ctx: SectionFacadeContext) {
     wc.updateSectionParams(sectionId, sectionKey, params);
   }
 
-  function addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicator: { id: string; name: string; technical_label: string; type: string }): void {
+  function addIndicatorToSection(sectionId: string | null, sectionKey: SectionKey, indicator: { id: string; name: string; technical_label: string; type: string; children?: { id: string; name: string; technical_label: string; type: string }[] }): void {
     wc.addIndicator(sectionId, sectionKey, indicator);
   }
 

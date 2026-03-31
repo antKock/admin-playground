@@ -25,7 +25,8 @@ import { ActivityListComponent } from '@app/shared/components/activity-list/acti
 import { SectionCardComponent } from '@app/shared/components/section-card/section-card.component';
 import { AssociationSectionToggleComponent } from '@app/shared/components/section-card/association-section-toggle.component';
 import { SectionParamsEditorComponent, SectionParams } from '@app/shared/components/section-card/section-params-editor.component';
-import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES, isAssociationSection } from '@app/shared/components/section-card/section-card.models';
+import { SectionKey, SECTION_TYPE_MAP, ASSOCIATION_SECTION_TYPES, isAssociationSection, sectionParamsToHints } from '@app/shared/components/section-card/section-card.models';
+import { ParamHints } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { ActionModelFacade, DisplaySection } from '../action-model.facade';
 import { buildSectionIndicatorCards } from '@features/shared/section-indicators/build-section-indicator-cards';
@@ -129,6 +130,7 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
       name: im.name,
       technical_label: im.technical_label,
       type: im.type,
+      children: im.children?.map((c) => ({ id: c.id, name: c.name, technical_label: c.technical_label, type: c.type })),
     })),
   );
 
@@ -211,6 +213,12 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
 
   onToggleAssociation(sectionKey: SectionKey): void {
     this.facade.toggleAssociationSection(sectionKey);
+  }
+
+  readonly allOffHints: ParamHints = { visibility: 'off', required: 'off', editable: 'off', defaultValue: 'off', occurrence: 'off', constrained: 'off' };
+
+  computeSectionHints(section: DisplaySection): ParamHints {
+    return sectionParamsToHints(this.getSectionParams(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {

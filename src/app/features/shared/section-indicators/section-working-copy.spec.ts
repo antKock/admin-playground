@@ -232,6 +232,117 @@ describe('createSectionWorkingCopy', () => {
       expect(ind.required_rule).toBe('true');
     });
 
+    it('addIndicator should hydrate children when provided', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({ id: 's1', key: 'financial' }),
+      ]);
+
+      wc.addIndicator('s1', 'financial', {
+        id: 'i1', name: 'Group Ind', technical_label: 'group_ind', type: 'group',
+        children: [
+          { id: 'c1', name: 'Child 1', technical_label: 'child1', type: 'numeric' },
+          { id: 'c2', name: 'Child 2', technical_label: 'child2', type: 'text_short' },
+        ],
+      });
+
+      const ind = wc.workingSections()[0].indicators![0];
+      expect(ind.children!.length).toBe(2);
+      expect(ind.children![0].id).toBe('c1');
+      expect(ind.children![0].name).toBe('Child 1');
+      expect(ind.children![0].hidden_rule).toBe('false');
+      expect(ind.children![0].default_value_rule).toBe('false');
+      expect(ind.children![1].id).toBe('c2');
+    });
+
+    it('newly added indicator params should be immediately editable', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({ id: 's1', key: 'financial' }),
+      ]);
+
+      wc.addIndicator('s1', 'financial', { id: 'i1', name: 'New Ind', technical_label: 'new_ind', type: 'numeric' });
+
+      // Toggle hidden ON
+      wc.updateIndicatorParams('s1', 'financial', 'i1', {
+        hidden_rule: 'true',
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: null,
+        constrained_rule: null,
+      });
+
+      const ind = wc.workingSections()[0].indicators![0];
+      expect(ind.hidden_rule).toBe('true');
+
+      // Toggle occurrence ON
+      wc.updateIndicatorParams('s1', 'financial', 'i1', {
+        hidden_rule: 'true',
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: { min: 'true', max: 'false' },
+        constrained_rule: null,
+      });
+
+      const ind2 = wc.workingSections()[0].indicators![0];
+      expect(ind2.occurrence_rule).toEqual({ min: 'true', max: 'false' });
+
+      // Toggle occurrence OFF
+      wc.updateIndicatorParams('s1', 'financial', 'i1', {
+        hidden_rule: 'true',
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: { min: 'false', max: 'false' },
+        constrained_rule: null,
+      });
+
+      const ind3 = wc.workingSections()[0].indicators![0];
+      expect(ind3.occurrence_rule).toEqual({ min: 'false', max: 'false' });
+    });
+
+    it('updateIndicatorParams with null occurrence_rule should set canonical OFF', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({
+          id: 's1', key: 'financial',
+          indicators: [makeIndicator({ id: 'i1', name: 'Ind1', occurrence_rule: { min: 'true', max: 'false' } })],
+        }),
+      ]);
+
+      wc.updateIndicatorParams('s1', 'financial', 'i1', {
+        hidden_rule: null,
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: null,
+        constrained_rule: null,
+      });
+
+      const ind = wc.workingSections()[0].indicators![0];
+      expect(ind.occurrence_rule).toEqual({ min: 'false', max: 'false' });
+    });
+
+    it('updateIndicatorParams with occurrence_rule should set it correctly', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({
+          id: 's1', key: 'financial',
+          indicators: [makeIndicator({ id: 'i1', name: 'Ind1' })],
+        }),
+      ]);
+
+      wc.updateIndicatorParams('s1', 'financial', 'i1', {
+        hidden_rule: null,
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: { min: '{"gte": 2}', max: 'false' },
+        constrained_rule: null,
+      });
+
+      const ind = wc.workingSections()[0].indicators![0];
+      expect(ind.occurrence_rule).toEqual({ min: '{"gte": 2}', max: 'false' });
+    });
+
     it('updateChildIndicatorParams should update child params', () => {
       const wc = createSectionWorkingCopy(() => [
         makeSection({
@@ -261,6 +372,62 @@ describe('createSectionWorkingCopy', () => {
 
       const child = wc.workingSections()[0].indicators![0].children![0];
       expect(child.hidden_rule).toBe('true');
+    });
+
+    it('updateChildIndicatorParams with null occurrence_rule should set canonical OFF', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({
+          id: 's1', key: 'financial',
+          indicators: [
+            makeIndicator({
+              id: 'i1', name: 'Parent',
+              children: [{
+                id: 'c1', name: 'Child1', technical_label: 'child1', type: 'numeric',
+                created_at: '2026-01-01', last_updated_at: '2026-01-01',
+                hidden_rule: 'false', required_rule: 'false', disabled_rule: 'false',
+                default_value_rule: 'false', constrained_rule: 'false',
+                occurrence_rule: { min: 'true', max: 'false' },
+              }],
+            }),
+          ],
+        }),
+      ]);
+
+      wc.updateChildIndicatorParams('s1', 'financial', 'i1', 'c1', {
+        hidden_rule: null,
+        required_rule: null,
+        disabled_rule: null,
+        default_value_rule: null,
+        occurrence_rule: null,
+        constrained_rule: null,
+      });
+
+      const child = wc.workingSections()[0].indicators![0].children![0];
+      expect(child.occurrence_rule).toEqual({ min: 'false', max: 'false' });
+    });
+  });
+
+  // ── Section occurrence toggle OFF ────────────────────────────────────
+
+  describe('section occurrence toggle OFF (Story 23.1 AC #1)', () => {
+    it('should update working copy to canonical OFF when occurrence toggled OFF', () => {
+      const wc = createSectionWorkingCopy(() => [
+        makeSection({
+          id: 's1', key: 'financial',
+          occurrence_rule: { min: 'true', max: 'false' },
+        }),
+      ]);
+
+      wc.updateSectionParams('s1', 'financial', {
+        hidden_rule: 'false',
+        required_rule: 'false',
+        disabled_rule: 'false',
+        occurrence_rule: { min: 'false', max: 'false' },
+        constrained_rule: 'false',
+      });
+
+      const section = wc.workingSections()[0];
+      expect(section.occurrence_rule).toEqual({ min: 'false', max: 'false' });
     });
   });
 

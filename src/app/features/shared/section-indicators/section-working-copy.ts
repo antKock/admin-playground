@@ -264,7 +264,7 @@ export function createSectionWorkingCopy(sectionsFn: () => DisplaySection[]) {
   function addIndicator(
     sectionId: string | null,
     sectionKey: SectionKey,
-    indicator: { id: string; name: string; technical_label: string; type: string },
+    indicator: { id: string; name: string; technical_label: string; type: string; children?: { id: string; name: string; technical_label: string; type: string }[] },
   ): void {
     forkIfNeeded();
     _working.update((sections) =>
@@ -272,6 +272,16 @@ export function createSectionWorkingCopy(sectionsFn: () => DisplaySection[]) {
         const match = sectionId != null ? s.id === sectionId : (s.id === null && s.key === sectionKey);
         if (!match) return s;
         const existing = s.indicators ?? [];
+        const children: SectionChildIndicatorModelRead[] = (indicator.children ?? []).map((child) => ({
+          id: child.id,
+          name: child.name,
+          technical_label: child.technical_label,
+          type: child.type,
+          ...SECTION_RULE_DEFAULTS,
+          default_value_rule: 'false',
+          created_at: '',
+          last_updated_at: '',
+        }));
         return {
           ...s,
           indicators: [
@@ -286,7 +296,7 @@ export function createSectionWorkingCopy(sectionsFn: () => DisplaySection[]) {
               created_at: '',
               last_updated_at: '',
               position: existing.length,
-              children: [],
+              children,
             } as SectionIndicatorModelRead,
           ],
         };
@@ -601,7 +611,7 @@ function applyIndicatorParams(ind: SectionIndicatorModelRead, params: IndicatorP
     required_rule: ruleForApi(params.required_rule),
     disabled_rule: ruleForApi(params.disabled_rule),
     default_value_rule: ruleForApi(params.default_value_rule),
-    occurrence_rule: params.occurrence_rule ? { min: params.occurrence_rule.min, max: params.occurrence_rule.max } : ind.occurrence_rule,
+    occurrence_rule: params.occurrence_rule ? { min: params.occurrence_rule.min, max: params.occurrence_rule.max } : { min: 'false', max: 'false' },
     constrained_rule: ruleForApi(params.constrained_rule),
   };
 }
@@ -613,7 +623,7 @@ function applyChildParams(child: SectionChildIndicatorModelRead, params: Indicat
     required_rule: ruleForApi(params.required_rule),
     disabled_rule: ruleForApi(params.disabled_rule),
     default_value_rule: ruleForApi(params.default_value_rule),
-    occurrence_rule: params.occurrence_rule ? { min: params.occurrence_rule.min, max: params.occurrence_rule.max } : child.occurrence_rule,
+    occurrence_rule: params.occurrence_rule ? { min: params.occurrence_rule.min, max: params.occurrence_rule.max } : { min: 'false', max: 'false' },
     constrained_rule: ruleForApi(params.constrained_rule),
   };
 }

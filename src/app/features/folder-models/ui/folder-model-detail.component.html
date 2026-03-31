@@ -70,6 +70,7 @@
               [sectionName]="view.section.name"
               [sectionType]="view.section.key"
               [indicatorCount]="(view.section.indicators ?? []).length"
+              [paramHints]="computeSectionHints(view.section)"
             >
               <div params>
                 <app-section-params-editor

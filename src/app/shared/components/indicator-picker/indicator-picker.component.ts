@@ -8,6 +8,7 @@ export interface IndicatorOption {
   name: string;
   technical_label: string;
   type: string;
+  children?: { id: string; name: string; technical_label: string; type: string }[];
 }
 
 @Component({
