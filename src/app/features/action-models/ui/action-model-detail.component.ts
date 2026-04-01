@@ -215,10 +215,10 @@ export class ActionModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
     this.facade.toggleAssociationSection(sectionKey);
   }
 
-  readonly allOffHints: ParamHints = { visibility: 'off', required: 'off', editable: 'off', defaultValue: 'off', occurrence: 'off', constrained: 'off' };
+  readonly allOffHints: ParamHints = { visibility: 'off', required: 'off', editable: 'off', defaultValue: null, occurrence: 'off', constrained: 'off' };
 
   computeSectionHints(section: DisplaySection): ParamHints {
-    return sectionParamsToHints(this.getSectionParams(section));
+    return sectionParamsToHints(this.getSectionParams(section), isAssociationSection(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {

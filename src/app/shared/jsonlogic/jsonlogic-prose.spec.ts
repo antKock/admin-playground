@@ -143,9 +143,13 @@ describe('translateJsonLogicToProse', () => {
     expect(translateJsonLogicToProse('false')).toBeNull();
   });
 
-  it('returns null for non-object JSON (array, string)', () => {
+  it('returns null for non-object JSON (array)', () => {
     expect(translateJsonLogicToProse('[1, 2, 3]')).toBeNull();
-    expect(translateJsonLogicToProse('"hello"')).toBeNull();
+  });
+
+  it('renders bare string rule value as prose', () => {
+    expect(translateJsonLogicToProse('"hello"')).toBe(val("'hello'"));
+    expect(translateJsonLogicToProse('"test"')).toBe(val("'test'"));
   });
 
   it('renders bare numeric rule value as prose', () => {

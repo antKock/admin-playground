@@ -5,12 +5,12 @@ import { TooltipDirective } from '@shared/directives/tooltip.directive';
 export type ParamState = 'off' | 'on' | 'rule';
 
 export interface ParamHints {
-  visibility: ParamState;
-  required: ParamState;
-  editable: ParamState;
-  defaultValue: ParamState;
-  occurrence: ParamState;
-  constrained: ParamState;
+  visibility: ParamState | null;
+  required: ParamState | null;
+  editable: ParamState | null;
+  defaultValue: ParamState | null;
+  occurrence: ParamState | null;
+  constrained: ParamState | null;
 }
 
 const DEFAULT_HINTS: ParamHints = {
@@ -49,9 +49,11 @@ export class ParamHintIconsComponent {
       { state: h.defaultValue, label: 'defaultValue', icon: this.icons.defaultValue, tooltip: 'Valeur par défaut' },
       { state: h.occurrence, label: 'occurrence', icon: this.icons.occurrence, tooltip: 'Occurrences' },
       { state: h.constrained, label: 'constrained', icon: this.icons.constrained, tooltip: 'Contrainte' },
-    ].map(item => ({
-      ...item,
-      stateClass: item.state === 'rule' ? 'on-rule' : item.state,
-    }));
+    ]
+      .filter(item => item.state != null)
+      .map(item => ({
+        ...item,
+        stateClass: item.state === 'rule' ? 'on-rule' : item.state,
+      }));
   });
 }

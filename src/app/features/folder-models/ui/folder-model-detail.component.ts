@@ -23,7 +23,7 @@ import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.compo
 import { ConfirmDialogService } from '@shared/components/confirm-dialog/confirm-dialog.service';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
 import { formatDateFr } from '@app/shared/utils/format-date';
-import { sectionParamsToHints } from '@app/shared/components/section-card/section-card.models';
+import { sectionParamsToHints, isAssociationSection } from '@app/shared/components/section-card/section-card.models';
 import { ParamHints } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { FolderModelFacade, DisplaySection } from '../folder-model.facade';
@@ -108,7 +108,7 @@ export class FolderModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   computeSectionHints(section: DisplaySection): ParamHints {
-    return sectionParamsToHints(this.getSectionParams(section));
+    return sectionParamsToHints(this.getSectionParams(section), isAssociationSection(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {

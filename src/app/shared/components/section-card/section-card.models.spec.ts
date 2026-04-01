@@ -10,12 +10,12 @@ describe('sectionParamsToHints', () => {
     constrained_rule: 'false',
   };
 
-  it('should return all off for default params', () => {
+  it('should return all off for default params (association)', () => {
     const hints = sectionParamsToHints(defaultParams);
     expect(hints.visibility).toBe('off');
     expect(hints.required).toBe('off');
     expect(hints.editable).toBe('off');
-    expect(hints.defaultValue).toBe('off');
+    expect(hints.defaultValue).toBeNull();
     expect(hints.occurrence).toBe('off');
     expect(hints.constrained).toBe('off');
   });
@@ -76,11 +76,32 @@ describe('sectionParamsToHints', () => {
     expect(hints.occurrence).toBe('rule');
   });
 
-  it('should always return "off" for defaultValue (sections have no default_value_rule)', () => {
+  it('should always return null for defaultValue (sections have no default_value_rule)', () => {
     const hints = sectionParamsToHints({
       ...defaultParams,
       hidden_rule: 'true',
     });
-    expect(hints.defaultValue).toBe('off');
+    expect(hints.defaultValue).toBeNull();
+  });
+
+  it('should return null for association-only hints on non-association sections', () => {
+    const hints = sectionParamsToHints(defaultParams, false);
+    expect(hints.visibility).toBe('off');
+    expect(hints.editable).toBe('off');
+    expect(hints.required).toBeNull();
+    expect(hints.defaultValue).toBeNull();
+    expect(hints.occurrence).toBeNull();
+    expect(hints.constrained).toBeNull();
+  });
+
+  it('should still compute editable and visibility for non-association sections', () => {
+    const hints = sectionParamsToHints({
+      ...defaultParams,
+      hidden_rule: 'true',
+      disabled_rule: '{"if": [true]}',
+    }, false);
+    expect(hints.visibility).toBe('on');
+    expect(hints.editable).toBe('rule');
+    expect(hints.required).toBeNull();
   });
 });

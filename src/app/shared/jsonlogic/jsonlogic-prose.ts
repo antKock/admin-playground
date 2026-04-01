@@ -385,6 +385,7 @@ export function translateJsonLogicToProse(jsonString: string, mode: ProseMode = 
   try {
     const parsed = JSON.parse(jsonString);
     if (typeof parsed === 'number') return wrapVal(String(parsed));
+    if (typeof parsed === 'string') return wrapVal(`'${escapeQuotes(escapeHtml(parsed))}'`);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     return translateNode(parsed, 0, true, mode);
   } catch {

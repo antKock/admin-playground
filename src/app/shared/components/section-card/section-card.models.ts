@@ -41,7 +41,19 @@ function ruleToState(value: string): ParamState {
   return 'rule';
 }
 
-export function sectionParamsToHints(params: SectionParams): ParamHints {
+export function sectionParamsToHints(params: SectionParams, isAssociation = true): ParamHints {
+  if (!isAssociation) {
+    // Non-association sections only support editable + hidden
+    return {
+      visibility: ruleToState(params.hidden_rule),
+      required: null,
+      editable: ruleToState(params.disabled_rule),
+      defaultValue: null,
+      occurrence: null,
+      constrained: null,
+    };
+  }
+
   const occMin = params.occurrence_rule.min;
   const occMax = params.occurrence_rule.max;
   let occurrence: ParamState = 'off';
@@ -53,7 +65,7 @@ export function sectionParamsToHints(params: SectionParams): ParamHints {
     visibility: ruleToState(params.hidden_rule),
     required: ruleToState(params.required_rule),
     editable: ruleToState(params.disabled_rule),
-    defaultValue: 'off', // sections don't have default_value_rule
+    defaultValue: null, // sections don't have default_value_rule
     occurrence,
     constrained: ruleToState(params.constrained_rule),
   };

@@ -19,7 +19,7 @@ import {
 } from '@app/shared/components/indicator-card/indicator-card.component';
 import { SaveBarComponent } from '@app/shared/components/save-bar/save-bar.component';
 import { UserNameResolverService } from '@app/shared/services/user-name-resolver.service';
-import { sectionParamsToHints } from '@app/shared/components/section-card/section-card.models';
+import { sectionParamsToHints, isAssociationSection } from '@app/shared/components/section-card/section-card.models';
 import { ParamHints } from '@app/shared/components/param-hint-icons/param-hint-icons.component';
 import { HasUnsavedChanges } from '@shared/guards/unsaved-changes.guard';
 import { EntityModelType } from '@domains/entity-models/entity-model.models';
@@ -131,7 +131,7 @@ export class EntityModelDetailComponent implements OnInit, OnDestroy, HasUnsaved
   }
 
   computeSectionHints(section: DisplaySection): ParamHints {
-    return sectionParamsToHints(this.getSectionParams(section));
+    return sectionParamsToHints(this.getSectionParams(section), isAssociationSection(section));
   }
 
   getSectionParams(section: DisplaySection): SectionParams {
